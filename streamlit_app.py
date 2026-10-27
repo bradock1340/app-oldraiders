@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
@@ -30,11 +31,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
+# URL base de tu Google Sheets
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 # Control de estado de la aplicación
 if "authenticated" not in st.session_state:
@@ -52,20 +53,18 @@ if not st.session_state.authenticated:
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
     contrasena_input = st.text_input("CONTRASEÑA", type="password")
     
-        if st.button("ENTRAR"):
-        # Sistema de reintentos automáticos para evitar el error de conexión
+    if st.button("ENTRAR"):
         df_usuarios = None
-        for intento in range(3): # Lo intenta hasta 3 veces seguidas de forma interna
+        # Sistema de reintentos automáticos alineado correctamente
+        for intento in range(3):
             try:
                 df_usuarios = pd.read_csv(URL_USUARIOS)
-                break # Si conecta con éxito, rompe el bucle y continúa
+                break
             except:
-                import time
-                time.sleep(0.2) # Espera un parpadeo antes de volver a intentar
+                time.sleep(0.2)
         
         if df_usuarios is not None:
             try:
-                # Limpiamos nombres de columnas
                 df_usuarios.columns = df_usuarios.columns.str.strip()
                 col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
                 
@@ -74,14 +73,14 @@ if not st.session_state.authenticated:
                 if not usuario_valido.empty:
                     pwd_correcta = True
                     if 'Contrasena' in df_usuarios.columns:
-                        pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
+                        pwd_correcta = str(usuario_valido.iloc['Contrasena']).strip() == contrasena_input
                     else:
                         pwd_correcta = contrasena_input == "1234"
                     
                     if pwd_correcta:
                         st.session_state.authenticated = True
-                        st.session_state.user_role = usuario_valido.iloc[0]['Rol']
-                        st.session_state.user_alias = usuario_valido.iloc[0]['Alias']
+                        st.session_state.user_role = usuario_valido.iloc['Rol'].values[0]
+                        st.session_state.user_alias = usuario_valido.iloc['Alias'].values[0]
                         st.rerun()
                     else:
                         st.error("Contraseña incorrecta")
@@ -92,7 +91,6 @@ if not st.session_state.authenticated:
         else:
             st.error("Google Sheets está tardando en responder. Por favor, vuelve a pulsar ENTRAR.")
 
-
 # --- PANTALLA 2: MENÚ PRINCIPAL ---
 else:
     st.title("MENÚ PRINCIPAL")
@@ -101,12 +99,12 @@ else:
     
     rol = st.session_state.user_role
     
-    # 1. BOTÓN CLUB (Visible para todos)
+    # 1. BOTÓN CLUB
     if st.button("CLUB"):
         st.subheader("Información del Club")
         st.write("Sección de historia, estatutos y datos internos.")
 
-    # 2. BOTÓN SALIDAS (Visible para todos)
+    # 2. BOTÓN SALIDAS
     if st.button("SALIDAS"):
         st.subheader("Calendario de Rutas")
         try:
@@ -115,8 +113,7 @@ else:
         except:
             st.write("No hay rutas programadas todavía.")
             
-    # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
-    # Rangos autorizados según tu matriz de permisos
+    # 3. BOTÓN ECONOMÍA (Solo Directiva y Tesorero)
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
@@ -126,7 +123,7 @@ else:
             except:
                 st.write("No hay registros financieros.")
                 
-    # 4. BOTÓN MERCHANDISING (Visible para todos)
+    # 4. BOTÓN MERCHANDISING
     if st.button("MERCHANDISING"):
         st.subheader("Tienda y Pedidos")
         st.write("Gestión de stock, chalecos, parches y camisetas.")
