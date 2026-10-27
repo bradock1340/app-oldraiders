@@ -4,10 +4,10 @@ import pandas as pd
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# URL REAL Y VERIFICADA DE TU ESCUDO EN GITHUB
+# URL REAL Y DIRECTA DE TU ESCUDO EN GITHUB (Para que cargue tu imagen de fondo)
 LOGO_URL = "https://githubusercontent.com"
 
-# Estilos visuales con el escudo de los Old Raiders de fondo de pantalla
+# Estilos visuales con tu escudo de fondo de pantalla y casillas translúcidas
 st.markdown(f"""
     <style>
     .stApp {{
@@ -28,7 +28,6 @@ st.markdown(f"""
         height: 50px !important;
         font-size: 18px !important;
         margin-bottom: 15px !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.7);
     }}
     .stButton>button:hover {{ background-color: #FFF !important; color: #000 !important; }}
     div[data-baseweb="input"] {{
@@ -40,7 +39,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# URL BASE DE TU GOOGLE SHEETS ENLACES LIMPIOS Y COMPROBADOS
+# URL base de tu Google Sheets (LAS TUYAS ORIGINALES QUE SÍ FUNCIONAN)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -56,8 +55,11 @@ if "user_alias" not in st.session_state:
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    # Espacio para empujar las casillas hacia abajo y dejar ver el escudo libre arriba
+    # Espacio para empujar las casillas hacia abajo y que dejen ver el escudo libre arriba
     st.write("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+    
+    st.title("Old Raiders MC")
+    st.subheader("Catalonia")
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
     contrasena_input = st.text_input("CONTRASEÑA", type="password")
@@ -76,9 +78,11 @@ if not st.session_state.authenticated:
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
+                # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contraseña')
+                # Si aún no la tienes, usaremos '1234' por defecto temporalmente
                 pwd_correcta = True
-                if 'Contraseña' in df_usuarios.columns:
-                    pwd_correcta = str(usuario_valido.iloc[0]['Contraseña']).strip() == contrasena_input
+                if 'Contrasena' in df_usuarios.columns:
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
                 else:
                     pwd_correcta = contrasena_input == "1234"
                 
@@ -92,7 +96,7 @@ if not st.session_state.authenticated:
             else:
                 st.error("El usuario no está registrado en el Moto Club")
         except Exception as e:
-            st.error("Vuelve a pulsar enter, para confirmar la conexión.")
+            st.error("Vuelve a pulsar enter, para confirmar.")
 
 # --- PANTALLA 2: MENÚ PRINCIPAL ---
 else:
@@ -117,6 +121,7 @@ else:
             st.write("No hay rutas programadas todavía.")
             
     # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
+    # Rangos autorizados según tu matriz de permisos
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
