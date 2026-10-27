@@ -10,52 +10,76 @@ def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
 
-# Intentamos cargar 'Log.png' para el fondo completo
-try:
-    img_base64 = get_base64_image("Log.png")
-    background_style = f"""
-    <style>
-    /* Fondo de pantalla completa con la imagen del club */
-    [data-testid="stAppViewContainer"] {{
-        background-image: url("data:image/png;base64,{img_base64}");
-        background-size: cover;
-        background-position: center top;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-    }}
-    /* Cabecera transparente para que no corte el logo superior */
-    [data-testid="stHeader"] {{
-        background: rgba(0,0,0,0);
-    }}
-    </style>
-    """
-except FileNotFoundError:
-    # Si por alguna razón borras la imagen, se queda en fondo negro plano
+# Inicialización del control de estado de la aplicación
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "user_role" not in st.session_state:
+    st.session_state.user_role = None
+if "user_alias" not in st.session_state:
+    st.session_state.user_alias = None
+
+# --- 2. CONFIGURACIÓN DINÁMICA DEL FONDO Y DISEÑO DE PANTALLA ---
+if not st.session_state.authenticated:
+    # SI NO ESTÁ AUTENTICADO: Aplicamos la imagen Log.png ajustada automáticamente estilo móvil
+    try:
+        img_base64 = get_base64_image("Log.png")
+        background_style = f"""
+        <style>
+        [data-testid="stAppViewContainer"] {{
+            background-image: url("data:image/png;base64,{img_base64}");
+            background-size: contain;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-color: #000000;
+            background-attachment: fixed;
+        }}
+        [data-testid="stHeader"] {{
+            background: rgba(0,0,0,0);
+        }}
+        /* Hace que el formulario de login no se estire de lado a lado en ordenadores */
+        [data-testid="stMainBlockContainer"] {{
+            max-width: 450px !important;
+            margin: auto;
+        }}
+        </style>
+        """
+    except FileNotFoundError:
+        background_style = """
+        <style>
+        [data-testid="stAppViewContainer"] { background-color: #000000; }
+        </style>
+        """
+else:
+    # SI YA INICIÓ SESIÓN: Fondo negro plano y ampliamos el ancho para ver bien las tablas de datos
     background_style = """
     <style>
-    [data-testid="stAppViewContainer"] { background-color: #000000; }
+    [data-testid="stAppViewContainer"] {
+        background-image: none !important;
+        background-color: #000000 !important;
+    }
+    [data-testid="stMainBlockContainer"] {
+        max-width: 800px !important;
+    }
     </style>
     """
 
-# --- 2. ESTILOS VISUALES PERSONALIZADOS ---
+# Inyectamos el estilo de pantalla correspondiente
 st.markdown(background_style, unsafe_allow_html=True)
 
+# --- 3. ESTILOS VISUALES GENERALES PARA COMPONENTES ---
 st.markdown("""
     <style>
-    /* Estilos globales de texto (Blanco e importante) */
     h1, h2, h3, p, label { 
         color: #FFFFFF !important; 
         font-family: 'Arial Black', Gadget, sans-serif !important;
     }
     
-    /* Forzar mayúsculas y espaciado en las etiquetas de los inputs */
     div[data-testid="stWidgetLabel"] p {
         font-size: 16px !important;
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
     }
     
-    /* Botón Dorados estilo Old Raiders */
     .stButton>button {
         background-color: #D4AF37 !important;
         color: #000000 !important;
@@ -73,7 +97,6 @@ st.markdown("""
         color: #000000 !important; 
     }
     
-    /* Inputs oscuros con borde dorado fino */
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 2px solid #D4AF37 !important;
@@ -88,35 +111,24 @@ st.markdown("""
 
 # URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
-# Control de estado de la aplicación
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "user_role" not in st.session_state:
-    st.session_state.user_role = None
-if "user_alias" not in st.session_state:
-    st.session_state.user_alias = None
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    # Espaciadores transparentes para empujar las cajas hacia abajo de la calavera
-    st.write("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+    # Genera saltos de línea para empujar las cajas encima de los recuadros blancos de Log.png
+    st.write("<br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     usuario_input = st.text_input("Usuario (Email)").strip().lower()
     contrasena_input = st.text_input("Contraseña", type="password")
     
     if st.button("ENTRAR"):
         try:
-            # Leemos los usuarios en tiempo real desde tu Google Sheets
+            # Leemos los usuarios en tiempo real desde Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
-            
-            # Limpiamos nombres de columnas por si acaso hay espacios en blanco
             df_usuarios.columns = df_usuarios.columns.str.strip()
-            
-            # Buscamos si el usuario introducido existe en la columna 'Usuario' o 'Email'
             col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
             
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
@@ -148,12 +160,12 @@ else:
     
     rol = st.session_state.user_role
     
-    # 1. BOTÓN CLUB (Visible para todos)
+    # 1. BOTÓN CLUB
     if st.button("CLUB"):
         st.subheader("Información del Club")
         st.write("Sección de historia, estatutos y datos internos.")
 
-    # 2. BOTÓN SALIDAS (Visible para todos)
+    # 2. BOTÓN SALIDAS
     if st.button("SALIDAS"):
         st.subheader("Calendario de Rutas")
         try:
@@ -162,7 +174,7 @@ else:
         except:
             st.write("No hay rutas programadas todavía.")
             
-    # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
+    # 3. BOTÓN ECONOMÍA (Restringido por rol)
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
@@ -172,14 +184,14 @@ else:
             except:
                 st.write("No hay registros financieros.")
                 
-    # 4. BOTÓN MERCHANDISING (Visible para todos)
+    # 4. BOTÓN MERCHANDISING
     if st.button("MERCHANDISING"):
         st.subheader("Tienda y Pedidos")
         st.write("Gestión de stock, chalecos, parches y camisetas.")
         
+    # Cerrar Sesión
     if st.button("Cerrar Sesión"):
         st.session_state.authenticated = False
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
-
