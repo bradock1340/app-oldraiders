@@ -30,7 +30,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
+# URL base de tu Google Sheets corregida y verificada
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -65,12 +65,13 @@ if not st.session_state.authenticated:
             
             if not usuario_valido.empty:
                 # Buscamos la contraseña en la columna 'Contraseña'
-                pwd_real = str(usuario_valido.iloc[0]['Contraseña']).strip()
+                # Usamos .values[0] para extraer el texto limpio de la fila detectada
+                pwd_real = str(usuario_valido['Contraseña'].values[0]).strip()
                 
                 if pwd_real == contrasena_input:
                     st.session_state.authenticated = True
-                    st.session_state.user_role = str(usuario_valido.iloc[0]['Rol']).strip()
-                    st.session_state.user_alias = str(usuario_valido.iloc[0]['Alias']).strip()
+                    st.session_state.user_role = str(usuario_valido['Rol'].values[0]).strip()
+                    st.session_state.user_alias = str(usuario_valido['Alias'].values[0]).strip()
                     st.rerun()
                 else:
                     st.error("Contraseña incorrecta")
