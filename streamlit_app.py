@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# Configuración de la página con estilo móvil
+# Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
 # Estilos visuales personalizados (Fondo negro y detalles dorados)
@@ -30,11 +30,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (La versión oficial limpia y sin fallos)
+# URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 # Control de estado de la aplicación
 if "authenticated" not in st.session_state:
@@ -66,7 +66,8 @@ if not st.session_state.authenticated:
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
-                # Comprobamos la contraseña buscando en tu columna del Sheets
+                # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contrasena')
+                # Si aún no la tienes, usaremos '1234' por defecto temporalmente
                 pwd_correcta = True
                 if 'Contrasena' in df_usuarios.columns:
                     pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
@@ -83,7 +84,7 @@ if not st.session_state.authenticated:
             else:
                 st.error("El usuario no está registrado en el Moto Club")
         except Exception as e:
-            st.error("Vuelve a pulsar enter, para confirmar.")
+            st.error("Error al conectar con la base de datos. Verifica el Google Sheets.")
 
 # --- PANTALLA 2: MENÚ PRINCIPAL ---
 else:
