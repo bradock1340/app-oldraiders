@@ -4,7 +4,7 @@ import pandas as pd
 # Configuración de la página con estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# URL directa del escudo que has subido a tu cuenta de GitHub
+# URL real y directa de tu escudo en GitHub
 LOGO_URL = "https://githubusercontent.com"
 
 # Estilos visuales con el escudo de los Old Raiders de fondo de pantalla
@@ -12,7 +12,7 @@ st.markdown(f"""
     <style>
     .stApp {{
         background-image: url("{LOGO_URL}");
-        background-size: 85% auto;
+        background-size: 75% auto;
         background-position: center 15%;
         background-repeat: no-repeat;
         background-color: #000000;
@@ -41,7 +41,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (La que funciona perfectamente)
+# ENLACES CORRECTOS DE GOOGLE SHEETS (Restaurados y comprobados)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -58,7 +58,7 @@ if "user_alias" not in st.session_state:
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
     # Espacio para dejar ver el escudo arriba de las casillas
-    st.write("<br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+    st.write("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
     contraseña_input = st.text_input("CONTRASEÑA", type="password")
@@ -137,4 +137,5 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
+
 
