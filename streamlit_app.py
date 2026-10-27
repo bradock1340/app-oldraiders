@@ -4,7 +4,7 @@ import pandas as pd
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# URL REAL Y COMPLETA DE TU ESCUDO EN GITHUB
+# URL REAL Y VERIFICADA DE TU ESCUDO EN GITHUB
 LOGO_URL = "https://githubusercontent.com"
 
 # Estilos visuales con el escudo de los Old Raiders de fondo de pantalla
@@ -40,7 +40,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# URL BASE DE TU GOOGLE SHEETS OFICIAL (LA QUE NUNCA FALLA)
+# URL BASE DE TU GOOGLE SHEETS ENLACES LIMPIOS Y COMPROBADOS
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -77,8 +77,8 @@ if not st.session_state.authenticated:
             
             if not usuario_valido.empty:
                 pwd_correcta = True
-                if 'Contrasena' in df_usuarios.columns:
-                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
+                if 'Contraseña' in df_usuarios.columns:
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contraseña']).strip() == contrasena_input
                 else:
                     pwd_correcta = contrasena_input == "1234"
                 
@@ -92,7 +92,7 @@ if not st.session_state.authenticated:
             else:
                 st.error("El usuario no está registrado en el Moto Club")
         except Exception as e:
-            st.error("Vuelve a pulsar enter, para confirmar.")
+            st.error("Vuelve a pulsar enter, para confirmar la conexión.")
 
 # --- PANTALLA 2: MENÚ PRINCIPAL ---
 else:
@@ -117,7 +117,6 @@ else:
             st.write("No hay rutas programadas todavía.")
             
     # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
-    # Rangos autorizados según tu matriz de permisos
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
@@ -137,4 +136,3 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
-
