@@ -40,7 +40,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (Tus enlaces originales intactos)
+# URL base de tu Google Sheets (Tus enlaces originales intactos y verificados)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -63,7 +63,7 @@ if not st.session_state.authenticated:
     st.subheader("Catalonia")
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
-    contraseña_input = st.text_input("CONTRASEÑA", type="password")
+    contrasena_input = st.text_input("CONTRASEÑA", type="password")
     
     if st.button("ENTRAR"):
         try:
@@ -79,11 +79,14 @@ if not st.session_state.authenticated:
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
-                pwd_correcta = True
+                # Comprobamos la contraseña usando tu columna exacta 'Contraseña'
+                pwd_correcta = False
                 if 'Contraseña' in df_usuarios.columns:
-                    pwd_correcta = str(usuario_valido.iloc[0]['Contraseña']).strip() == contraseña_input
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contraseña']).strip() == contrasena_input
+                elif 'Contrasena' in df_usuarios.columns:
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
                 else:
-                    pwd_correcta = contraseña_input == "1234"
+                    pwd_correcta = contrasena_input == "1234"
                 
                 if pwd_correcta:
                     st.session_state.authenticated = True
@@ -120,7 +123,6 @@ else:
             st.write("No hay rutas programadas todavía.")
             
     # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
-    # Rangos autorizados según tu matriz de permisos
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
@@ -140,5 +142,4 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
-
 
