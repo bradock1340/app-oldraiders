@@ -42,9 +42,9 @@ st.markdown(f"""
 
 # URL base de tu Google Sheets (Tus enlaces originales intactos)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 # Control de estado de la aplicación
 if "authenticated" not in st.session_state:
@@ -79,8 +79,6 @@ if not st.session_state.authenticated:
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
-                # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contraseña')
-                # Si aún no la tienes, usaremos '1234' por defecto temporalmente
                 pwd_correcta = True
                 if 'Contrasena' in df_usuarios.columns:
                     pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
@@ -142,3 +140,4 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
+
