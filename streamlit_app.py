@@ -4,7 +4,7 @@ import pandas as pd
 # Configuración de la página con estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# URL de la imagen del escudo que acabas de subir a tu GitHub
+# URL directa del escudo que has subido a tu cuenta de GitHub
 LOGO_URL = "https://githubusercontent.com"
 
 # Estilos visuales con el escudo de los Old Raiders de fondo de pantalla
@@ -12,8 +12,8 @@ st.markdown(f"""
     <style>
     .stApp {{
         background-image: url("{LOGO_URL}");
-        background-size: contain;
-        background-position: center 20%;
+        background-size: 85% auto;
+        background-position: center 15%;
         background-repeat: no-repeat;
         background-color: #000000;
     }}
@@ -41,7 +41,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (Mantenemos la que funciona)
+# URL base de tu Google Sheets (La que funciona perfectamente)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -57,16 +57,21 @@ if "user_alias" not in st.session_state:
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    # Añadimos unos espacios arriba para que las casillas bajen y dejen ver el escudo libre
+    # Espacio para dejar ver el escudo arriba de las casillas
     st.write("<br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
-    contrasea_input = st.text_input("CONTRASEÑA", type="password")
+    contraseña_input = st.text_input("CONTRASEÑA", type="password")
     
     if st.button("ENTRAR"):
         try:
+            # Leemos los usuarios en tiempo real desde tu Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
+            
+            # Limpiamos nombres de columnas
             df_usuarios.columns = df_usuarios.columns.str.strip()
+            
+            # Buscamos si el usuario introducido existe en la columna 'Usuario'
             col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
             
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
@@ -132,3 +137,4 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
+
