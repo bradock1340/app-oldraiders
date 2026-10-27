@@ -17,13 +17,14 @@ if "user_role" not in st.session_state:
     st.session_state.user_role = None
 if "user_alias" not in st.session_state:
     st.session_state.user_alias = None
+if "current_menu" not in st.session_state:
+    st.session_state.current_menu = "PRINCIPAL"
 
 # --- 2. CONFIGURACIÓN DINÁMICA DEL FONDO (IMAGEN PERSISTENTE CON OPACIDAD) ---
 try:
     img_base64 = get_base64_image("Log.png")
     
     if not st.session_state.authenticated:
-        # PANTALLA DE LOGIN: Imagen al 100% de brillo y contenedor estrecho (estilo móvil)
         background_style = f"""
         <style>
         [data-testid="stAppViewContainer"] {{
@@ -41,7 +42,6 @@ try:
         </style>
         """
     else:
-        # MENÚ PRINCIPAL: La misma imagen fija de fondo, pero con una capa negra semi-transparente encima (Opacidad)
         background_style = f"""
         <style>
         [data-testid="stAppViewContainer"] {{
@@ -53,7 +53,7 @@ try:
             background-attachment: fixed;
         }}
         [data-testid="stMainBlockContainer"] {{
-            max-width: 800px !important; /* Ancho ampliado para leer bien tablas y datos */
+            max-width: 800px !important;
         }}
         </style>
         """
@@ -64,32 +64,20 @@ except FileNotFoundError:
     </style>
     """
 
-# Inyectamos el estilo de pantalla correspondiente
 st.markdown(background_style, unsafe_allow_html=True)
 
-# Transparencia obligatoria para la barra superior en ambas pantallas
 st.markdown("""
     <style>
-    [data-testid="stHeader"] {
-        background: rgba(0,0,0,0) !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- 3. ESTILOS VISUALES GENERALES PARA COMPONENTES ---
-st.markdown("""
-    <style>
+    [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
     h1, h2, h3, p, label { 
         color: #FFFFFF !important; 
         font-family: 'Arial Black', Gadget, sans-serif !important;
     }
-    
     div[data-testid="stWidgetLabel"] p {
         font-size: 16px !important;
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
     }
-    
     .stButton>button {
         background-color: #D4AF37 !important;
         color: #000000 !important;
@@ -99,14 +87,13 @@ st.markdown("""
         width: 100% !important;
         height: 50px !important;
         font-size: 18px !important;
-        margin-top: 15px !important;
-        margin-bottom: 15px !important;
+        margin-top: 10px !important;
+        margin-bottom: 10px !important;
     }
     .stButton>button:hover { 
         background-color: #FFFFFF !important; 
         color: #000000 !important; 
     }
-    
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 2px solid #D4AF37 !important;
@@ -119,28 +106,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- COMPLETAMENTE CORREGIDO: Enlaces oficiales a Google Sheets ---
+# Enlaces a Google Sheets
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
 URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
-
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    # Genera saltos de línea para empujar las cajas encima de los recuadros blancos de Log.png
     st.write("<br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-    
     usuario_input = st.text_input("Usuario (Email)").strip().lower()
     contrasena_input = st.text_input("Contraseña", type="password")
     
     if st.button("ENTRAR"):
         try:
-            # Leemos los usuarios en tiempo real desde Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
-            
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
@@ -152,57 +134,127 @@ if not st.session_state.authenticated:
                 
                 if pwd_correcta:
                     st.session_state.authenticated = True
-                    st.session_state.user_role = usuario_valido.iloc[0]['Rol']
+                    st.session_state.user_role = usuario_valido.iloc[0]['Rol'].strip()
                     st.session_state.user_alias = usuario_valido.iloc[0]['Alias']
+                    st.session_state.current_menu = "PRINCIPAL"
                     st.rerun()
                 else:
                     st.error("Contraseña incorrecta")
             else:
-                st.error("El usuario no está registrado en el Moto Club")
+                st.error("El usuario no está registrado")
         except Exception as e:
-            st.error("Error al conectar con la base de datos. Verifica el Google Sheets.")
+            st.error("Error al conectar con la base de datos.")
 
-# --- PANTALLA 2: MENÚ PRINCIPAL ---
+# --- PANTALLA 2: MENÚ PRINCIPAL Y SUBMENÚS ---
 else:
-    st.title("MENÚ PRINCIPAL")
-    st.write(f"Bienvenido, **{st.session_state.user_alias}**")
-    st.write(f"Cargo: **{st.session_state.user_role}**")
-    
     rol = st.session_state.user_role
-    
-    # 1. BOTÓN CLUB
-    if st.button("CLUB"):
-        st.subheader("Información del Club")
-        st.write("Sección de historia, estatutos y datos internos.")
 
-    # 2. BOTÓN SALIDAS
-    if st.button("SALIDAS"):
-        st.subheader("Calendario de Rutas")
-        try:
-            df_salidas = pd.read_csv(URL_SALIDAS)
-            st.dataframe(df_salidas)
-        except:
-            st.write("No hay rutas programadas todavía.")
-            
-    # 3. BOTÓN ECONOMÍA (Restringido por rol)
-    if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
-        if st.button("ECONOMÍA"):
-            st.subheader("Control Financiero del Club")
-            try:
-                df_economia = pd.read_csv(URL_ECONOMIA)
-                st.dataframe(df_economia)
-            except:
-                st.write("No hay registros financieros.")
-                
-    # 4. BOTÓN MERCHANDISING
-    if st.button("MERCHANDISING"):
-        st.subheader("Tienda y Pedidos")
-        st.write("Gestión de stock, chalecos, parches y camisetas.")
+    # ================= SUBMENÚ: CLUB =================
+    if st.session_state.current_menu == "CLUB":
+        st.title("CLUB")
         
-    # Cerrar Sesión
-    if st.button("Cerrar Sesión"):
-        st.session_state.authenticated = False
-        st.session_state.user_role = None
-        st.session_state.user_alias = None
-        st.rerun()
+        # Filtro de seguridad: Secretario y Tesorero no ven rutas ni eventos, pero Directiva ve todo
+        if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
+            if st.button("ECONOMÍA"):
+                st.session_state.current_menu = "ECONOMIA_MENU"
+                st.rerun()
+                
+        if st.button("REUNIONES"):
+            st.session_state.current_menu = "REUNIONES"
+            st.rerun()
+            
+        if st.button("OLD RAIDERS"):
+            st.session_state.current_menu = "OLD_RAIDERS"
+            st.rerun()
+            
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
 
+    # ================= SECCIÓN: ECONOMÍA =================
+    elif st.session_state.current_menu == "ECONOMIA_MENU":
+        st.title("ECONOMÍA")
+        if st.button("MENSUALIDADES"):
+            st.subheader("Control de Mensualidades")
+            # Aquí irá la lógica de la tabla de mensualidades
+        if st.button("OTROS PAGOS"):
+            st.subheader("Otros Pagos (Bar, Colores, etc.)")
+        if st.button("TOTAL DINERO"):
+            st.subheader("Balance Económico Total")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "CLUB"
+            st.rerun()
+
+    # ================= SUBMENÚ: SALIDAS =================
+    elif st.session_state.current_menu == "SALIDAS":
+        st.title("SALIDAS")
+        
+        # Permitido introducir rutas a roles autorizados
+        if rol in ["Presidente", "Vicepresidente", "Secretario", "Capitán de Ruta", "Administrador"]:
+            if st.button("AÑADIR NUEVA RUTA"):
+                st.subheader("Formulario de Nueva Ruta")
+                
+        if st.button("PRÓXIMAS SALIDAS"):
+            st.subheader("Calendario de Próximas Rutas")
+            
+        if st.button("SALIDAS REALIZADAS (HISTORIAL)"):
+            st.subheader("Historial de Rutas Completo")
+            
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+
+    # ================= SUBMENÚ: USUARIOS =================
+    elif st.session_state.current_menu == "USUARIOS":
+        st.title("USUARIOS")
+        if st.button("DATOS DE LOS MIEMBROS"):
+            st.subheader("Fichas de Socios")
+        if st.button("DATOS DE SALIDAS REALIZADAS"):
+            st.subheader("Asistencia a Rutas")
+        if st.button("DATOS DE PAGOS AL DÍA"):
+            st.subheader("Estado de Cuentas")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+
+    # ================= SUBMENÚ: MERCHANDISING =================
+    elif st.session_state.current_menu == "MERCHANDISING":
+        st.title("MERCHANDISING")
+        if st.button("NUEVO PRODUCTO"):
+            st.subheader("Alta de Inventario")
+        if st.button("NUEVO PEDIDO"):
+            st.subheader("Formulario de Pedidos")
+        if st.button("LISTADO DE PRODUCTOS"):
+            st.subheader("Stock Actual")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+
+    # ================= MENÚ PRINCIPAL DE BOTONES =================
+    else:
+        st.title("MENÚ PRINCIPAL")
+        st.write(f"Bienvenido, **{st.session_state.user_alias}** — ({rol})")
+        
+        # Muestra la navegación principal calcada al PDF
+        if st.button("CLUB"):
+            st.session_state.current_menu = "CLUB"
+            st.rerun()
+            
+        if st.button("SALIDAS"):
+            st.session_state.current_menu = "SALIDAS"
+            st.rerun()
+            
+        if st.button("USUARIOS"):
+            st.session_state.current_menu = "USUARIOS"
+            st.rerun()
+            
+        if st.button("MERCHANDISING"):
+            st.session_state.current_menu = "MERCHANDISING"
+            st.rerun()
+            
+        if st.button("CERRAR SESIÓN"):
+            st.session_state.authenticated = False
+            st.session_state.user_role = None
+            st.session_state.user_alias = None
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
