@@ -119,15 +119,16 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URLs de conexión con Google Sheets
+# --- COMPLETAMENTE CORREGIDO: Enlaces oficiales a Google Sheets ---
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
+    # Genera saltos de línea para empujar las cajas encima de los recuadros blancos de Log.png
     st.write("<br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     usuario_input = st.text_input("Usuario (Email)").strip().lower()
@@ -135,6 +136,7 @@ if not st.session_state.authenticated:
     
     if st.button("ENTRAR"):
         try:
+            # Leemos los usuarios en tiempo real desde Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
