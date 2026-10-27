@@ -4,7 +4,7 @@ import pandas as pd
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# URL real y directa de tu escudo en GitHub para el fondo de pantalla
+# URL REAL Y COMPLETA DE TU ESCUDO EN GITHUB
 LOGO_URL = "https://githubusercontent.com"
 
 # Estilos visuales con el escudo de los Old Raiders de fondo de pantalla
@@ -40,11 +40,11 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (La versión oficial de ://google.com que funciona al 100%)
+# URL BASE DE TU GOOGLE SHEETS OFICIAL (LA QUE NUNCA FALLA)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://://google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://://google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://://google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 # Control de estado de la aplicación
 if "authenticated" not in st.session_state:
@@ -57,10 +57,7 @@ if "user_alias" not in st.session_state:
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
     # Espacio para empujar las casillas hacia abajo y dejar ver el escudo libre arriba
-    st.write("<br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-    
-    st.title("Old Raiders MC")
-    st.subheader("Catalonia")
+    st.write("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
     contrasena_input = st.text_input("CONTRASEÑA", type="password")
@@ -120,6 +117,7 @@ else:
             st.write("No hay rutas programadas todavía.")
             
     # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
+    # Rangos autorizados según tu matriz de permisos
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
