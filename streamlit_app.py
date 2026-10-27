@@ -4,21 +4,12 @@ import pandas as pd
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# URL REAL Y DIRECTA DE TU ESCUDO EN GITHUB (Para que cargue tu imagen de fondo)
-LOGO_URL = "https://githubusercontent.com"
-
-# Estilos visuales con tu escudo de fondo de pantalla y casillas translúcidas
-st.markdown(f"""
+# Estilos visuales personalizados (Fondo negro y detalles dorados)
+st.markdown("""
     <style>
-    .stApp {{
-        background-image: url("{LOGO_URL}");
-        background-size: 85% auto;
-        background-position: center 15%;
-        background-repeat: no-repeat;
-        background-color: #000000;
-    }}
-    h1, h2, h3, p, label {{ color: #FFFFFF !important; text-shadow: 2px 2px 4px #000000; }}
-    .stButton>button {{
+    .stApp { background-color: #000000; }
+    h1, h2, h3, p, label { color: #FFFFFF !important; }
+    .stButton>button {
         background-color: #D4AF37 !important;
         color: #000000 !important;
         font-weight: bold !important;
@@ -28,22 +19,22 @@ st.markdown(f"""
         height: 50px !important;
         font-size: 18px !important;
         margin-bottom: 15px !important;
-    }}
-    .stButton>button:hover {{ background-color: #FFF !important; color: #000 !important; }}
-    div[data-baseweb="input"] {{
-        background-color: rgba(26, 26, 26, 0.85) !important;
+    }
+    .stButton>button:hover { background-color: #FFF !important; color: #000 !important; }
+    div[data-baseweb="input"] {
+        background-color: #1A1A1A !important;
         border: 2px solid #D4AF37 !important;
         border-radius: 8px !important;
-    }}
-    input {{ color: #FFFFFF !important; }}
+    }
+    input { color: #FFFFFF !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (LAS TUYAS ORIGINALES QUE SÍ FUNCIONAN)
+# URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 # Control de estado de la aplicación
 if "authenticated" not in st.session_state:
@@ -55,14 +46,11 @@ if "user_alias" not in st.session_state:
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    # Espacio para empujar las casillas hacia abajo y que dejen ver el escudo libre arriba
-    st.write("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-    
     st.title("Old Raiders MC")
     st.subheader("Catalonia")
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
-    contrasena_input = st.text_input("CONTRASEÑA", type="password")
+    contraseña_input = st.text_input("CONTRASEÑA", type="password")
     
     if st.button("ENTRAR"):
         try:
@@ -81,10 +69,10 @@ if not st.session_state.authenticated:
                 # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contraseña')
                 # Si aún no la tienes, usaremos '1234' por defecto temporalmente
                 pwd_correcta = True
-                if 'Contrasena' in df_usuarios.columns:
-                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
+                if 'Contraseña' in df_usuarios.columns:
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contraseña']).strip() == contraseña_input
                 else:
-                    pwd_correcta = contrasena_input == "1234"
+                    pwd_correcta = contraseña_input == "1234"
                 
                 if pwd_correcta:
                     st.session_state.authenticated = True
