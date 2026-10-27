@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# Configuración de la página estilo móvil
+# Configuración de la página con estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
 # Estilos visuales personalizados (Fondo negro y detalles dorados)
@@ -32,11 +32,11 @@ st.markdown("""
 
 # URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
-# Control de estado de la aplicación
+# Control de estado de la aplicación (Pantalla actual y Rol de usuario)
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "user_role" not in st.session_state:
@@ -50,34 +50,27 @@ if not st.session_state.authenticated:
     st.subheader("Catalonia")
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
-    contrasena_input = st.text_input("CONTRASEÑA", type="password")
+    contrasena_input = st.text_input("CONTRASEÑA", type="password").strip()
     
     if st.button("ENTRAR"):
         try:
             # Leemos los usuarios en tiempo real desde tu Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
-            
-            # Limpiamos nombres de columnas por si acaso hay espacios en blanco
             df_usuarios.columns = df_usuarios.columns.str.strip()
             
-            # Buscamos si el usuario introducido existe en la columna 'Usuario' o 'Email'
+            # Detectamos la columna de usuario
             col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
             
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
-                # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contrasena')
-                # Si aún no la tienes, usaremos '1234' por defecto temporalmente
-                pwd_correcta = True
-                if 'Contrasena' in df_usuarios.columns:
-                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
-                else:
-                    pwd_correcta = contrasena_input == "1234"
+                # Buscamos la contraseña en la columna 'Contraseña'
+                pwd_real = str(usuario_valido.iloc[0]['Contraseña']).strip()
                 
-                if pwd_correcta:
+                if pwd_real == contrasena_input:
                     st.session_state.authenticated = True
-                    st.session_state.user_role = usuario_valido.iloc[0]['Rol']
-                    st.session_state.user_alias = usuario_valido.iloc[0]['Alias']
+                    st.session_state.user_role = str(usuario_valido.iloc[0]['Rol']).strip()
+                    st.session_state.user_alias = str(usuario_valido.iloc[0]['Alias']).strip()
                     st.rerun()
                 else:
                     st.error("Contraseña incorrecta")
@@ -109,7 +102,6 @@ else:
             st.write("No hay rutas programadas todavía.")
             
     # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
-    # Rangos autorizados según tu matriz de permisos
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
