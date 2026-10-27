@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import time
 
-# Configuración de la página estilo móvil
+# Configuración de la página con estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
 # Estilos visuales personalizados (Fondo negro y detalles dorados)
@@ -31,13 +30,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets
+# URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
 URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
-# Control de estado de la aplicación
+# Control de estado de la aplicación (Pantalla actual y Rol de usuario)
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 if "user_role" not in st.session_state:
@@ -54,42 +53,32 @@ if not st.session_state.authenticated:
     contrasena_input = st.text_input("CONTRASEÑA", type="password")
     
     if st.button("ENTRAR"):
-        df_usuarios = None
-        # Sistema de reintentos automáticos alineado correctamente
-        for intento in range(3):
-            try:
-                df_usuarios = pd.read_csv(URL_USUARIOS)
-                break
-            except:
-                time.sleep(0.2)
-        
-        if df_usuarios is not None:
-            try:
-                df_usuarios.columns = df_usuarios.columns.str.strip()
-                col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
-                
-                usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
-                
-                if not usuario_valido.empty:
-                    pwd_correcta = True
-                    if 'Contrasena' in df_usuarios.columns:
-                        pwd_correcta = str(usuario_valido.iloc['Contrasena']).strip() == contrasena_input
-                    else:
-                        pwd_correcta = contrasena_input == "1234"
-                    
-                    if pwd_correcta:
-                        st.session_state.authenticated = True
-                        st.session_state.user_role = usuario_valido.iloc['Rol'].values[0]
-                        st.session_state.user_alias = usuario_valido.iloc['Alias'].values[0]
-                        st.rerun()
-                    else:
-                        st.error("Contraseña incorrecta")
+        try:
+            # Leemos los usuarios en tiempo real desde tu Google Sheets
+            df_usuarios = pd.read_csv(URL_USUARIOS)
+            df_usuarios.columns = df_usuarios.columns.str.strip()
+            col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
+            
+            usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
+            
+            if not usuario_valido.empty:
+                pwd_correcta = True
+                if 'Contrasena' in df_usuarios.columns:
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
                 else:
-                    st.error("El usuario no está registrado en el Moto Club")
-            except Exception as e:
-                st.error("Error al procesar los datos de usuario. Revisa las columnas del Sheets.")
-        else:
-            st.error("Google Sheets está tardando en responder. Por favor, vuelve a pulsar ENTRAR.")
+                    pwd_correcta = contrasena_input == "1234"
+                
+                if pwd_correcta:
+                    st.session_state.authenticated = True
+                    st.session_state.user_role = usuario_valido.iloc[0]['Rol']
+                    st.session_state.user_alias = usuario_valido.iloc[0]['Alias']
+                    st.rerun()
+                else:
+                    st.error("Contraseña incorrecta")
+            else:
+                st.error("El usuario no está registrado en el Moto Club")
+        except Exception as e:
+            st.error("Error al conectar con la base de datos. Verifica el Google Sheets.")
 
 # --- PANTALLA 2: MENÚ PRINCIPAL ---
 else:
@@ -99,12 +88,12 @@ else:
     
     rol = st.session_state.user_role
     
-    # 1. BOTÓN CLUB
+    # 1. BOTÓN CLUB (Visible para todos)
     if st.button("CLUB"):
         st.subheader("Información del Club")
         st.write("Sección de historia, estatutos y datos internos.")
 
-    # 2. BOTÓN SALIDAS
+    # 2. BOTÓN SALIDAS (Visible para todos)
     if st.button("SALIDAS"):
         st.subheader("Calendario de Rutas")
         try:
@@ -113,7 +102,7 @@ else:
         except:
             st.write("No hay rutas programadas todavía.")
             
-    # 3. BOTÓN ECONOMÍA (Solo Directiva y Tesorero)
+    # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
@@ -123,7 +112,7 @@ else:
             except:
                 st.write("No hay registros financieros.")
                 
-    # 4. BOTÓN MERCHANDISING
+    # 4. BOTÓN MERCHANDISING (Visible para todos)
     if st.button("MERCHANDISING"):
         st.subheader("Tienda y Pedidos")
         st.write("Gestión de stock, chalecos, parches y camisetas.")
