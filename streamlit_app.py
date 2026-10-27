@@ -146,30 +146,102 @@ if not st.session_state.authenticated:
             st.error("Error al conectar con la base de datos.")
 
 # --- PANTALLA 2: MENÚ PRINCIPAL Y SUBMENÚS ---
+# --- PANTALLA 2: MENÚ PRINCIPAL Y NAVEGACIÓN ---
 else:
     rol = st.session_state.user_role
+    
+    # Creamos el control de pantallas si no existe todavía
+    if "pantalla" not in st.session_state:
+        st.session_state.pantalla = "PRINCIPAL"
 
-    # ================= SUBMENÚ: CLUB =================
-    if st.session_state.current_menu == "CLUB":
-        st.title("CLUB")
+    # === 1. MENÚ PRINCIPAL ===
+    if st.session_state.pantalla == "PRINCIPAL":
+        st.title("MENÚ PRINCIPAL")
+        st.write(f"Bienvenido, **{st.session_state.user_alias}**")
+        st.write(f"Cargo: **{st.session_state.user_role}**")
         
-        # Filtro de seguridad: Secretario y Tesorero no ven rutas ni eventos, pero Directiva ve todo
+        if st.button("CLUB"):
+            st.session_state.pantalla = "CLUB_MENU"
+            st.rerun()
+
+        if st.button("SALIDAS"):
+            st.subheader("Calendario de Rutas")
+            try:
+                df_salidas = pd.read_csv(URL_SALIDAS)
+                st.dataframe(df_salidas)
+            except:
+                st.write("No hay rutas programadas todavía.")
+                
         if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
             if st.button("ECONOMÍA"):
-                st.session_state.current_menu = "ECONOMIA_MENU"
-                st.rerun()
-                
-        if st.button("REUNIONES"):
-            st.session_state.current_menu = "REUNIONES"
+                st.subheader("Control Financiero del Club")
+                try:
+                    df_economia = pd.read_csv(URL_ECONOMIA)
+                    st.dataframe(df_economia)
+                except:
+                    st.write("No hay registros financieros.")
+                    
+        if st.button("MERCHANDISING"):
+            st.subheader("Tienda y Pedidos")
+            st.write("Gestión de stock, chalecos, parches y camisetas.")
+            
+        if st.button("Cerrar Sesión"):
+            st.session_state.authenticated = False
+            st.session_state.pantalla = "PRINCIPAL"
             st.rerun()
+
+    # === 2. PANTALLA: CLUB (La de tu foto) ===
+    elif st.session_state.pantalla == "CLUB_MENU":
+        st.title("CLUB")
+        
+        if st.button("REUNIONES"):
+            st.subheader("Sección de Reuniones")
+            st.write("Aquí irán las actas y próximas reuniones.")
             
         if st.button("OLD RAIDERS"):
-            st.session_state.current_menu = "OLD_RAIDERS"
+            st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
             
         if st.button("VOLVER"):
-            st.session_state.current_menu = "PRINCIPAL"
+            st.session_state.pantalla = "PRINCIPAL"
             st.rerun()
+
+    # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
+    elif st.session_state.pantalla == "OLD_RAIDERS_MENU":
+        st.title("OLD RAIDERS")
+        
+        if st.button("NORMATIVA"):
+            st.subheader("Normativa Interna")
+            st.write("Sección en desarrollo para las normas del club.")
+            
+        if st.button("HISTORIA"):
+            st.session_state.pantalla = "PANTALLA_HISTORIA"
+            st.rerun()
+            
+        if st.button("VOLVER"):
+            st.session_state.pantalla = "CLUB_MENU"
+            st.rerun()
+
+    # === 4. PANTALLA: TEXTO DE LA HISTORIA (Con un único botón para volver) ===
+    elif st.session_state.pantalla == "PANTALLA_HISTORIA":
+        st.title("HISTORIA")
+        
+        # Texto oficial extraído de tu PDF
+        st.markdown("""
+        Fundado un **16 de septiembre del 2017** por un grupo de 8 antiguos motoristas de diferentes moto clubs y algún otro.
+        
+        Después de un tiempo, algunos nos dejaron y otros se fueron a recorrer las autopistas del cielo.
+        
+        Tras unos años de andadura nos convertimos en **MC en 2026** bajo los valores de amistad, rutas, libertad, hermandad, y pasión por las motos.
+        
+        *(In memori Sebas 1967-2022)*
+        """)
+        
+        # Único botón para regresar al menú anterior
+        if st.button("VOLVER"):
+            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.rerun()
+
 
     # ================= SECCIÓN: ECONOMÍA =================
     elif st.session_state.current_menu == "ECONOMIA_MENU":
