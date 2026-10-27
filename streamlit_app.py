@@ -1,14 +1,61 @@
 import streamlit as st
 import pandas as pd
+import base64
 
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
-# Estilos visuales personalizados (Fondo negro y detalles dorados)
+# --- 1. FUNCIÓN PARA CARGAR LA IMAGEN DE FONDO EN BASE64 ---
+def get_base64_image(image_path):
+    with open(image_path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode()
+
+# Intentamos cargar 'Log.png' para el fondo completo
+try:
+    img_base64 = get_base64_image("Log.png")
+    background_style = f"""
+    <style>
+    /* Fondo de pantalla completa con la imagen del club */
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/png;base64,{img_base64}");
+        background-size: cover;
+        background-position: center top;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }}
+    /* Cabecera transparente para que no corte el logo superior */
+    [data-testid="stHeader"] {{
+        background: rgba(0,0,0,0);
+    }}
+    </style>
+    """
+except FileNotFoundError:
+    # Si por alguna razón borras la imagen, se queda en fondo negro plano
+    background_style = """
+    <style>
+    [data-testid="stAppViewContainer"] { background-color: #000000; }
+    </style>
+    """
+
+# --- 2. ESTILOS VISUALES PERSONALIZADOS ---
+st.markdown(background_style, unsafe_allow_html=True)
+
 st.markdown("""
     <style>
-    .stApp { background-color: #000000; }
-    h1, h2, h3, p, label { color: #FFFFFF !important; }
+    /* Estilos globales de texto (Blanco e importante) */
+    h1, h2, h3, p, label { 
+        color: #FFFFFF !important; 
+        font-family: 'Arial Black', Gadget, sans-serif !important;
+    }
+    
+    /* Forzar mayúsculas y espaciado en las etiquetas de los inputs */
+    div[data-testid="stWidgetLabel"] p {
+        font-size: 16px !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+    }
+    
+    /* Botón Dorados estilo Old Raiders */
     .stButton>button {
         background-color: #D4AF37 !important;
         color: #000000 !important;
@@ -18,15 +65,24 @@ st.markdown("""
         width: 100% !important;
         height: 50px !important;
         font-size: 18px !important;
+        margin-top: 15px !important;
         margin-bottom: 15px !important;
     }
-    .stButton>button:hover { background-color: #FFF !important; color: #000 !important; }
+    .stButton>button:hover { 
+        background-color: #FFFFFF !important; 
+        color: #000000 !important; 
+    }
+    
+    /* Inputs oscuros con borde dorado fino */
     div[data-baseweb="input"] {
-        background-color: #1A1A1A !important;
+        background-color: #000000 !important;
         border: 2px solid #D4AF37 !important;
         border-radius: 8px !important;
     }
-    input { color: #FFFFFF !important; }
+    input { 
+        color: #FFFFFF !important; 
+        background-color: #000000 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -46,11 +102,11 @@ if "user_alias" not in st.session_state:
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    st.title("Old Raiders MC")
-    st.subheader("Catalonia")
+    # Espaciadores transparentes para empujar las cajas hacia abajo de la calavera
+    st.write("<br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
-    usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
-    contrasena_input = st.text_input("CONTRASEÑA", type="password")
+    usuario_input = st.text_input("Usuario (Email)").strip().lower()
+    contrasena_input = st.text_input("Contraseña", type="password")
     
     if st.button("ENTRAR"):
         try:
@@ -66,8 +122,6 @@ if not st.session_state.authenticated:
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
-                # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contrasena')
-                # Si aún no la tienes, usaremos '1234' por defecto temporalmente
                 pwd_correcta = True
                 if 'Contrasena' in df_usuarios.columns:
                     pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
@@ -109,7 +163,6 @@ else:
             st.write("No hay rutas programadas todavía.")
             
     # 3. BOTÓN ECONOMÍA (Estricto: Solo Directiva y Tesorero)
-    # Rangos autorizados según tu matriz de permisos
     if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
         if st.button("ECONOMÍA"):
             st.subheader("Control Financiero del Club")
