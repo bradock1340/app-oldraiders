@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# Configuración de la página estilo móvil
+# Configuración de la página con estilo móvil
 st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
 
 # Estilos visuales personalizados (Fondo negro y detalles dorados)
@@ -30,7 +30,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# URL base de tu Google Sheets (transformada para exportar en CSV automáticamente)
+# URL base de tu Google Sheets (La versión oficial limpia y sin fallos)
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
 URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
 URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
@@ -66,8 +66,7 @@ if not st.session_state.authenticated:
             usuario_valido = df_usuarios[df_usuarios[col_usuario].astype(str).str.strip().str.lower() == usuario_input]
             
             if not usuario_valido.empty:
-                # Comprobamos la contraseña (asumiendo que añadas una columna llamada 'Contraseña')
-                # Si aún no la tienes, usaremos '1234' por defecto temporalmente
+                # Comprobamos la contraseña buscando en tu columna del Sheets
                 pwd_correcta = True
                 if 'Contrasena' in df_usuarios.columns:
                     pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
@@ -129,3 +128,4 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
+
