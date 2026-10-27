@@ -18,11 +18,12 @@ if "user_role" not in st.session_state:
 if "user_alias" not in st.session_state:
     st.session_state.user_alias = None
 
-# --- 2. CONFIGURACIÓN DINÁMICA DEL FONDO Y DISEÑO DE PANTALLA ---
-if not st.session_state.authenticated:
-    # SI NO ESTÁ AUTENTICADO: Aplicamos la imagen Log.png ajustada automáticamente estilo móvil
-    try:
-        img_base64 = get_base64_image("Log.png")
+# --- 2. CONFIGURACIÓN DINÁMICA DEL FONDO (IMAGEN PERSISTENTE CON OPACIDAD) ---
+try:
+    img_base64 = get_base64_image("Log.png")
+    
+    if not st.session_state.authenticated:
+        # PANTALLA DE LOGIN: Imagen al 100% de brillo y contenedor estrecho (estilo móvil)
         background_style = f"""
         <style>
         [data-testid="stAppViewContainer"] {{
@@ -33,38 +34,47 @@ if not st.session_state.authenticated:
             background-color: #000000;
             background-attachment: fixed;
         }}
-        [data-testid="stHeader"] {{
-            background: rgba(0,0,0,0);
-        }}
-        /* Hace que el formulario de login no se estire de lado a lado en ordenadores */
         [data-testid="stMainBlockContainer"] {{
             max-width: 450px !important;
             margin: auto;
         }}
         </style>
         """
-    except FileNotFoundError:
-        background_style = """
+    else:
+        # MENÚ PRINCIPAL: La misma imagen fija de fondo, pero con una capa negra semi-transparente encima (Opacidad)
+        background_style = f"""
         <style>
-        [data-testid="stAppViewContainer"] { background-color: #000000; }
+        [data-testid="stAppViewContainer"] {{
+            background-image: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), url("data:image/png;base64,{img_base64}");
+            background-size: contain;
+            background-position: center top;
+            background-repeat: no-repeat;
+            background-color: #000000;
+            background-attachment: fixed;
+        }}
+        [data-testid="stMainBlockContainer"] {{
+            max-width: 800px !important; /* Ancho ampliado para leer bien tablas y datos */
+        }}
         </style>
         """
-else:
-    # SI YA INICIÓ SESIÓN: Fondo negro plano y ampliamos el ancho para ver bien las tablas de datos
+except FileNotFoundError:
     background_style = """
     <style>
-    [data-testid="stAppViewContainer"] {
-        background-image: none !important;
-        background-color: #000000 !important;
-    }
-    [data-testid="stMainBlockContainer"] {
-        max-width: 800px !important;
-    }
+    [data-testid="stAppViewContainer"] { background-color: #000000; }
     </style>
     """
 
 # Inyectamos el estilo de pantalla correspondiente
 st.markdown(background_style, unsafe_allow_html=True)
+
+# Transparencia obligatoria para la barra superior en ambas pantallas
+st.markdown("""
+    <style>
+    [data-testid="stHeader"] {
+        background: rgba(0,0,0,0) !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # --- 3. ESTILOS VISUALES GENERALES PARA COMPONENTES ---
 st.markdown("""
@@ -109,16 +119,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CORREGIDO: URLs correctas para conectar con Google Sheets ---
+# URLs de conexión con Google Sheets
 SHEET_ID = "1GXjpYr5nCrRH4wHI9RtKJQ3YUSv2sXcjZqWWL0kPoQA"
-URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
-URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+URL_SALIDAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
+URL_ECONOMIA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
-    # Genera saltos de línea para empujar las cajas encima de los recuadros blancos de Log.png
     st.write("<br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
     
     usuario_input = st.text_input("Usuario (Email)").strip().lower()
@@ -126,7 +135,6 @@ if not st.session_state.authenticated:
     
     if st.button("ENTRAR"):
         try:
-            # Leemos los usuarios en tiempo real desde Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             col_usuario = 'Usuario' if 'Usuario' in df_usuarios.columns else 'Email'
