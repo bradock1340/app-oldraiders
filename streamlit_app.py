@@ -63,7 +63,7 @@ if not st.session_state.authenticated:
     st.subheader("Catalonia")
     
     usuario_input = st.text_input("USUARIO (EMAIL)").strip().lower()
-    contrasena_input = st.text_input("CONTRASEÑA", type="password")
+    contraseña_input = st.text_input("CONTRASEÑA", type="password")
     
     if st.button("ENTRAR"):
         try:
@@ -80,10 +80,10 @@ if not st.session_state.authenticated:
             
             if not usuario_valido.empty:
                 pwd_correcta = True
-                if 'Contrasena' in df_usuarios.columns:
-                    pwd_correcta = str(usuario_valido.iloc[0]['Contrasena']).strip() == contrasena_input
+                if 'Contraseña' in df_usuarios.columns:
+                    pwd_correcta = str(usuario_valido.iloc[0]['Contraseña']).strip() == contraseña_input
                 else:
-                    pwd_correcta = contrasena_input == "1234"
+                    pwd_correcta = contraseña_input == "1234"
                 
                 if pwd_correcta:
                     st.session_state.authenticated = True
@@ -140,4 +140,5 @@ else:
         st.session_state.user_role = None
         st.session_state.user_alias = None
         st.rerun()
+
 
