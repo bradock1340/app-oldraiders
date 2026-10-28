@@ -474,7 +474,8 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-     # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
+   
+    # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         
@@ -493,6 +494,7 @@ else:
         
         try:
             # === CORREGIDO: URL limpia oficial de Google Docs ===
+            #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
             URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
@@ -537,16 +539,6 @@ else:
                         
                     if 'Enviar por correo' in df_filtrado.columns and row['Enviar por correo'] == "SÍ":
                         st.caption("📧 *Esta acta fue marcada para difusión por correo electrónico.*")
-                    
-                    # === BOTÓN PARA MODIFICAR (Solo Roles Permitidos) ===
-                    if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                        if st.button(f"✏️ MODIFICAR ESTA REUNIÓN", key=f"btn_edit_{index}"):
-                            dict_row = row.to_dict()
-                            # Guardamos la posición real de la fila (index + 2 para Google Sheets)
-                            dict_row["indice_fila"] = index + 2
-                            st.session_state.reunion_a_editar = dict_row
-                            st.session_state.pantalla = "REUNIONES_EDITAR"
-                            st.rerun()
                         
                     st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
@@ -591,6 +583,7 @@ else:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                 URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                 
+                # CORREGIDO: Espacios alineados correctamente para evitar IndentationError
                 payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
@@ -617,56 +610,6 @@ else:
         if st.button("CANCELAR"):
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
-
-    # === 2.3 PANTALLA: MODIFICAR REUNIÓN (Campos Precargados) ===
-    elif st.session_state.pantalla == "REUNIONES_EDITAR":
-        st.title("📝 EDITAR REUNIÓN")
-        import requests
-        import json
-        
-        # Recuperar los datos guardados de la reunión seleccionada
-        reunion_datos = st.session_state.get("reunion_a_editar", {})
-        
-        # Convertir la fecha actual (str) a objeto date para el input de Streamlit
-        try:
-            fecha_actual_dt = pd.to_datetime(reunion_datos.get('Fecha'), format='%d/%m/%Y').date()
-        except:
-            fecha_actual_dt = pd.Timestamp.now().date()
-            
-        fecha_reunion = st.date_input("FECHA DE LA REUNIÓN", value=fecha_actual_dt)
-        
-        # Averiguar el índice del tipo actual en la lista para que aparezca seleccionado
-        tipos_disponibles = ["Ordinaria", "Extraordinaria", "Voto de colores", "Asamblea General"]
-        tipo_actual = reunion_datos.get('Tipo', 'Ordinaria')
-        idx_tipo = tipos_disponibles.index(tipo_actual) if tipo_actual in tipos_disponibles else 0
-        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", tipos_disponibles, index=idx_tipo)
-        
-        descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA", value=reunion_datos.get('Resumen', ''))
-        
-        # Limpieza para que si el enlace PDF viene vacío o con valor "nan", aparezca vacío en el input
-        pdf_inicial = reunion_datos.get('Enlace PDF', '')
-        if pd.isna(pdf_inicial) or str(pdf_inicial).strip().lower() == 'nan':
-            pdf_inicial = ""
-        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=pdf_inicial)
-        
-        correo_inicial = True if reunion_datos.get('Enviar por correo') == "SÍ" else False
-        enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=correo_inicial)
-        string_correo = "SÍ" if enviar_mail_check else "NO"
-        
-        st.subheader("👥 CONTROL DE ASISTENCIA")
-        st.write("Selecciona los oficiales y miembros presentes:")
-        
-        # === PROTECCIÓN: Evita que un valor 'nan' en asistentes rompa el código ===
-        miembros_crudos = reunion_datos.get('Miembros', '')
-        if pd.isna(miembros_crudos) or str(miembros_crudos).strip().lower() == 'nan':
-            asistentes_antiguos = []
-        else:
-            asistentes_antiguos = str(miembros_crudos).split(", ")
-            
-        asistentes_lista = []
-        try:
-            df_usuarios = pd.read_csv(URL_USUARIOS)
-            df_usuarios.columns = df_usuarios.columns.str.strip()
 
     # ================= SUBMENÚ: MERCHANDISING =================
     elif st.session_state.current_menu == "MERCHANDISING":
@@ -709,3 +652,4 @@ else:
             st.session_state.user_alias = None
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
+
