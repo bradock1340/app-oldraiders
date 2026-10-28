@@ -224,14 +224,23 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
  
-              # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
+    # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
-        if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-            if st.button("➕ AÑADIR NUEVA NORMA"):
-                st.session_state.edit_norma_data = None  # Reseteo total para nueva norma
-                st.session_state.pantalla = "NORMATIVA_CREAR"
+        # Creamos dos columnas en la parte superior para agrupar los botones de navegación
+        col_botones1, col_botones2 = st.columns(2)
+        
+        with col_botones1:
+            if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
+                if st.button("➕ AÑADIR NORMA"):
+                    st.session_state.edit_norma_data = None
+                    st.session_state.pantalla = "NORMATIVA_CREAR"
+                    st.rerun()
+                    
+        with col_botones2:
+            if st.button("⬅️ VOLVER"):
+                st.session_state.pantalla = "OLD_RAIDERS_MENU"
                 st.rerun()
         
         st.write("---")
