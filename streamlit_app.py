@@ -288,14 +288,12 @@ else:
 
   
 
-    # === 3.2 PANTALLA: CREAR NORMATIVA (Formulario Validado por Cat_Normas) ===
+        # === 3.2 PANTALLA: CREAR NORMATIVA (Validada por la Variable Global Limpia) ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         st.title("NUEVA NORMA")
         
         try:
-            # Volvemos a leer de forma dinámica tu estructura de categorías
-            URL_CAT_NORMAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"
-           #URL_CAT_NORMAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"  
+            # Usamos directamente la variable global que ya funciona arriba
             df_cat = pd.read_csv(URL_CAT_NORMAS)
             df_cat.columns = df_cat.columns.str.strip()
             
@@ -304,17 +302,17 @@ else:
             # 1. Desplegable de Categoría Principal
             tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales)
             
-            # 2. Desplegable de Subtipo (se limpia de valores vacíos automáticamente)
+            # 2. Desplegable de Subtipo (limpia celdas vacías del Excel de forma automática)
             subtipos_disponibles = df_cat[tipo_seleccionado].dropna().astype(str).unique()
             subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles)
             
-            # Resto de campos manuales
+            # Resto de campos de escritura
             descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA")
             tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)")
             
             if st.button("GUARDAR NORMA"):
                 if descripcion_norma:
-                    st.success(f"Validado: Guardando '{tipo_seleccionado} -> {subtipo_seleccionado}'")
+                    st.success(f"Validado correctamente: Guardando '{tipo_seleccionado} -> {subtipo_seleccionado}'")
                 else:
                     st.error("Por favor, introduce la descripción de la norma.")
                     
@@ -324,11 +322,7 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
-
-       
-
-
-
+    
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
     elif st.session_state.pantalla == "HISTORIA_VER":
         st.title("HISTORIA DEL CLUB")
