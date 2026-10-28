@@ -239,9 +239,8 @@ else:
         
         # Llegir i mostrar les normes des de Google Sheets
         try:
-           #URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-          URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-          df_normativa = pd.read_csv(URL_NORMATIVA)
+            URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+            df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
             if not df_normativa.empty:
@@ -281,6 +280,7 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
+
 
 
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
