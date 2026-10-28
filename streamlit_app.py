@@ -226,12 +226,13 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 
-      # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
+     
         # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
+    # === 3.1 PANTALLA: VISUALITZAR NORMATIVA (Amb Buscador i Filtre per Categoria) ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
-        # Permís especial per a l'oficialat per afegir noves regles (Pantalla 8 de l'esbós)
+        # Permís especial per a l'oficialat per afegir regles
         if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
             if st.button("➕ AÑADIR NUEVA NORMA"):
                 st.session_state.pantalla = "NORMATIVA_CREAR"
@@ -239,32 +240,73 @@ else:
         
         st.write("---")
         
-        # Llegir i mostrar les normes des de Google Sheets
         try:
-            # === AQUÍ ESTÀ LA CORRECCIÓ DE L'ENLLAÇ COMPLET ===
-            URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-            
+            URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
             df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
-            if not df_normativa.empty:
-                for index, row in df_normativa.iterrows():
-                    st.markdown(f"### 📌 {row['Tipo']}")
+            # --- ZONA DE FILTRES (Ideal per a Mòbil) ---
+            st.subheader("🔍 BUSCADOR DE REGLAS")
+            
+            # 1. Filtre per paraula clau (Buscador lliure)
+            busqueda = st.text_input("Escribe una palabra (Ej: voto, ruta, prospect...)").strip().lower()
+            
+            # 2. Desplegable per triar veure-ho tot o només una categoria concreta
+            categorias_principales = [
+                "MOSTRAR TODAS",
+                "Obligaciones Generales", 
+                "Comportamiento y Hermandad", 
+                "Convivencia y Organización", 
+                "Disciplina en Ruta", 
+                "Representación y Respeto Externo", 
+                "Tiempos", 
+                "Restricciones y Prohibiciones"
+            ]
+            categoria_filtrada = st.selectbox("Filtrar por Categoría Principal", categorias_principales)
+            
+            st.write("---")
+            
+            # --- APLICACIÓ DELS FILTRES ---
+            df_filtrado = df_normativa.copy()
+            
+            # Aplicar filtre de categoria si no s'ha triat "MOSTRAR TODAS"
+            if categoria_filtrada != "MOSTRAR TODAS":
+                df_filtrado = df_filtrado[df_filtrado['Tipo'] == categoria_filtrada]
+                
+            # Aplicar filtre de text lliure si l'usuari ha escrit alguna cosa
+            if busqueda:
+                # Busca tant a la Descripcion com al Tipo o Subtipo
+                condicion_tipo = df_filtrado['Tipo'].astype(str).str.lower().str.contains(busqueda)
+                condicion_subtipo = df_filtrado['Subtipo'].astype(str).str.lower().str.contains(busqueda)
+                condicion_desc = df_filtrado['Descripcion'].astype(str).str.lower().str.contains(busqueda)
+                
+                df_filtrado = df_filtrado[condicion_tipo | condicion_subtipo | condicion_desc]
+            
+            # --- MOSTRAR ELS RESULTATS FILTRATS ---
+            if not df_filtrado.empty:
+                # Si es mostra una categoria concreta o s'ha usat el buscador, ho llistem netament
+                for index, row in df_filtrado.iterrows():
+                    categoria_actual = row['Tipo']
+                    subtitulo = row['Subtipo'] if 'Subtipo' in df_normativa.columns else "Norma"
+                    
+                    st.markdown(f"### 📌 {subtitulo}")
+                    st.caption(f"Categoría: {categoria_actual}") # Mostra a quina secció pertany
                     st.write(row['Descripcion'])
-                    # Mostrar el tiempo/vigencia con un estilo destacado
-                    if 'Tiempo' in df_normativa.columns and pd.notna(row['Tiempo']):
-                        st.markdown(f"⏱️ **Tiempo / Vigencia:** *{row['Tiempo']}*")
-                    st.write("---")
+                    
+                    if 'Tiempo' in df_filtrado.columns and pd.notna(row['Tiempo']):
+                        st.markdown(f"⏱️ **Vigencia/Tiempo:** *{row['Tiempo']}*")
+                    st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
-                st.write("No hay normas registradas todavía.")
+                st.warning("⚠️ No se encontraron normas que coincidan con tu búsqueda o filtro.")
+                
         except Exception as e:
-            # Canviat temporalment perquè vegis l'error a la pantalla si el nom de la columna tingués alguna errada
             st.error(f"Error de lectura: {e}")
-            st.write("⚠️ Para ver las normas, crea una pestaña llamada 'Normativa' en tu Google Sheets con las columnas: Tipo, Descripcion y Tiempo.")
+            st.write("⚠️ Recuerda añadir la columna 'Subtipo' en tu Google Sheets.")
 
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
+
 
     # === 3.2 PANTALLA: CREAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
