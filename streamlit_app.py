@@ -307,7 +307,7 @@ else:
             descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA")
             tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)")
             
-            # --- Comportamiento al pulsar el botón Guardar ---
+                       # --- Comportamiento al pulsar el botón Guardar ---
             if st.button("GUARDAR NORMA"):
                 if descripcion_norma and tiempo_norma:
                     
@@ -315,8 +315,11 @@ else:
                     from streamlit_gsheets import GSheetsConnection
                     conn = st.connection("gsheets", type=GSheetsConnection)
                     
-                    # Leemos los datos actuales de la pestaña 'Normativa'
-                    df_actual = conn.read(sheet="Normativa")
+                    # === AQUÍ ESTÁ LA CORRECCIÓN: Le pasamos la URL del documento explícitamente ===
+                    URL_DOCUMENTO_COMPLETO = f"https://google.com{SHEET_ID}"
+                    
+                    # Leemos los datos actuales de la pestaña 'Normativa' indicando la hoja
+                    df_actual = conn.read(spreadsheet=URL_DOCUMENTO_COMPLETO, sheet="Normativa")
                     
                     # Recogemos los valores exactos que el usuario ha escrito en la App
                     nueva_fila = pd.DataFrame([{
@@ -329,8 +332,8 @@ else:
                     # Juntamos la nueva norma con las antiguas
                     df_actualizado = pd.concat([df_actual, nueva_fila], ignore_index=True)
                     
-                    # Sobrescribimos el Google Sheet de forma invisible con la nueva lista
-                    conn.update(sheet="Normativa", data=df_actualizado)
+                    # Sobrescribimos el Google Sheet indicando el documento de destino
+                    conn.update(spreadsheet=URL_DOCUMENTO_COMPLETO, sheet="Normativa", data=df_actualizado)
                     
                     st.success(f"✔️ Norma guardada correctamente en tu hoja 'Normativa'")
                     st.balloons() # Animación de celebración
