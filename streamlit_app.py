@@ -210,9 +210,7 @@ else:
     # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
     elif st.session_state.pantalla == "OLD_RAIDERS_MENU":
         st.title("OLD RAIDERS")
-        
-        # Enllaç a la nova pestanya de Normativa al teu Google Sheets
-        #URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+
         URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
         if st.button("NORMATIVA"):
             st.session_state.pantalla = "NORMATIVA_VER"
@@ -331,7 +329,7 @@ else:
                 if descripcion_norma and tiempo_norma:
                     
                     # ⚠️ PEGA AQUÍ ABAJO LA URL LARGA QUE HAS COPIADO EN EL PASO 2 ⚠️
-                    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+                    URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     
                     if es_edicion:
                         payload = {
