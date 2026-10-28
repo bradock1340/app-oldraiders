@@ -409,7 +409,6 @@ else:
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
 
-
     # === 4. PANTALLA: TEXTO DE LA HISTORIA (Con un único botón para volver) ===
     elif st.session_state.pantalla == "PANTALLA_HISTORIA":
         st.title("HISTORIA")
@@ -496,7 +495,8 @@ else:
             #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
            #URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
             # Busca esta línea en tu bloque 2.1 de GitHub y cámbiala exactamente por esta:
-URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+#URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
 
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
@@ -578,9 +578,7 @@ URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reunion
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                 URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
-
-                
-                payload = {
+               payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
                     "tipo": tipo_reunion,
