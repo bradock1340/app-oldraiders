@@ -225,13 +225,14 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
-    # === 3.1 PANTALLA: VISUALIZAR NORMATIVA (Con Opción de Editar) ===
+ 
+       # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
         if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
             if st.button("➕ AÑADIR NUEVA NORMA"):
-                st.session_state.edit_norma_data = None  # Modo creación limpia
+                st.session_state.edit_norma_data = None
                 st.session_state.pantalla = "NORMATIVA_CREAR"
                 st.rerun()
         
@@ -271,11 +272,10 @@ else:
                     if 'Tiempo' in df_filtrado.columns and pd.notna(row['Tiempo']):
                         st.markdown(f"⏱️ **Vigencia:** *{row['Tiempo']}*")
                     
-                    # Botón de edición exclusivo para la directiva al lado de la norma
                     if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                        # Usamos una clave única basada en el índice para que Streamlit no se confunda
                         if st.button(f"📝 EDITAR REGLA", key=f"edit_{index}"):
                             st.session_state.edit_norma_data = {
+                                "indice_fila": index,  # Guardamos la posición exacta de la fila
                                 "tipo": row['Tipo'],
                                 "subtipo": row['Subtipo'],
                                 "descripcion": row['Descripcion'],
@@ -296,9 +296,8 @@ else:
             st.rerun()
 
 
-    # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA (Doble función inteligente) ===
+    # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
-        # Detectamos si venimos de pulsar "Editar" o "Añadir Nueva"
         es_edicion = st.session_state.edit_norma_data is not None
         
         if es_edicion:
@@ -316,7 +315,6 @@ else:
             df_cat.columns = df_cat.columns.str.strip()
             categorias_principales = list(df_cat.columns)
             
-            # Buscamos el índice predeterminado si estamos editando
             idx_tipo = categorias_principales.index(datos_previos["tipo"]) if datos_previos["tipo"] in categorias_principales else 0
             tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales, index=idx_tipo)
             
@@ -327,27 +325,24 @@ else:
             descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA", value=datos_previos["descripcion"])
             tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)", value=datos_previos["tiempo"])
             
-            # Botón dinámico según la acción
             texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR NORMA"
             
             if st.button(texto_boton):
                 if descripcion_norma and tiempo_norma:
                     
-                    # ⚠️ ASEGÚRATE DE QUE ESTA SEA TU URL DE GOOGLE APPS SCRIPT ACTUALIZADA ⚠️
+                    # ⚠️ PEGA AQUÍ ABAJO LA URL LARGA QUE HAS COPIADO EN EL PASO 2 ⚠️
                     URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     
                     if es_edicion:
-                        # Mandamos la orden de editar adjuntando el texto original para localizar la fila
                         payload = {
-                            "accion": "editar",
-                            "descripcion_original": datos_previos["descripcion"],
-                            "descripcion_nueva": descripcion_norma,
+                            "accion": "edited",
+                            "indice_fila": datos_previos["indice_fila"],
                             "tipo": tipo_seleccionado,
                             "subtipo": subtipo_seleccionado,
-                            "tiempo": tiempo_norma
+                            "descripcion": descripcion_norma,  # Sincronizado
+                            "tiempo": tiempo_norma             # Sincronizado
                         }
                     else:
-                        # Mandamos la orden normal de crear una fila nueva
                         payload = {
                             "accion": "crear",
                             "tipo": tipo_seleccionado,
@@ -359,13 +354,13 @@ else:
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                     
                     if "OK_CREAR" in respuesta.text:
-                        st.success("✔️ ¡Nueva norma guardada en el club!")
+                        st.success("✔️ ¡Nueva norma guardada con éxito!")
                         st.balloons()
                     elif "OK_EDITAR" in respuesta.text:
                         st.success("✔️ ¡Norma modificada y actualizada con éxito!")
                         st.balloons()
                     else:
-                        st.error("Google rechazó la operación. Revisa los nombres de las pestañas.")
+                        st.error("Google rechazó la operación.")
                 else:
                     st.error("Por favor, rellena todos los campos antes de continuar.")
                     
@@ -376,10 +371,7 @@ else:
             st.session_state.edit_norma_data = None
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
-
-  
-                   # URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
-                    
+                 
                   
 
     
