@@ -113,6 +113,7 @@ URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=ou
 URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
 
+
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
     st.write("<br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
@@ -211,8 +212,8 @@ else:
         st.title("OLD RAIDERS")
         
         # Enllaç a la nova pestanya de Normativa al teu Google Sheets
-        URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-        
+        #URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+        URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
         if st.button("NORMATIVA"):
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
