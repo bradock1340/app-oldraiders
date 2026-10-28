@@ -475,7 +475,7 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-      # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
+    # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         
@@ -488,28 +488,28 @@ else:
         with col_reun2:
             if st.button("⬅️ VOLVER"):
                 st.session_state.pantalla = "PRINCIPAL"
-                st.rerun()      
+                st.rerun()
+                
         st.write("---")
-            try:
-            # === CORREGIDO: Formato de URL limpio y oficial de Google Docs ===
-            URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+        
+        try:
             #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+            URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
-             # Formatear fechas para poder extraer el año correctamente
+            
             df_reuniones['Fecha_DT'] = pd.to_datetime(df_reuniones['Fecha'], format='%d/%m/%Y', errors='coerce')
             
-            # --- SECCIÓN DE FILTROS ---
             st.subheader("🔍 BUSCADOR E HISTORIAL")
-            # Filtro por Año
+            
             df_reuniones['Año'] = df_reuniones['Fecha_DT'].dt.year.fillna(2026).astype(int)
             lista_años = ["TODOS"] + sorted(list(df_reuniones['Año'].unique()), reverse=True)
             año_sel = st.selectbox("Filtrar por Año", lista_años)
-            # Filtro por palabra clave (Tema)
-            busqueda_tema = st.text_input("Buscar por contenido o resumen...").strip().lower()
-             st.write("---")
             
-            # Aplicar los filtros
+            busqueda_tema = st.text_input("Buscar por contenido o resumen...").strip().lower()
+            
+            st.write("---")
+            
             df_filtrado = df_reuniones.copy()
             if año_sel != "TODOS":
                 df_filtrado = df_filtrado[df_filtrado['Año'] == int(año_sel)]
@@ -518,7 +518,7 @@ else:
                     df_filtrado['Tipo'].astype(str).str.lower().str.contains(busqueda_tema) | 
                     df_filtrado['Resumen'].astype(str).str.lower().str.contains(busqueda_tema)
                 ]
-                        # --- MOSTRAR LAS REUNIONES EN PANTALLA ---
+            
             if not df_filtrado.empty:
                 for index, row in df_filtrado.iterrows():
                     st.markdown(f"### 📅 {row['Fecha']} — {row['Tipo']}")
@@ -541,19 +541,20 @@ else:
             st.error(f"Error de lectura en la hoja: {e}")
 
     # === 2.2 PANTALLA: AÑADIR REUNIÓN (Campos e Inyección a tus Columnas) ===
-         elif st.session_state.pantalla == "REUNIONES_CREAR":
+    elif st.session_state.pantalla == "REUNIONES_CREAR":
         st.title("➕ NUEVA REUNIÓN")
         import requests
         import json
+        
         fecha_reunion = st.date_input("FECHA DE LA REUNIÓN")
-        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", ["Ordinaria", "Extraordinaria", "Comité de Oficiales", "Asamblea General"])
+        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", ["Ordinaria", "Extraordinaria", "Voto de colores", "Asamblea General"])
         descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA")
         enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)")
         
         enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=False)
         string_correo = "SÍ" if enviar_mail_check else "NO"
         
-        st.subheader("CONTROL DE ASISTENCIA")
+        st.subheader("👥 CONTROL DE ASISTENCIA")
         st.write("Selecciona los oficiales y miembros presentes:")
         
         asistentes_lista = []
@@ -563,7 +564,7 @@ else:
             listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
             
             for miembro in listado_miembros:
-                if st.checkbox(f" {miembro}", value=True, key=f"reun_real_{miembro}"):
+                if st.checkbox(f"🏍️ {miembro}", value=True, key=f"reun_real_{miembro}"):
                     asistentes_lista.append(miembro)
         except:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
@@ -573,9 +574,8 @@ else:
         if st.button("GUARDAR REUNIÓN"):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                # Tu URL real que termina en /exec
-                URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
-                #URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
+                URL_PROCESADOR_GOOGLE = f"https://google.com"
+                
                 payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
@@ -585,14 +585,15 @@ else:
                     "enlace_pdf": enlace_acta if enlace_acta else "",
                     "enviar_correo": string_correo
                 }
-                     try:
+                
+                try:
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                     if "OK_REUNION" in respuesta.text:
-                        st.success("✔️ Acta y asistencia guardadas de puta madre en tu hoja.")
+                        st.success("✔️ Acta y asistencia guardadas correctamente.")
                         st.session_state.pantalla = "REUNIONES_MENU"
                         st.rerun()
                     else:
-                        st.error("Google rechazó la estructura de las columnas. Revisa haber guardado la Nueva Versión en tu Apps Script.")
+                        st.error("Google rechazó la estructura de las columnas.")
                 except Exception as err:
                     st.error(f"Fallo de red: {err}")
             else:
@@ -601,6 +602,7 @@ else:
         if st.button("CANCELAR"):
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
+
     # ================= SUBMENÚ: MERCHANDISING =================
     elif st.session_state.current_menu == "MERCHANDISING":
         st.title("MERCHANDISING")
