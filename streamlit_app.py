@@ -239,8 +239,8 @@ else:
         
         # Llegir i mostrar les normes des de Google Sheets
         try:
-            #URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-            URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
+            URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+            #URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
             df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
