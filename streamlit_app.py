@@ -308,38 +308,49 @@ else:
             tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)")
             
                        # --- Comportamiento al pulsar el botón Guardar ---
+                       # --- Comportamiento al pulsar el botón Guardar (Método Directo Asegurado) ---
             if st.button("GUARDAR NORMA"):
                 if descripcion_norma and tiempo_norma:
+                    import requests
                     
-                    # Creamos la conexión nativa de Streamlit para poder ESCRIBIR
-                    from streamlit_gsheets import GSheetsConnection
-                    conn = st.connection("gsheets", type=GSheetsConnection)
+                    # Usamos el sistema de Apps Script de Google que no requiere configurar contraseñas complejas en la App
+                    # Copia este pequeño bloque de código en Extensiones > Apps Script en tu Google Sheet:
+                    # 
+                    # function doPost(e) {
+                    #   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Normativa");
+                    #   var data = JSON.parse(e.postData.contents);
+                    #   sheet.appendRow([data.tipo, data.subtipo, data.descripcion, data.tiempo]);
+                    #   return ContentService.createTextOutput("OK");
+                    # }
                     
-                    # === AQUÍ ESTÁ LA CORRECCIÓN: Le pasamos la URL del documento explícitamente ===
-                    URL_DOCUMENTO_COMPLETO = f"https://google.com{SHEET_ID}"
+                    # ⚠️ REEMPLAZA ESTA URL POR LA QUE TE DÉ TU ENLACE DE GOOGLE AL PUBLICAR EL SCRIPT ⚠️
+                    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     
-                    # Leemos los datos actuales de la pestaña 'Normativa' indicando la hoja
-                    df_actual = conn.read(spreadsheet=URL_DOCUMENTO_COMPLETO, sheet="Normativa")
+                    datos_a_guardar = {
+                        "tipo": tipo_seleccionado,
+                        "subtipo": subtipo_seleccionado,
+                        "descripcion": descripcion_norma,
+                        "tiempo": tiempo_norma
+                    }
                     
-                    # Recogemos los valores exactos que el usuario ha escrito en la App
-                    nueva_fila = pd.DataFrame([{
-                        "Tipo": tipo_seleccionado,
-                        "Subtipo": subtipo_seleccionado,
-                        "Descripcion": descripcion_norma,
-                        "Tiempo": tiempo_norma
-                    }])
-                    
-                    # Juntamos la nueva norma con las antiguas
-                    df_actualizado = pd.concat([df_actual, nueva_fila], ignore_index=True)
-                    
-                    # Sobrescribimos el Google Sheet indicando el documento de destino
-                    conn.update(spreadsheet=URL_DOCUMENTO_COMPLETO, sheet="Normativa", data=df_actualizado)
-                    
-                    st.success(f"✔️ Norma guardada correctamente en tu hoja 'Normativa'")
-                    st.balloons() # Animación de celebración
+                    try:
+                        import json
+                        respuesta = requests.post(
+                            URL_PROCESADOR_GOOGLE, 
+                            data=json.dumps(datos_a_guardar), 
+                            headers={"Content-Type": "application/json"}
+                        )
+                        
+                        if respuesta.status_code == 200 or "OK" in respuesta.text:
+                            st.success(f"✔️ ¡Norma guardada correctamente en tu hoja 'Normativa'!")
+                            st.balloons()  # Animación de celebración
+                        else:
+                            st.error("Google ha recibido los datos pero ha rechazado la escritura.")
+                    except Exception as err:
+                        st.error(f"Fallo al enviar los datos al archivo: {err}")
                 else:
                     st.error("Por favor, rellena los campos de texto (Descripción y Tiempo) antes de guardar.")
-                    
+                   
         except Exception as e:
             st.error(f"Error al cargar el validador de datos o guardar: {e}")
             
