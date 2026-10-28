@@ -574,7 +574,8 @@ else:
         if st.button("GUARDAR REUNIÓN"):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                URL_PROCESADOR_GOOGLE = f"https://google.com"
+                URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+
                 
                 payload = {
                     "accion": "crear_reunion_real",
