@@ -112,7 +112,7 @@ URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=o
 URL_SALIDAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Salidas"
 URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Economia"
 URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-
+URL_CAT_NORMAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"  # <-- Corregido con espacio válido (%20)
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
@@ -226,7 +226,7 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 
-          # === 3.1 PANTALLA: VISUALIZAR NORMATIVA (Con Validador Dinámico) ===
+             # === 3.1 PANTALLA: VISUALIZAR NORMATIVA (Con Validador Dinámico Fijo) ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
@@ -238,15 +238,12 @@ else:
         st.write("---")
         
         try:
-            # 1. Cargamos el validador de datos desde 'Cat_Normas' (AQUÍ ESTÁ CORREGIDO)
-            URL_CAT_NORMAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"
+            # 1. Cargamos el validador desde la variable global limpia
             df_cat = pd.read_csv(URL_CAT_NORMAS)
             df_cat.columns = df_cat.columns.str.strip()
-            
-            # Obtener las categorías principales (los nombres de las columnas reales)
             categorias_principales = list(df_cat.columns)
             
-            # 2. Cargamos las normas registradas (USANDO LA VARIABLE GLOBAL URL_NORMATIVA QUE YA CORREGISTE ANTES)
+            # 2. Cargamos las normas desde la variable global limpia
             df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
@@ -254,7 +251,6 @@ else:
             st.subheader("🔍 BUSCADOR DE REGLAS")
             busqueda = st.text_input("Escribe una palabra clave...").strip().lower()
             
-            # Filtro dropdown dinámico alimentado por las columnas de tu Excel
             opciones_filtro = ["MOSTRAR TODAS"] + categorias_principales
             categoria_filtrada = st.selectbox("Filtrar por Categoría Principal", opciones_filtro)
             
@@ -289,6 +285,7 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
+
   
 
     # === 3.2 PANTALLA: CREAR NORMATIVA (Formulario Validado por Cat_Normas) ===
