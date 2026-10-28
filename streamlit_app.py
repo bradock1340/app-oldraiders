@@ -476,7 +476,7 @@ else:
 
    
     # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
-       # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
+        # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         
@@ -484,7 +484,6 @@ else:
         with col_reun1:
             if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                 if st.button("➕ AÑADIR REUNIÓN"):
-                    st.session_state.edit_reunion_data = None  # Limpiamos datos previos al crear una nueva
                     st.session_state.pantalla = "REUNIONES_CREAR"
                     st.rerun()
         with col_reun2:
@@ -496,7 +495,8 @@ else:
         
         try:
             # === CORREGIDO: URL limpia oficial de Google Docs ===
-            URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
+            #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+            URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
             
@@ -540,17 +540,6 @@ else:
                         
                     if 'Enviar por correo' in df_filtrado.columns and row['Enviar por correo'] == "SÍ":
                         st.caption("📧 *Esta acta fue marcada para difusión por correo electrónico.*")
-                    
-                    # === AQUÍ ESTÁ EL BOTÓN DE MODIFICAR (Igual que en Normativa) ===
-                    if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                        st.write("") # Un pequeño espacio estético
-                        if st.button(f"📝 EDITAR REUNIÓN", key=f"btn_modificar_reun_{index}"):
-                            dict_row = row.to_dict()
-                            # Guardamos la posición exacta de la fila (index + 2) para el Apps Script
-                            dict_row["indice_fila"] = index + 2
-                            st.session_state.edit_reunion_data = dict_row
-                            st.session_state.pantalla = "REUNIONES_CREAR"
-                            st.rerun()
                         
                     st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
@@ -558,6 +547,7 @@ else:
                 
         except Exception as e:
             st.error(f"Error de lectura en la hoja: {e}")
+
 
        # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
