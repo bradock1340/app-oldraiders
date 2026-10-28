@@ -617,6 +617,7 @@ else:
             st.rerun()
 
     # === 2.3 PANTALLA: MODIFICAR REUNIÓN (Campos Precargados) ===
+        # === 2.3 PANTALLA: MODIFICAR REUNIÓN (Campos Precargados) ===
     elif st.session_state.pantalla == "REUNIONES_EDITAR":
         st.title("✏️ MODIFICAR REUNIÓN")
         import requests
@@ -640,7 +641,12 @@ else:
         tipo_reunion = st.selectbox("TIPO DE REUNIÓN", tipos_disponibles, index=idx_tipo)
         
         descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA", value=reunion_datos.get('Resumen', ''))
-        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=reunion_datos.get('Enlace PDF', ''))
+        
+        # Limpieza para que si el enlace PDF viene vacío o con valor "nan", aparezca vacío en el input
+        pdf_inicial = reunion_datos.get('Enlace PDF', '')
+        if pd.isna(pdf_inicial) or str(pdf_inicial).strip().lower() == 'nan':
+            pdf_inicial = ""
+        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=pdf_inicial)
         
         correo_inicial = True if reunion_datos.get('Enviar por correo') == "SÍ" else False
         enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=correo_inicial)
@@ -649,22 +655,66 @@ else:
         st.subheader("👥 CONTROL DE ASISTENCIA")
         st.write("Selecciona los oficiales y miembros presentes:")
         
-        # Recuperar asistentes antiguos para dejarlos marcados
-        asistentes_antiguos = str(reunion_datos.get('Miembros', '')).split(", ")
+        # === PROTECCIÓN: Evita que un valor 'nan' en asistentes rompa el código ===
+        miembros_crudos = reunion_datos.get('Miembros', '')
+        if pd.isna(miembros_crudos) or str(miembros_crudos).strip().lower() == 'nan':
+            asistentes_antiguos = []
+        else:
+            asistentes_antiguos = str(miembros_crudos).split(", ")
+            
         asistentes_lista = []
-        
         try:
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
             
             for miembro in listado_miembros:
-                # Si ya estaba en la lista guardada de la reunión, se marca True por defecto
+                # Quedará seleccionado por defecto si ya pertenecía a la reunión
                 marcado_defecto = miembro in asistentes_antiguos
                 if st.checkbox(f"🏍️ {miembro}", value=marcado_defecto, key=f"reun_edit_{miembro}"):
                     asistentes_lista.append(miembro)
         except:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
+            
+        string_asistentes_comas = ", ".join(asistentes_lista)
+        
+        # === BOTONES DE ACCIÓN (FINAL DE PANTALLA) ===
+        st.write("---")
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("💾 GUARDAR CAMBIOS"):
+                if descripcion_reunion:
+                    fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
+                    URL_PROCESADOR_GOOGLE = "https://google.com"
+                    
+                    payload = {
+                        "accion": "editar_reunion_real",
+                        "fecha_original": reunion_datos.get('Fecha'), # Criterio de búsqueda para localizar la fila
+                        "fecha": fecha_formateada,
+                        "tipo": tipo_reunion,
+                        "miembros": string_asistentes_comas,
+                        "resumen": descripcion_reunion,
+                        "enlace_pdf": enlace_acta if enlace_acta else "",
+                        "enviar_correo": string_correo
+                    }
+                    
+                    try:
+                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                        if "OK" in respuesta.text: 
+                            st.success("✔️ Reunión modificada correctamente.")
+                            st.session_state.pantalla = "REUNIONES_MENU"
+                            st.rerun()
+                        else:
+                            st.error(f"Google no pudo actualizar la fila. Respuesta: {respuesta.text}")
+                    except Exception as err:
+                        st.error(f"Fallo de red: {err}")
+                else:
+                    st.error("Por favor, rellena el resumen u orden del día.")
+                    
+        with col_btn2:
+            if st.button("❌ CANCELAR"):
+                st.session_state.pantalla = "REUNIONES_MENU"
+                st.rerun()
 
     # ================= SUBMENÚ: MERCHANDISING =================
     elif st.session_state.current_menu == "MERCHANDISING":
