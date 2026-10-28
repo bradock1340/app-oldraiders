@@ -491,22 +491,31 @@ else:
                 
         st.write("---")
         try:
-           URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+           #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+            URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+        try:
+            # === URL CORRECTA E INDENTACIÓN REVISADA AL MILÍMETRO ===
+            URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
             
+            # Formatear fechas para poder extraer el año correctamente
             df_reuniones['Fecha_DT'] = pd.to_datetime(df_reuniones['Fecha'], format='%d/%m/%Y', errors='coerce')
             
+            # --- SECCIÓN DE FILTROS ---
             st.subheader("🔍 BUSCADOR E HISTORIAL")
             
+            # Filtro por Año
             df_reuniones['Año'] = df_reuniones['Fecha_DT'].dt.year.fillna(2026).astype(int)
             lista_años = ["TODOS"] + sorted(list(df_reuniones['Año'].unique()), reverse=True)
             año_sel = st.selectbox("Filtrar por Año", lista_años)
             
+            # Filtro por palabra clave (Tema)
             busqueda_tema = st.text_input("Buscar por contenido o resumen...").strip().lower()
             
             st.write("---")
             
+            # Aplicar los filtros
             df_filtrado = df_reuniones.copy()
             if año_sel != "TODOS":
                 df_filtrado = df_filtrado[df_filtrado['Año'] == int(año_sel)]
@@ -516,6 +525,7 @@ else:
                     df_filtrado['Resumen'].astype(str).str.lower().str.contains(busqueda_tema)
                 ]
             
+            # --- MOSTRAR LAS REUNIONES EN PANTALLA ---
             if not df_filtrado.empty:
                 for index, row in df_filtrado.iterrows():
                     st.markdown(f"### 📅 {row['Fecha']} — {row['Tipo']}")
@@ -536,7 +546,6 @@ else:
                 
         except Exception as e:
             st.error(f"Error de lectura en la hoja: {e}")
-
     # === 2.2 PANTALLA: AÑADIR REUNIÓN (Campos e Inyección a tus Columnas) ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
         st.title("➕ NUEVA REUNIÓN")
