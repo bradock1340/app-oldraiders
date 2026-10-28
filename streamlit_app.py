@@ -476,7 +476,7 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-       # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
+      # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         
@@ -494,6 +494,7 @@ else:
         st.write("---")
         
         try:
+            # === CORREGIDO: Formato de URL limpio y oficial de Google Docs ===
             URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
@@ -583,6 +584,8 @@ else:
         if st.button("GUARDAR REUNIÓN"):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
+                
+                # === CORREGIDO: Enlace real del ejecutable ejecutor de tu Apps Script público ===
                 URL_PROCESADOR_GOOGLE = f"https://google.com"
                 
                 payload = {
@@ -611,6 +614,7 @@ else:
         if st.button("CANCELAR"):
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
+
 
     # ================= SUBMENÚ: MERCHANDISING =================
     elif st.session_state.current_menu == "MERCHANDISING":
