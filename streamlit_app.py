@@ -295,7 +295,7 @@ else:
 
 
     # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
-       # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
+         # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         es_edicion = st.session_state.edit_norma_data is not None
         
@@ -329,12 +329,12 @@ else:
             if st.button(texto_boton):
                 if descripcion_norma and tiempo_norma:
                     
-                    URL_PROCESADOR_GOOGLE = f"https://google.com"
+                    URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     
                     if es_edicion:
                         payload = {
-                            "accion": "editar",
-                            "indice_fila": int(datos_previos["indice_fila"]),
+                            "accion": "editar",  # Corregido a "editar" para que coincida con tu Script
+                            "indice_fila": int(datos_previos["indice_fila"]), # Obligamos a que sea un número entero limpio
                             "tipo": tipo_seleccionado,
                             "subtipo": subtipo_seleccionado,
                             "descripcion": descripcion_norma,
@@ -351,11 +351,12 @@ else:
                     
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                     
-                    # Quitados los globos, ahora solo muestra la confirmación en verde
                     if "OK_CREAR" in respuesta.text:
                         st.success("✔️ ¡Nueva norma guardada con éxito!")
+                        st.balloons()
                     elif "OK_EDITAR" in respuesta.text:
                         st.success("✔️ ¡Norma modificada y actualizada con éxito!")
+                       # st.balloons()
                     else:
                         st.error("Google rechazó la operación.")
                 else:
@@ -368,8 +369,6 @@ else:
             st.session_state.edit_norma_data = None
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
-
-
 
     
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
