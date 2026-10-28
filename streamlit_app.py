@@ -227,6 +227,7 @@ else:
             st.rerun()
 
       # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
+        # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
@@ -240,8 +241,10 @@ else:
         
         # Llegir i mostrar les normes des de Google Sheets
         try:
-         URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-         df_normativa = pd.read_csv(URL_NORMATIVA)
+            # === AQUÍ ESTÀ LA CORRECCIÓ DE L'ENLLAÇ COMPLET ===
+            URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+            
+            df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
             if not df_normativa.empty:
@@ -254,7 +257,9 @@ else:
                     st.write("---")
             else:
                 st.write("No hay normas registradas todavía.")
-        except:
+        except Exception as e:
+            # Canviat temporalment perquè vegis l'error a la pantalla si el nom de la columna tingués alguna errada
+            st.error(f"Error de lectura: {e}")
             st.write("⚠️ Para ver las normas, crea una pestaña llamada 'Normativa' en tu Google Sheets con las columnas: Tipo, Descripcion y Tiempo.")
 
         if st.button("VOLVER"):
