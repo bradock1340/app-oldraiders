@@ -288,40 +288,62 @@ else:
 
   
 
-        # === 3.2 PANTALLA: CREAR NORMATIVA (Validada por la Variable Global Limpia) ===
+           # === 3.2 PANTALLA: CREAR NORMATIVA (Guardado Directo desde la App) ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         st.title("NUEVA NORMA")
         
         try:
-            # Usamos directamente la variable global que ya funciona arriba
+            # 1. Cargamos el validador dinámico para los desplegables
             df_cat = pd.read_csv(URL_CAT_NORMAS)
             df_cat.columns = df_cat.columns.str.strip()
-            
             categorias_principales = list(df_cat.columns)
             
-            # 1. Desplegable de Categoría Principal
+            # --- Estos son los mismos campos de tu pantalla ---
             tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales)
             
-            # 2. Desplegable de Subtipo (limpia celdas vacías del Excel de forma automática)
             subtipos_disponibles = df_cat[tipo_seleccionado].dropna().astype(str).unique()
             subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles)
             
-            # Resto de campos de escritura
             descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA")
             tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)")
             
+            # --- Comportamiento al pulsar el botón Guardar ---
             if st.button("GUARDAR NORMA"):
-                if descripcion_norma:
-                    st.success(f"Validado correctamente: Guardando '{tipo_seleccionado} -> {subtipo_seleccionado}'")
+                if descripcion_norma and tiempo_norma:
+                    
+                    # Creamos la conexión nativa de Streamlit para poder ESCRIBIR
+                    from streamlit_gsheets import GSheetsConnection
+                    conn = st.connection("gsheets", type=GSheetsConnection)
+                    
+                    # Leemos los datos actuales de la pestaña 'Normativa'
+                    df_actual = conn.read(sheet="Normativa")
+                    
+                    # Recogemos los valores exactos que el usuario ha escrito en la App
+                    nueva_fila = pd.DataFrame([{
+                        "Tipo": tipo_seleccionado,
+                        "Subtipo": subtipo_seleccionado,
+                        "Descripcion": descripcion_norma,
+                        "Tiempo": tiempo_norma
+                    }])
+                    
+                    # Juntamos la nueva norma con las antiguas
+                    df_actualizado = pd.concat([df_actual, nueva_fila], ignore_index=True)
+                    
+                    # Sobrescribimos el Google Sheet de forma invisible con la nueva lista
+                    conn.update(sheet="Normativa", data=df_actualizado)
+                    
+                    st.success(f"✔️ Norma guardada correctamente en tu hoja 'Normativa'")
+                    st.balloons() # Animación de celebración
                 else:
-                    st.error("Por favor, introduce la descripción de la norma.")
+                    st.error("Por favor, rellena los campos de texto (Descripción y Tiempo) antes de guardar.")
                     
         except Exception as e:
-            st.error(f"Error al cargar el validador de datos: {e}")
+            st.error(f"Error al cargar el validador de datos o guardar: {e}")
             
         if st.button("VOLVER"):
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
+
     
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
     elif st.session_state.pantalla == "HISTORIA_VER":
