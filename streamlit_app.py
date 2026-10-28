@@ -294,9 +294,8 @@ else:
         
         try:
             # Volvemos a leer de forma dinámica tu estructura de categorías
-            #URL_CAT_NORMAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"
-           URL_CAT_NORMAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"  
-            
+            URL_CAT_NORMAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"
+           #URL_CAT_NORMAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"  
             df_cat = pd.read_csv(URL_CAT_NORMAS)
             df_cat.columns = df_cat.columns.str.strip()
             
