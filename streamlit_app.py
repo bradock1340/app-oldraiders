@@ -549,7 +549,7 @@ else:
 
 
     # === 2.2 PANTALLA: AÑADIR REUNIÓN (Campos e Inyección a tus Columnas) ===
-    elif st.session_state.pantalla == "REUNIONES_CREAR":
+         elif st.session_state.pantalla == "REUNIONES_CREAR":
         st.title("➕ NUEVA REUNIÓN")
         import requests
         import json
@@ -559,12 +559,10 @@ else:
         descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA")
         enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)")
         
-        # Selector de envío de correo electrónico (Columna F)
         enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=False)
         string_correo = "SÍ" if enviar_mail_check else "NO"
         
-        # --- BUSCADOR DINÁMICO DE ASISTENCIA SOBRE TU COLUMNA C ---
-        st.subheader("👥 CONTROL DE ASISTENCIA")
+        st.subheader("CONTROL DE ASISTENCIA")
         st.write("Selecciona los oficiales y miembros presentes:")
         
         asistentes_lista = []
@@ -574,7 +572,7 @@ else:
             listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
             
             for miembro in listado_miembros:
-                if st.checkbox(f"🏍️ {miembro}", value=True, key=f"reun_real_{miembro}"):
+                if st.checkbox(f" {miembro}", value=True, key=f"reun_real_{miembro}"):
                     asistentes_lista.append(miembro)
         except:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
@@ -585,9 +583,9 @@ else:
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                 
-                # === CORREGIDO: Enlace real del ejecutable ejecutor de tu Apps Script público ===
-                URL_PROCESADOR_GOOGLE = f"https://google.com"
-                
+                # Tu URL real que termina en /exec
+                URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
+                # Las variables viajan de forma idéntica a como las lee tu Apps Script del Paso 1
                 payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
@@ -597,15 +595,14 @@ else:
                     "enlace_pdf": enlace_acta if enlace_acta else "",
                     "enviar_correo": string_correo
                 }
-                
-                try:
+                     try:
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                     if "OK_REUNION" in respuesta.text:
                         st.success("✔️ Acta y asistencia guardadas de puta madre en tu hoja.")
                         st.session_state.pantalla = "REUNIONES_MENU"
                         st.rerun()
                     else:
-                        st.error("Google rechazó la estructura de las columnas.")
+                        st.error("Google rechazó la estructura de las columnas. Revisa haber guardado la Nueva Versión en tu Apps Script.")
                 except Exception as err:
                     st.error(f"Fallo de red: {err}")
             else:
@@ -614,6 +611,7 @@ else:
         if st.button("CANCELAR"):
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
+
 
 
     # ================= SUBMENÚ: MERCHANDISING =================
