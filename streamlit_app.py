@@ -488,32 +488,26 @@ else:
         with col_reun2:
             if st.button("⬅️ VOLVER"):
                 st.session_state.pantalla = "PRINCIPAL"
-                st.rerun()
-                
+                st.rerun()      
         st.write("---")
-        
-        try:
+                try:
             # === CORREGIDO: Formato de URL limpio y oficial de Google Docs ===
             URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
             #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
-            
-            # Formatear fechas para poder extraer el año correctamente
+             # Formatear fechas para poder extraer el año correctamente
             df_reuniones['Fecha_DT'] = pd.to_datetime(df_reuniones['Fecha'], format='%d/%m/%Y', errors='coerce')
             
             # --- SECCIÓN DE FILTROS ---
             st.subheader("🔍 BUSCADOR E HISTORIAL")
-            
             # Filtro por Año
             df_reuniones['Año'] = df_reuniones['Fecha_DT'].dt.year.fillna(2026).astype(int)
             lista_años = ["TODOS"] + sorted(list(df_reuniones['Año'].unique()), reverse=True)
             año_sel = st.selectbox("Filtrar por Año", lista_años)
-            
             # Filtro por palabra clave (Tema)
             busqueda_tema = st.text_input("Buscar por contenido o resumen...").strip().lower()
-            
-            st.write("---")
+             st.write("---")
             
             # Aplicar los filtros
             df_filtrado = df_reuniones.copy()
@@ -524,8 +518,7 @@ else:
                     df_filtrado['Tipo'].astype(str).str.lower().str.contains(busqueda_tema) | 
                     df_filtrado['Resumen'].astype(str).str.lower().str.contains(busqueda_tema)
                 ]
-            
-            # --- MOSTRAR LAS REUNIONES EN PANTALLA ---
+                        # --- MOSTRAR LAS REUNIONES EN PANTALLA ---
             if not df_filtrado.empty:
                 for index, row in df_filtrado.iterrows():
                     st.markdown(f"### 📅 {row['Fecha']} — {row['Tipo']}")
@@ -552,7 +545,6 @@ else:
         st.title("➕ NUEVA REUNIÓN")
         import requests
         import json
-        
         fecha_reunion = st.date_input("FECHA DE LA REUNIÓN")
         tipo_reunion = st.selectbox("TIPO DE REUNIÓN", ["Ordinaria", "Extraordinaria", "Comité de Oficiales", "Asamblea General"])
         descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA")
@@ -584,7 +576,6 @@ else:
                 # Tu URL real que termina en /exec
                 URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
                 #URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
-                #Las variables viajan de forma idéntica a como las lee tu Apps Script del Paso 1
                 payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
@@ -610,9 +601,6 @@ else:
         if st.button("CANCELAR"):
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
-
-
-
     # ================= SUBMENÚ: MERCHANDISING =================
     elif st.session_state.current_menu == "MERCHANDISING":
         st.title("MERCHANDISING")
