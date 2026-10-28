@@ -206,7 +206,6 @@ else:
             st.rerun()
 
     # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
-    # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
     elif st.session_state.pantalla == "OLD_RAIDERS_MENU":
         st.title("OLD RAIDERS")
         
@@ -225,7 +224,7 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 
-    # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
+      # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
@@ -247,35 +246,40 @@ else:
                 for index, row in df_normativa.iterrows():
                     st.markdown(f"### 📌 {row['Tipo']}")
                     st.write(row['Descripcion'])
+                    # Mostrar el tiempo/vigencia con un estilo destacado
+                    if 'Tiempo' in df_normativa.columns and pd.notna(row['Tiempo']):
+                        st.markdown(f"⏱️ **Tiempo / Vigencia:** *{row['Tiempo']}*")
                     st.write("---")
             else:
                 st.write("No hay normas registradas todavía.")
         except:
-            st.write("⚠️ Para ver las normas, crea una pestaña llamada 'Normativa' en tu Google Sheets con las columnas: Tipo y Descripcion.")
+            st.write("⚠️ Para ver las normas, crea una pestaña llamada 'Normativa' en tu Google Sheets con las columnas: Tipo, Descripcion y Tiempo.")
 
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
 
-    # === 3.2 PANTALLA: CREAR NORMATIVA (Formulari Pantalla 8 de l'esbós) ===
+    # === 3.2 PANTALLA: CREAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         st.title("NUEVA NORMA")
         
-        # Camps del formulari exactes al teu disseny en paper
+        # Camps del formulari actualitzats amb la teva nova columna
         tipo_norma = st.text_input("TIPO (Categoría de la norma)")
         descripcion_norma = st.text_area("DESCRIPCION")
-        fecha_norma = st.date_input("FECHA")
+        tiempo_norma = st.text_input("TIEMPO (Ej: Permanente, 6 meses, Solo 2026...)")
+        fecha_norma = st.date_input("FECHA DE REGISTRO")
         
         if st.button("GUARDAR NORMA"):
-            if tipo_norma and descripcion_norma:
+            if tipo_norma and descripcion_norma and tiempo_norma:
                 # Aquí anirà la connexió per desar-ho a Google Sheets automàticament
-                st.success(f"Norma '{tipo_norma}' preparada para guardar.")
+                st.success(f"Norma '{tipo_norma}' con tiempo '{tiempo_norma}' preparada para guardar.")
             else:
-                st.error("Por favor, rellena todos los campos.")
+                st.error("Por favor, rellena todos los campos (Tipo, Descripción y Tiempo).")
                 
         if st.button("VOLVER"):
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
+
 
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
     elif st.session_state.pantalla == "HISTORIA_VER":
