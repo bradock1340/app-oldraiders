@@ -274,7 +274,7 @@ else:
                     st.caption(f"Categoría: {row['Tipo']}")
                     st.write(row['Descripcion'])
                     if 'Tiempo' in df_filtrado.columns and pd.notna(row['Tiempo']):
-                        st.markdown(f"⏱️ **Vigencia:** *{row['Tiempo']}*")
+                        st.markdown(f"**Sanción:** *{row['Tiempo']}*")
                     st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
                 st.warning("⚠️ No se encontraron normas con esos criterios.")
