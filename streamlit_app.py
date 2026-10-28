@@ -547,23 +547,68 @@ else:
         except Exception as e:
             st.error(f"Error de lectura en la hoja: {e}")
 
-    # === 2.2 PANTALLA: AÑADIR REUNIÓN (Campos e Inyección a tus Columnas) ===
+        # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
-        st.title("➕ NUEVA REUNIÓN")
+        es_edicion = st.session_state.get("edit_reunion_data") is not None
+        
+        if es_edicion:
+            st.title("📝 EDITAR REUNIÓN")
+            datos_previos = st.session_state.edit_reunion_data
+        else:
+            st.title("➕ NUEVA REUNIÓN")
+            # Valores por defecto para una nueva reunión
+            datos_previos = {
+                "Fecha": pd.Timestamp.now().date(),
+                "Tipo": "Ordinaria",
+                "Resumen": "",
+                "Enlace PDF": "",
+                "Enviar por correo": "NO",
+                "Miembros": ""
+            }
+            
         import requests
         import json
         
-        fecha_reunion = st.date_input("FECHA DE LA REUNIÓN")
-        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", ["Ordinaria", "Extraordinaria", "Voto de colores", "Asamblea General"])
-        descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA")
-        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)")
+        # 1. Campo Fecha (Manejo de formato objeto date)
+        if es_edicion:
+            try:
+                fecha_inicial_dt = pd.to_datetime(datos_previos.get('Fecha'), format='%d/%m/%Y').date()
+            except:
+                fecha_inicial_dt = pd.Timestamp.now().date()
+        else:
+            fecha_inicial_dt = datos_previos["Fecha"]
+            
+        fecha_reunion = st.date_input("FECHA DE LA REUNIÓN", value=fecha_inicial_dt)
         
-        enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=False)
+        # 2. Campo Tipo de Reunión
+        tipos_disponibles = ["Ordinaria", "Extraordinaria", "Voto de colores", "Asamblea General"]
+        tipo_actual = datos_previos.get('Tipo', 'Ordinaria')
+        idx_tipo = tipos_disponibles.index(tipo_actual) if tipo_actual in tipos_disponibles else 0
+        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", tipos_disponibles, index=idx_tipo)
+        
+        # 3. Campos de Texto (Resumen y Acta PDF)
+        descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA", value=datos_previos.get('Resumen', ''))
+        
+        pdf_inicial = datos_previos.get('Enlace PDF', '')
+        if pd.isna(pdf_inicial) or str(pdf_inicial).strip().lower() == 'nan':
+            pdf_inicial = ""
+        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=pdf_inicial)
+        
+        # 4. Campo Checkbox de Correo
+        correo_inicial = True if datos_previos.get('Enviar por correo') == "SÍ" else False
+        enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=correo_inicial)
         string_correo = "SÍ" if enviar_mail_check else "NO"
         
+        # 5. Control de Asistencia (Miembros Activos)
         st.subheader("👥 CONTROL DE ASISTENCIA")
         st.write("Selecciona los oficiales y miembros presentes:")
         
+        miembros_crudos = datos_previos.get('Miembros', '')
+        if pd.isna(miembros_crudos) or str(miembros_crudos).strip().lower() == 'nan':
+            asistentes_antiguos = []
+        else:
+            asistentes_antiguos = [m.strip() for m in str(miembros_crudos).split(",")]
+            
         asistentes_lista = []
         try:
             df_usuarios = pd.read_csv(URL_USUARIOS)
@@ -571,58 +616,69 @@ else:
             listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
             
             for miembro in listado_miembros:
-                if st.checkbox(f"🏍️ {miembro}", value=True, key=f"reun_real_{miembro}"):
+                # Si es edición, se marcan los que ya estaban guardados; si es nueva, todos True por defecto
+                marcado_defecto = miembro in asistentes_antiguos if es_edicion else True
+                if st.checkbox(f"🏍️ {miembro}", value=marcado_defecto, key=f"reun_gestion_{miembro}"):
                     asistentes_lista.append(miembro)
         except:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
             
         string_asistentes_comas = ", ".join(asistentes_lista)
         
-        if st.button("GUARDAR REUNIÓN"):
+        # 6. Envío de datos e Inyección según el estado
+        texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
+        
+        if st.button(texto_boton):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                 URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                 
-                # CORREGIDO: Espacios alineados correctamente para evitar IndentationError
-                payload = {
-                    "accion": "crear_reunion_real",
-                    "fecha": fecha_formateada,
-                    "tipo": tipo_reunion,
-                    "miembros": string_asistentes_comas,
-                    "resumen": descripcion_reunion,
-                    "enlace_pdf": enlace_acta if enlace_acta else "",
-                    "enviar_correo": string_correo
-                }
+                if es_edicion:
+                    payload = {
+                        "accion": "editar",
+                        "indice_fila": int(datos_previos["indice_fila"]),
+                        "fecha": fecha_formateada,
+                        "tipo": tipo_reunion,
+                        "miembros": string_asistentes_comas,
+                        "resumen": descripcion_reunion,
+                        "enlace_pdf": enlace_acta if enlace_acta else "",
+                        "enviar_correo": string_correo
+                    }
+                else:
+                    payload = {
+                        "accion": "crear_reunion_real",
+                        "fecha": fecha_formateada,
+                        "tipo": tipo_reunion,
+                        "miembros": string_asistentes_comas,
+                        "resumen": descripcion_reunion,
+                        "enlace_pdf": enlace_acta if enlace_acta else "",
+                        "enviar_correo": string_correo
+                    }
                 
                 try:
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                    
                     if "OK_REUNION" in respuesta.text:
-                        st.success("✔️ Acta y asistencia guardadas correctamente.")
+                        st.success("✔️ ¡Nueva reunión guardada con éxito!")
+                        st.session_state.pantalla = "REUNIONES_MENU"
+                        st.rerun()
+                    elif "OK_EDITAR" in respuesta.text:
+                        st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
+                        st.session_state.edit_reunion_data = None
                         st.session_state.pantalla = "REUNIONES_MENU"
                         st.rerun()
                     else:
-                        st.error("Google rechazó la estructura de las columnas.")
+                        st.error(f"Google rechazó la operación. Respuesta: {respuesta.text}")
                 except Exception as err:
                     st.error(f"Fallo de red: {err}")
             else:
                 st.error("Por favor, rellena el resumen u orden del día.")
                 
-        if st.button("CANCELAR"):
+        if st.button("VOLVER"):
+            st.session_state.edit_reunion_data = None
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
 
-    # ================= SUBMENÚ: MERCHANDISING =================
-    elif st.session_state.current_menu == "MERCHANDISING":
-        st.title("MERCHANDISING")
-        if st.button("NUEVO PRODUCTO"):
-            st.subheader("Alta de Inventario")
-        if st.button("NUEVO PEDIDO"):
-            st.subheader("Formulario de Pedidos")
-        if st.button("LISTADO DE PRODUCTOS"):
-            st.subheader("Stock Actual")
-        if st.button("VOLVER"):
-            st.session_state.current_menu = "PRINCIPAL"
-            st.rerun()
 
     # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
