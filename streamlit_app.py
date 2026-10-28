@@ -228,17 +228,14 @@ else:
     # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
-        
         # Creamos dos columnas en la parte superior para agrupar los botones de navegación
         col_botones1, col_botones2 = st.columns(2)
-        
-        with col_botones1:
+                with col_botones1:
             if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                 if st.button("➕ AÑADIR NORMA"):
                     st.session_state.edit_norma_data = None
                     st.session_state.pantalla = "NORMATIVA_CREAR"
-                    st.rerun()
-                    
+                    st.rerun()           
         with col_botones2:
             if st.button("⬅️ VOLVER"):
                 st.session_state.pantalla = "OLD_RAIDERS_MENU"
@@ -303,12 +300,10 @@ else:
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
 
-
     # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
         elif st.session_state.pantalla == "NORMATIVA_CREAR":
         es_edicion = st.session_state.edit_norma_data is not None
-        
-        if es_edicion:
+                if es_edicion:
             st.title("📝 EDITAR NORMA")
             datos_previos = st.session_state.edit_norma_data
         else:
@@ -378,7 +373,6 @@ else:
             st.session_state.edit_norma_data = None
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
-
     
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
     elif st.session_state.pantalla == "HISTORIA_VER":
@@ -428,8 +422,6 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
-
-
     # ================= SECCIÓN: ECONOMÍA =================
     elif st.session_state.current_menu == "ECONOMIA_MENU":
         st.title("ECONOMÍA")
