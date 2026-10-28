@@ -474,6 +474,7 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
+   
     # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
@@ -490,11 +491,9 @@ else:
                 st.rerun()
                 
         st.write("---")
+        
         try:
-           #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
-            URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
-        try:
-            # === URL CORRECTA E INDENTACIÓN REVISADA AL MILÍMETRO ===
+            # === CORREGIDO: URL limpia oficial de Google Docs ===
             URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
@@ -546,6 +545,7 @@ else:
                 
         except Exception as e:
             st.error(f"Error de lectura en la hoja: {e}")
+
     # === 2.2 PANTALLA: AÑADIR REUNIÓN (Campos e Inyección a tus Columnas) ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
         st.title("➕ NUEVA REUNIÓN")
@@ -581,7 +581,9 @@ else:
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                 URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
-               payload = {
+                
+                # CORREGIDO: Espacios alineados correctamente para evitar IndentationError
+                payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
                     "tipo": tipo_reunion,
