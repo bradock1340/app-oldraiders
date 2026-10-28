@@ -225,29 +225,26 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
-
-             # === 3.1 PANTALLA: VISUALIZAR NORMATIVA (Con Validador Dinámico Fijo) ===
+    # === 3.1 PANTALLA: VISUALIZAR NORMATIVA (Con Opción de Editar) ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
         if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
             if st.button("➕ AÑADIR NUEVA NORMA"):
+                st.session_state.edit_norma_data = None  # Modo creación limpia
                 st.session_state.pantalla = "NORMATIVA_CREAR"
                 st.rerun()
         
         st.write("---")
         
         try:
-            # 1. Cargamos el validador desde la variable global limpia
             df_cat = pd.read_csv(URL_CAT_NORMAS)
             df_cat.columns = df_cat.columns.str.strip()
             categorias_principales = list(df_cat.columns)
             
-            # 2. Cargamos las normas desde la variable global limpia
             df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
-            # --- ZONA DE FILTROS EN PANTALLA ---
             st.subheader("🔍 BUSCADOR DE REGLAS")
             busqueda = st.text_input("Escribe una palabra clave...").strip().lower()
             
@@ -256,7 +253,6 @@ else:
             
             st.write("---")
             
-            # --- FILTRADO DE DATOS ---
             df_filtrado = df_normativa.copy()
             if categoria_filtrada != "MOSTRAR TODAS":
                 df_filtrado = df_filtrado[df_filtrado['Tipo'].str.strip() == categoria_filtrada.strip()]
@@ -267,14 +263,27 @@ else:
                 condicion_desc = df_filtrado['Descripcion'].astype(str).str.lower().str.contains(busqueda)
                 df_filtrado = df_filtrado[condicion_tipo | condicion_subtipo | condicion_desc]
             
-            # --- MOSTRAR RESULTADOS ---
             if not df_filtrado.empty:
                 for index, row in df_filtrado.iterrows():
                     st.markdown(f"### 📌 {row['Subtipo']}")
                     st.caption(f"Categoría: {row['Tipo']}")
                     st.write(row['Descripcion'])
                     if 'Tiempo' in df_filtrado.columns and pd.notna(row['Tiempo']):
-                        st.markdown(f"**Sanción:** *{row['Tiempo']}*")
+                        st.markdown(f"⏱️ **Vigencia:** *{row['Tiempo']}*")
+                    
+                    # Botón de edición exclusivo para la directiva al lado de la norma
+                    if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
+                        # Usamos una clave única basada en el índice para que Streamlit no se confunda
+                        if st.button(f"📝 EDITAR REGLA", key=f"edit_{index}"):
+                            st.session_state.edit_norma_data = {
+                                "tipo": row['Tipo'],
+                                "subtipo": row['Subtipo'],
+                                "descripcion": row['Descripcion'],
+                                "tiempo": row['Tiempo']
+                            }
+                            st.session_state.pantalla = "NORMATIVA_CREAR"
+                            st.rerun()
+                            
                     st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
                 st.warning("⚠️ No se encontraron normas con esos criterios.")
@@ -286,77 +295,92 @@ else:
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
 
-  
 
-           # === 3.2 PANTALLA: CREAR NORMATIVA (Guardado Directo desde la App) ===
+    # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA (Doble función inteligente) ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
-        st.title("NUEVA NORMA")
+        # Detectamos si venimos de pulsar "Editar" o "Añadir Nueva"
+        es_edicion = st.session_state.edit_norma_data is not None
+        
+        if es_edicion:
+            st.title("📝 EDITAR NORMA")
+            datos_previos = st.session_state.edit_norma_data
+        else:
+            st.title("➕ NUEVA NORMA")
+            datos_previos = {"tipo": None, "subtipo": None, "descripcion": "", "tiempo": ""}
+            
+        import requests
+        import json
         
         try:
-            # 1. Cargamos el validador dinámico para los desplegables
             df_cat = pd.read_csv(URL_CAT_NORMAS)
             df_cat.columns = df_cat.columns.str.strip()
             categorias_principales = list(df_cat.columns)
             
-            # --- Estos son los mismos campos de tu pantalla ---
-            tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales)
+            # Buscamos el índice predeterminado si estamos editando
+            idx_tipo = categorias_principales.index(datos_previos["tipo"]) if datos_previos["tipo"] in categorias_principales else 0
+            tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales, index=idx_tipo)
             
-            subtipos_disponibles = df_cat[tipo_seleccionado].dropna().astype(str).unique()
-            subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles)
+            subtipos_disponibles = list(df_cat[tipo_seleccionado].dropna().astype(str).unique())
+            idx_sub = subtipos_disponibles.index(datos_previos["subtipo"]) if datos_previos["subtipo"] in subtipos_disponibles else 0
+            subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles, index=idx_sub)
             
-            descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA")
-            tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)")
+            descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA", value=datos_previos["descripcion"])
+            tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)", value=datos_previos["tiempo"])
             
-                       # --- Comportamiento al pulsar el botón Guardar ---
-                       # --- Comportamiento al pulsar el botón Guardar (Método Directo Asegurado) ---
-            if st.button("GUARDAR NORMA"):
+            # Botón dinámico según la acción
+            texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR NORMA"
+            
+            if st.button(texto_boton):
                 if descripcion_norma and tiempo_norma:
-                    import requests
                     
-                    # Usamos el sistema de Apps Script de Google que no requiere configurar contraseñas complejas en la App
-                    # Copia este pequeño bloque de código en Extensiones > Apps Script en tu Google Sheet:
-                    # 
-                    # function doPost(e) {
-                    #   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Normativa");
-                    #   var data = JSON.parse(e.postData.contents);
-                    #   sheet.appendRow([data.tipo, data.subtipo, data.descripcion, data.tiempo]);
-                    #   return ContentService.createTextOutput("OK");
-                    # }
-                    
-                    # ⚠️ REEMPLAZA ESTA URL POR LA QUE TE DÉ TU ENLACE DE GOOGLE AL PUBLICAR EL SCRIPT ⚠️
+                    # ⚠️ ASEGÚRATE DE QUE ESTA SEA TU URL DE GOOGLE APPS SCRIPT ACTUALIZADA ⚠️
                     URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     
-                    datos_a_guardar = {
-                        "tipo": tipo_seleccionado,
-                        "subtipo": subtipo_seleccionado,
-                        "descripcion": descripcion_norma,
-                        "tiempo": tiempo_norma
-                    }
+                    if es_edicion:
+                        # Mandamos la orden de editar adjuntando el texto original para localizar la fila
+                        payload = {
+                            "accion": "editar",
+                            "descripcion_original": datos_previos["descripcion"],
+                            "descripcion_nueva": descripcion_norma,
+                            "tipo": tipo_seleccionado,
+                            "subtipo": subtipo_seleccionado,
+                            "tiempo": tiempo_norma
+                        }
+                    else:
+                        # Mandamos la orden normal de crear una fila nueva
+                        payload = {
+                            "accion": "crear",
+                            "tipo": tipo_seleccionado,
+                            "subtipo": subtipo_seleccionado,
+                            "descripcion": descripcion_norma,
+                            "tiempo": tiempo_norma
+                        }
                     
-                    try:
-                        import json
-                        respuesta = requests.post(
-                            URL_PROCESADOR_GOOGLE, 
-                            data=json.dumps(datos_a_guardar), 
-                            headers={"Content-Type": "application/json"}
-                        )
-                        
-                        if respuesta.status_code == 200 or "OK" in respuesta.text:
-                            st.success(f"✔️ ¡Norma guardada correctamente en tu hoja 'Normativa'!")
-                            st.balloons()  # Animación de celebración
-                        else:
-                            st.error("Google ha recibido los datos pero ha rechazado la escritura.")
-                    except Exception as err:
-                        st.error(f"Fallo al enviar los datos al archivo: {err}")
+                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                    
+                    if "OK_CREAR" in respuesta.text:
+                        st.success("✔️ ¡Nueva norma guardada en el club!")
+                        st.balloons()
+                    elif "OK_EDITAR" in respuesta.text:
+                        st.success("✔️ ¡Norma modificada y actualizada con éxito!")
+                        st.balloons()
+                    else:
+                        st.error("Google rechazó la operación. Revisa los nombres de las pestañas.")
                 else:
-                    st.error("Por favor, rellena los campos de texto (Descripción y Tiempo) antes de guardar.")
-                   
+                    st.error("Por favor, rellena todos los campos antes de continuar.")
+                    
         except Exception as e:
-            st.error(f"Error al cargar el validador de datos o guardar: {e}")
+            st.error(f"Error en el módulo de datos: {e}")
             
         if st.button("VOLVER"):
+            st.session_state.edit_norma_data = None
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
+
+  
+                   # URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+                    
+                  
 
     
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
