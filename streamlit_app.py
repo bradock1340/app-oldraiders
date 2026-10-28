@@ -225,12 +225,13 @@ else:
             st.rerun()
  
        # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
+       # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
         if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
             if st.button("➕ AÑADIR NUEVA NORMA"):
-                st.session_state.edit_norma_data = None
+                st.session_state.edit_norma_data = None  # Reseteo total para nueva norma
                 st.session_state.pantalla = "NORMATIVA_CREAR"
                 st.rerun()
         
@@ -273,7 +274,7 @@ else:
                     if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                         if st.button(f"📝 EDITAR REGLA", key=f"edit_{index}"):
                             st.session_state.edit_norma_data = {
-                                "indice_fila": index,  # Guardamos la posición exacta de la fila
+                                "indice_fila": int(index),  # Guardamos la fila numérica real
                                 "tipo": row['Tipo'],
                                 "subtipo": row['Subtipo'],
                                 "descripcion": row['Descripcion'],
@@ -328,17 +329,16 @@ else:
             if st.button(texto_boton):
                 if descripcion_norma and tiempo_norma:
                     
-                    # ⚠️ PEGA AQUÍ ABAJO LA URL LARGA QUE HAS COPIADO EN EL PASO 2 ⚠️
                     URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     
                     if es_edicion:
                         payload = {
-                            "accion": "edited",
-                            "indice_fila": datos_previos["indice_fila"],
+                            "accion": "editar",  # Corregido a "editar" para que coincida con tu Script
+                            "indice_fila": int(datos_previos["indice_fila"]), # Obligamos a que sea un número entero limpio
                             "tipo": tipo_seleccionado,
                             "subtipo": subtipo_seleccionado,
-                            "descripcion": descripcion_norma,  # Sincronizado
-                            "tiempo": tiempo_norma             # Sincronizado
+                            "descripcion": descripcion_norma,
+                            "tiempo": tiempo_norma
                         }
                     else:
                         payload = {
@@ -369,8 +369,7 @@ else:
             st.session_state.edit_norma_data = None
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
-                 
-                  
+
 
     
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
