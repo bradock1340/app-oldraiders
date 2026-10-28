@@ -226,13 +226,10 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 
-     
-        # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
-    # === 3.1 PANTALLA: VISUALITZAR NORMATIVA (Amb Buscador i Filtre per Categoria) ===
+         # === 3.1 PANTALLA: VISUALIZAR NORMATIVA (Con Validador Dinámico) ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
-        # Permís especial per a l'oficialat per afegir regles
         if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
             if st.button("➕ AÑADIR NUEVA NORMA"):
                 st.session_state.pantalla = "NORMATIVA_CREAR"
@@ -241,95 +238,97 @@ else:
         st.write("---")
         
         try:
+            # 1. Cargamos el validador de datos desde 'Cat_Normas'
+            URL_CAT_NORMAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"
+            df_cat = pd.read_csv(URL_CAT_NORMAS)
+            df_cat.columns = df_cat.columns.str.strip()
             
-           # URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
-            URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+            # Obtener las categorías principales (los nombres de las columnas reales)
+            categorias_principales = list(df_cat.columns)
+            
+            # 2. Cargamos las normas registradas
+            URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
             df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
-            # --- ZONA DE FILTRES (Ideal per a Mòbil) ---
+            # --- ZONA DE FILTROS EN PANTALLA ---
             st.subheader("🔍 BUSCADOR DE REGLAS")
+            busqueda = st.text_input("Escribe una palabra clave...").strip().lower()
             
-            # 1. Filtre per paraula clau (Buscador lliure)
-            busqueda = st.text_input("Escribe una palabra (Ej: voto, ruta, prospect...)").strip().lower()
-            
-            # 2. Desplegable per triar veure-ho tot o només una categoria concreta
-            categorias_principales = [
-                "MOSTRAR TODAS",
-                "Obligaciones Generales", 
-                "Comportamiento y Hermandad", 
-                "Convivencia y Organización", 
-                "Disciplina en Ruta", 
-                "Representación y Respeto Externo", 
-                "Tiempos", 
-                "Restricciones y Prohibiciones"
-            ]
-            categoria_filtrada = st.selectbox("Filtrar por Categoría Principal", categorias_principales)
+            # Filtro dropdown dinámico alimentado por las columnas de tu Excel
+            opciones_filtro = ["MOSTRAR TODAS"] + categorias_principales
+            categoria_filtrada = st.selectbox("Filtrar por Categoría Principal", opciones_filtro)
             
             st.write("---")
             
-            # --- APLICACIÓ DELS FILTRES ---
+            # --- FILTRADO DE DATOS ---
             df_filtrado = df_normativa.copy()
-            
-            # Aplicar filtre de categoria si no s'ha triat "MOSTRAR TODAS"
             if categoria_filtrada != "MOSTRAR TODAS":
-                df_filtrado = df_filtrado[df_filtrado['Tipo'] == categoria_filtrada]
+                df_filtrado = df_filtrado[df_filtrado['Tipo'].str.strip() == categoria_filtrada.strip()]
                 
-            # Aplicar filtre de text lliure si l'usuari ha escrit alguna cosa
             if busqueda:
-                # Busca tant a la Descripcion com al Tipo o Subtipo
                 condicion_tipo = df_filtrado['Tipo'].astype(str).str.lower().str.contains(busqueda)
                 condicion_subtipo = df_filtrado['Subtipo'].astype(str).str.lower().str.contains(busqueda)
                 condicion_desc = df_filtrado['Descripcion'].astype(str).str.lower().str.contains(busqueda)
-                
                 df_filtrado = df_filtrado[condicion_tipo | condicion_subtipo | condicion_desc]
             
-            # --- MOSTRAR ELS RESULTATS FILTRATS ---
+            # --- MOSTRAR RESULTADOS ---
             if not df_filtrado.empty:
-                # Si es mostra una categoria concreta o s'ha usat el buscador, ho llistem netament
                 for index, row in df_filtrado.iterrows():
-                    categoria_actual = row['Tipo']
-                    subtitulo = row['Subtipo'] if 'Subtipo' in df_normativa.columns else "Norma"
-                    
-                    st.markdown(f"### 📌 {subtitulo}")
-                    st.caption(f"Categoría: {categoria_actual}") # Mostra a quina secció pertany
+                    st.markdown(f"### 📌 {row['Subtipo']}")
+                    st.caption(f"Categoría: {row['Tipo']}")
                     st.write(row['Descripcion'])
-                    
                     if 'Tiempo' in df_filtrado.columns and pd.notna(row['Tiempo']):
-                        st.markdown(f"⏱️ **Vigencia/Tiempo:** *{row['Tiempo']}*")
+                        st.markdown(f"⏱️ **Vigencia:** *{row['Tiempo']}*")
                     st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
-                st.warning("⚠️ No se encontraron normas que coincidan con tu búsqueda o filtro.")
+                st.warning("⚠️ No se encontraron normas con esos criterios.")
                 
         except Exception as e:
-            st.error(f"Error de lectura: {e}")
-            st.write("⚠️ Recuerda añadir la columna 'Subtipo' en tu Google Sheets.")
+            st.error(f"Error de conexión o lectura: {e}")
 
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
 
 
-    # === 3.2 PANTALLA: CREAR NORMATIVA ===
+    # === 3.2 PANTALLA: CREAR NORMATIVA (Formulario Validado por Cat_Normas) ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         st.title("NUEVA NORMA")
         
-        # Camps del formulari actualitzats amb la teva nova columna
-        tipo_norma = st.text_input("TIPO (Categoría de la norma)")
-        descripcion_norma = st.text_area("DESCRIPCION")
-        tiempo_norma = st.text_input("TIEMPO (Ej: Permanente, 6 meses, Solo 2026...)")
-        fecha_norma = st.date_input("FECHA DE REGISTRO")
-        
-        if st.button("GUARDAR NORMA"):
-            if tipo_norma and descripcion_norma and tiempo_norma:
-                # Aquí anirà la connexió per desar-ho a Google Sheets automàticament
-                st.success(f"Norma '{tipo_norma}' con tiempo '{tiempo_norma}' preparada para guardar.")
-            else:
-                st.error("Por favor, rellena todos los campos (Tipo, Descripción y Tiempo).")
-                
+        try:
+            # Volvemos a leer de forma dinámica tu estructura de categorías
+            URL_CAT_NORMAS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas"
+            df_cat = pd.read_csv(URL_CAT_NORMAS)
+            df_cat.columns = df_cat.columns.str.strip()
+            
+            categorias_principales = list(df_cat.columns)
+            
+            # 1. Desplegable de Categoría Principal
+            tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales)
+            
+            # 2. Desplegable de Subtipo (se limpia de valores vacíos automáticamente)
+            subtipos_disponibles = df_cat[tipo_seleccionado].dropna().astype(str).unique()
+            subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles)
+            
+            # Resto de campos manuales
+            descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA")
+            tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)")
+            
+            if st.button("GUARDAR NORMA"):
+                if descripcion_norma:
+                    st.success(f"Validado: Guardando '{tipo_seleccionado} -> {subtipo_seleccionado}'")
+                else:
+                    st.error("Por favor, introduce la descripción de la norma.")
+                    
+        except Exception as e:
+            st.error(f"Error al cargar el validador de datos: {e}")
+            
         if st.button("VOLVER"):
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
+
+       
 
 
 
