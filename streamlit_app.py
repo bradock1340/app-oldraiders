@@ -145,7 +145,6 @@ if not st.session_state.authenticated:
         except Exception as e:
             st.error("Error al conectar con la base de datos.")
 
-# --- PANTALLA 2: MENÚ PRINCIPAL Y SUBMENÚS ---
 # --- PANTALLA 2: MENÚ PRINCIPAL Y NAVEGACIÓN ---
 else:
     rol = st.session_state.user_role
@@ -207,20 +206,105 @@ else:
             st.rerun()
 
     # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
+    # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
     elif st.session_state.pantalla == "OLD_RAIDERS_MENU":
         st.title("OLD RAIDERS")
         
+        # Enllaç a la nova pestanya de Normativa al teu Google Sheets
+        URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+        
         if st.button("NORMATIVA"):
-            st.subheader("Normativa Interna")
-            st.write("Sección en desarrollo para las normas del club.")
+            st.session_state.pantalla = "NORMATIVA_VER"
+            st.rerun()
             
         if st.button("HISTORIA"):
-            st.session_state.pantalla = "PANTALLA_HISTORIA"
+            st.session_state.pantalla = "HISTORIA_VER"
             st.rerun()
             
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
+
+    # === 3.1 PANTALLA: VISUALITZAR NORMATIVA ===
+    elif st.session_state.pantalla == "NORMATIVA_VER":
+        st.title("NORMATIVA INTERNA")
+        
+        # Permís especial per a l'oficialat per afegir noves regles (Pantalla 8 de l'esbós)
+        if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
+            if st.button("➕ AÑADIR NUEVA NORMA"):
+                st.session_state.pantalla = "NORMATIVA_CREAR"
+                st.rerun()
+        
+        st.write("---")
+        
+        # Llegir i mostrar les normes des de Google Sheets
+        try:
+            URL_NORMATIVA = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
+            df_normativa = pd.read_csv(URL_NORMATIVA)
+            df_normativa.columns = df_normativa.columns.str.strip()
+            
+            if not df_normativa.empty:
+                for index, row in df_normativa.iterrows():
+                    st.markdown(f"### 📌 {row['Tipo']}")
+                    st.write(row['Descripcion'])
+                    st.write("---")
+            else:
+                st.write("No hay normas registradas todavía.")
+        except:
+            st.write("⚠️ Para ver las normas, crea una pestaña llamada 'Normativa' en tu Google Sheets con las columnas: Tipo y Descripcion.")
+
+        if st.button("VOLVER"):
+            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.rerun()
+
+    # === 3.2 PANTALLA: CREAR NORMATIVA (Formulari Pantalla 8 de l'esbós) ===
+    elif st.session_state.pantalla == "NORMATIVA_CREAR":
+        st.title("NUEVA NORMA")
+        
+        # Camps del formulari exactes al teu disseny en paper
+        tipo_norma = st.text_input("TIPO (Categoría de la norma)")
+        descripcion_norma = st.text_area("DESCRIPCION")
+        fecha_norma = st.date_input("FECHA")
+        
+        if st.button("GUARDAR NORMA"):
+            if tipo_norma and descripcion_norma:
+                # Aquí anirà la connexió per desar-ho a Google Sheets automàticament
+                st.success(f"Norma '{tipo_norma}' preparada para guardar.")
+            else:
+                st.error("Por favor, rellena todos los campos.")
+                
+        if st.button("VOLVER"):
+            st.session_state.pantalla = "NORMATIVA_VER"
+            st.rerun()
+
+    # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
+    elif st.session_state.pantalla == "HISTORIA_VER":
+        st.title("HISTORIA DEL CLUB")
+        
+        # Text literal extret del teu esbós original
+        st.markdown("""
+        ### **Fundación**
+        Fundado un **16 de septiembre del 2017** por un grupo de 8 antiguos motoristas de diferentes moto clubs y algún otro. 
+        
+        Después de un tiempo, algunos nos dejaron y otros se fueron a recorrer las autopistas del cielo.
+        
+        ### **Evolución**
+        Tras unos años de andadura nos convertimos en **MC en 2026** bajo los valores de:
+        * 🤝 Amistad
+        * 🛣️ Rutas
+        * 🦅 Libertad
+        * 🪵 Hermandad
+        * 🏍️ Pasión por las motos.
+        
+        ---
+        ### 🖤 In memoriam
+        **Sebas 1967-2022**
+        """)
+        
+        if st.button("VOLVER"):
+            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.rerun()
+
 
     # === 4. PANTALLA: TEXTO DE LA HISTORIA (Con un único botón para volver) ===
     elif st.session_state.pantalla == "PANTALLA_HISTORIA":
