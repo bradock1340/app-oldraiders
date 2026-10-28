@@ -547,7 +547,6 @@ else:
         except Exception as e:
             st.error(f"Error de lectura en la hoja: {e}")
 
-
     # === 2.2 PANTALLA: AÑADIR REUNIÓN (Campos e Inyección a tus Columnas) ===
          elif st.session_state.pantalla == "REUNIONES_CREAR":
         st.title("➕ NUEVA REUNIÓN")
@@ -582,10 +581,10 @@ else:
         if st.button("GUARDAR REUNIÓN"):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                
                 # Tu URL real que termina en /exec
-                URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
-                # Las variables viajan de forma idéntica a como las lee tu Apps Script del Paso 1
+                URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+                #URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
+                #Las variables viajan de forma idéntica a como las lee tu Apps Script del Paso 1
                 payload = {
                     "accion": "crear_reunion_real",
                     "fecha": fecha_formateada,
