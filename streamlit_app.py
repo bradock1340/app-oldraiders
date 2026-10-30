@@ -641,21 +641,20 @@ else:
         st.write("---")
         
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
-        
-        col_accion1, col_accion2 = st.columns(2)
+               col_accion1, col_accion2 = st.columns(2)
         with col_accion1:
             if st.button(texto_boton_principal):
                 if descripcion_reunion:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                     
-                    # URL DE APPS SCRIPT GENERADA
-                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                    # ⚠️ PEGA AQUÍ TU URL DE APPS SCRIPT TERMINADA EN /exec
+                    URL_DIRECTA = "TU_NUEVA_URL_DE_APPS_SCRIPT_AQUÍ"
                     
                     if es_edicion:
                         payload = {
                             "accion": "editar_reunion_real",
-                            "fecha_original": str(datos_previos.get('Fecha', '')), # Llave de búsqueda 1
-                            "resumen_original": str(datos_previos.get('Resumen', '')), # Llave de búsqueda 2
+                            "fecha_original": str(datos_previos.get('Fecha', '')),
+                            "resumen_original": str(datos_previos.get('Resumen', '')),
                             "fecha": fecha_formateada,
                             "tipo": tipo_reunion,
                             "miembros": string_asistentes_comas,
@@ -673,8 +672,9 @@ else:
                             "enlace_pdf": enlace_acta,
                             "enviar_correo": string_correo
                         }
-                        
-                                       try:
+                    
+                    # === ZONA DEL ERROR CORREGIDA (ALINEACIÓN PERFECTA) ===
+                    try:
                         res = requests.post(
                             URL_DIRECTA, 
                             data=json.dumps(payload), 
@@ -682,24 +682,20 @@ else:
                         )
                         
                         if "OK_REUNION" in res.text:
-                            # 1. Mostramos el mensaje en pantalla
                             st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
-                            
-                            # 2. Forzamos una pausa de 2 segundos para que el usuario pueda leerlo
                             import time
                             time.sleep(2.0)
-                            
-                            # 3. Limpiamos el estado y redirigimos
                             st.session_state.edit_reunion_data = None
                             st.session_state.pantalla = "REUNIONES_MENU"
                             st.rerun()
                         else:
                             st.error(f"Google rechazó la estructura: {res.text}")
-
                     except Exception as e:
                         st.error(f"Error de conexión con el servidor: {e}")
                 else:
-                    st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")  
+                    st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+ 
+
 
     # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
