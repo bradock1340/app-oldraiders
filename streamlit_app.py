@@ -637,7 +637,7 @@ else:
             
         string_asistentes_comas = ", ".join(asistentes_lista)
         
-              # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
+                # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
         
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
@@ -647,9 +647,10 @@ else:
             if st.button(texto_boton_principal):
                 if descripcion_reunion:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                   
-                    # CORREGIDO: Eliminamos "https://google.com" para usar la URL global de tu app
-                    URL_DIRECTA = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+                    
+                    # ⚠️ PEGA AQUÍ TU ENLACE LARGO DE GOOGLE QUE TERMINA EN /exec ⚠️
+                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+                    
                     if es_edicion:
                         payload = {
                             "accion": "editar",
@@ -673,9 +674,9 @@ else:
                         }
                         
                     try:
-                        # Enviamos los datos usando la variable de tu sistema con la estructura exacta de headers
+                        # Usamos la nueva URL directa definida aquí mismo para saltarnos el error de falta de definición
                         res = requests.post(
-                            URL_PROCESADOR_GOOGLE, 
+                            URL_DIRECTA, 
                             data=json.dumps(payload), 
                             headers={"Content-Type": "application/json"}
                         )
@@ -697,6 +698,7 @@ else:
                 st.session_state.edit_reunion_data = None
                 st.session_state.pantalla = "REUNIONES_MENU"
                 st.rerun()
+     
 
     # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
