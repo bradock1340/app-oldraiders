@@ -637,7 +637,7 @@ else:
             
         string_asistentes_comas = ", ".join(asistentes_lista)
         
-                # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
+                        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
         
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
@@ -648,13 +648,14 @@ else:
                 if descripcion_reunion:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                     
-                    # ⚠️ PEGA AQUÍ TU ENLACE LARGO DE GOOGLE QUE TERMINA EN /exec ⚠️
-                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycby8dcHjCGpNGrkZ_o9WDo-MbfaMFF6iGrhOnXXpq_4lcluPk9qgHueo2AFe06ONi-M/exec"
+                    # ⚠️ PEGA AQUÍ TU ÚLTIMA URL DE APPS SCRIPT GENERADA
+                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                     
                     if es_edicion:
                         payload = {
-                            "accion": "editar",
-                            "indice_fila": int(datos_previos.get("indice_fila", 0)),
+                            "accion": "editar_reunion_real",
+                            "fecha_original": str(datos_previos.get('Fecha', '')), # Llave de búsqueda 1
+                            "resumen_original": str(datos_previos.get('Resumen', '')), # Llave de búsqueda 2
                             "fecha": fecha_formateada,
                             "tipo": tipo_reunion,
                             "miembros": string_asistentes_comas,
@@ -664,7 +665,7 @@ else:
                         }
                     else:
                         payload = {
-                            "accion": "crear",
+                            "accion": "crear_reunion_real",
                             "fecha": fecha_formateada,
                             "tipo": tipo_reunion,
                             "miembros": string_asistentes_comas,
@@ -674,14 +675,13 @@ else:
                         }
                         
                     try:
-                        # Usamos la nueva URL directa definida aquí mismo para saltarnos el error de falta de definición
                         res = requests.post(
                             URL_DIRECTA, 
                             data=json.dumps(payload), 
                             headers={"Content-Type": "application/json"}
                         )
                         
-                        if res.status_code == 200:
+                        if "OK_REUNION" in res.text:
                             st.success("¡Operación realizada con éxito!")
                             st.session_state.edit_reunion_data = None
                             st.session_state.pantalla = "REUNIONES_MENU"
@@ -692,12 +692,7 @@ else:
                         st.error(f"Error de conexión con el servidor: {e}")
                 else:
                     st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
-                    
-        with col_accion2:
-            if st.button("❌ CANCELAR"):
-                st.session_state.edit_reunion_data = None
-                st.session_state.pantalla = "REUNIONES_MENU"
-                st.rerun()
+
      
 
     # ================= MENÚ PRINCIPAL DE BOTONES =================
