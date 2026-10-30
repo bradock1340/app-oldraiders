@@ -649,7 +649,7 @@ else:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                    
                     # CORREGIDO: Eliminamos "https://google.com" para usar la URL global de tu app
-                    URL_DIRECTA = https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
+                    URL_DIRECTA = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
                     if es_edicion:
                         payload = {
                             "accion": "editar",
