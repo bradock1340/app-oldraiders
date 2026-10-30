@@ -671,16 +671,14 @@ else:
                             "resumen": descripcion_reunion,
                             "enlace_pdf": enlace_acta,
                             "enviar_correo": string_correo
-                        }
-                    
+                        }                    
                     # === ZONA DEL ERROR CORREGIDA (ALINEACIÓN PERFECTA) ===
                     try:
                         res = requests.post(
                             URL_DIRECTA, 
                             data=json.dumps(payload), 
                             headers={"Content-Type": "application/json"}
-                        )
-                        
+                        )                        
                         if "OK_REUNION" in res.text:
                             st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
                             import time
@@ -694,10 +692,7 @@ else:
                         st.error(f"Error de conexión con el servidor: {e}")
                 else:
                     st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
- 
-
-
-    # ================= MENÚ PRINCIPAL DE BOTONES =================
+     # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
         st.title("MENÚ PRINCIPAL")
         st.write(f"Bienvenido, **{st.session_state.user_alias}** — ({rol})")
