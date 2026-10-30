@@ -691,9 +691,7 @@ else:
                     except Exception as e:
                         st.error(f"Error de conexión con el servidor: {e}")
                 else:
-                    st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
-
-     
+                    st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")  
 
     # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
