@@ -645,8 +645,8 @@ else:
         if st.button(texto_boton_principal):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                URL_PROCESADOR_GOOGLE =  f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
-                
+                #URL_PROCESADOR_GOOGLE =  f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
+                URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
                 if es_edicion:
                     payload = {
                         "accion": "editar",
