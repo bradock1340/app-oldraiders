@@ -77,19 +77,21 @@ st.markdown("""
         font-size: 16px !important;
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
-    }
-    .stButton>button {
-        background-color: #D4AF37 !important;
-        color: #000000 !important;
-        font-weight: bold !important;
-        border-radius: 8px !important;
-        border: none !important;
-        width: 100% !important;
-        height: 50px !important;
-        font-size: 18px !important;
-        margin-top: 10px !important;
-        margin-bottom: 10px !important;
-    }
+.stButton>button {
+    background-color: #000000 !important; /* Fondo negro */
+    color: #FFFFFF !important;            /* Texto blanco */
+    font-weight: bold !important;
+    font-size: 20px !important;           /* Un poco más grande para el estilo */
+    border-radius: 4px !important;        /* Esquinas menos redondeadas como la imagen */
+    border: 5px solid #FFD700 !important; /* Borde grueso amarillo/dorado */
+    width: 100% !important;
+    height: 60px !important;              /* Un poco más alto para dar aire al texto */
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+    text-transform: uppercase !important; /* Forzar mayúsculas como en tu diseño */
+    box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 0.2); /* Ligero relieve interno */
+}
+
     .stButton>button:hover { 
         background-color: #FFFFFF !important; 
         color: #000000 !important; 
