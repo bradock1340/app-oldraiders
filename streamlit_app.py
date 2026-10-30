@@ -674,7 +674,7 @@ else:
                             "enviar_correo": string_correo
                         }
                         
-                    try:
+                                       try:
                         res = requests.post(
                             URL_DIRECTA, 
                             data=json.dumps(payload), 
@@ -682,14 +682,20 @@ else:
                         )
                         
                         if "OK_REUNION" in res.text:
-                            st.success("¡Operación realizada con éxito!")
-                             import time
+                            # 1. Mostramos el mensaje en pantalla
+                            st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
+                            
+                            # 2. Forzamos una pausa de 2 segundos para que el usuario pueda leerlo
+                            import time
                             time.sleep(2.0)
+                            
+                            # 3. Limpiamos el estado y redirigimos
                             st.session_state.edit_reunion_data = None
                             st.session_state.pantalla = "REUNIONES_MENU"
                             st.rerun()
                         else:
                             st.error(f"Google rechazó la estructura: {res.text}")
+
                     except Exception as e:
                         st.error(f"Error de conexión con el servidor: {e}")
                 else:
