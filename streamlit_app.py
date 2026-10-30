@@ -648,7 +648,7 @@ else:
                 if descripcion_reunion:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                     
-                    # ⚠️ PEGA AQUÍ TU ÚLTIMA URL DE APPS SCRIPT GENERADA
+                    # URL DE APPS SCRIPT GENERADA
                     URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                     
                     if es_edicion:
@@ -683,6 +683,8 @@ else:
                         
                         if "OK_REUNION" in res.text:
                             st.success("¡Operación realizada con éxito!")
+                             import time
+                            time.sleep(2.0)
                             st.session_state.edit_reunion_data = None
                             st.session_state.pantalla = "REUNIONES_MENU"
                             st.rerun()
