@@ -649,7 +649,7 @@ else:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                     
                     # ⚠️ PEGA AQUÍ TU ENLACE LARGO DE GOOGLE QUE TERMINA EN /exec ⚠️
-                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycby8dcHjCGpNGrkZ_o9WDo-MbfaMFF6iGrhOnXXpq_4lcluPk9qgHueo2AFe06ONi-M/exec"
                     
                     if es_edicion:
                         payload = {
