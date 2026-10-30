@@ -68,35 +68,44 @@ st.markdown(background_style, unsafe_allow_html=True)
 
 st.markdown("""
     <style>
-    [data-testid="stHeader"] { background: rgba(0,0,0,0) !important; }
+    [data-testid="stHeader"] { 
+        background: rgba(0,0,0,0) !important; 
+    }
     h1, h2, h3, p, label { 
         color: #FFFFFF !important; 
         font-family: 'Arial Black', Gadget, sans-serif !important;
     }
+    
+    /* Clau tancada correctament al final d'aquesta regla */
     div[data-testid="stWidgetLabel"] p {
         font-size: 16px !important;
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
-.stButton>button {
-    background-color: #000000 !important; /* Fondo negro absoluto */
-    color: #FFFFFF !important;            /* Texto blanco */
-    font-weight: bold !important;
-    font-size: 16px !important;           /* Tamaño ideal para menús laterales */
-    border-radius: 6px !important;        
-    border: 3px solid #FFD700 !important; /* Borde amarillo grueso forzado */
-    width: 100% !important;               /* Ocupa todo el ancho disponible */
-    padding: 10px 15px !important;        /* Espacio interno para que no quede pegado al borde */
-    margin-top: 8px !important;
-    margin-bottom: 8px !important;
-    text-transform: uppercase !important; /* Fuerza las mayúsculas como en tu diseño */
-    box-shadow: none !important;          /* Quita sombras nativas de Streamlit que puedan interferir */
-}
-
-
-    .stButton>button:hover { 
-        background-color: #FFFFFF !important; 
-        color: #000000 !important; 
     }
+
+    /* Selector corregit i ultraespecífic per als botons */
+    div[data-testid="stButton"] button {
+        background-color: #000000 !important; 
+        color: #FFFFFF !important;            
+        font-weight: bold !important;
+        font-size: 16px !important;           
+        border-radius: 6px !important;        
+        border: 3px solid #FFD700 !important; /* Força el teu contorn groc */
+        width: 100% !important;               
+        padding: 10px 15px !important;        
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        text-transform: uppercase !important; 
+        box-shadow: none !important;          
+    }
+
+    /* Efecte Hover adaptat al nou selector */
+    div[data-testid="stButton"] button:hover { 
+        background-color: #FFFFFF !important; 
+        color: #000000 !important;
+        border-color: #FFD700 !important;
+    }
+    
     div[data-baseweb="input"] {
         background-color: #000000 !important;
         border: 2px solid #D4AF37 !important;
