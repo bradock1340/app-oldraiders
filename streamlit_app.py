@@ -488,7 +488,6 @@ else:
 
    
     # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
-        # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         
@@ -496,6 +495,8 @@ else:
         with col_reun1:
             if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                 if st.button("➕ AÑADIR REUNIÓN"):
+                    # Se limpian los datos previos para asegurar que se crea una reunión vacía
+                    st.session_state.edit_reunion_data = None
                     st.session_state.pantalla = "REUNIONES_CREAR"
                     st.rerun()
         with col_reun2:
@@ -506,8 +507,7 @@ else:
         st.write("---")
         
         try:
-            # === CORREGIDO: URL limpia oficial de Google Docs ===
-            #URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones"
+            # === URL limpia oficial de Google Docs mantenida exactamente igual ===
             URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
@@ -553,6 +553,14 @@ else:
                     if 'Enviar por correo' in df_filtrado.columns and row['Enviar por correo'] == "SÍ":
                         st.caption("📧 *Esta acta fue marcada para difusión por correo electrónico.*")
                         
+                    # === NUEVO: BOTÓN EDITAR EN CADA ELEMENTO DEL LISTADO ===
+                    if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
+                        if st.button("📝 EDITAR REUNIÓN", key=f"edit_reun_{index}"):
+                            # Se guardan los datos de la fila completa en el estado de la sesión
+                            st.session_state.edit_reunion_data = row.to_dict()
+                            st.session_state.pantalla = "REUNIONES_CREAR"
+                            st.rerun()
+                        
                     st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
             else:
                 st.warning("No se encontraron reuniones guardadas.")
@@ -561,7 +569,7 @@ else:
             st.error(f"Error de lectura en la hoja: {e}")
 
 
-       # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
+    # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
         es_edicion = st.session_state.get("edit_reunion_data") is not None
         
@@ -651,6 +659,8 @@ else:
                         "enviar_correo": string_correo
                     }
                 else:
+                    # Aquí continuaría el bloque de payload para "crear" nueva fila
+                  
                     payload = {
                         "accion": "crear_reunion_real",
                         "fecha": fecha_formateada,
