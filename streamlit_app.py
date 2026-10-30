@@ -495,8 +495,9 @@ else:
         with col_reun1:
             if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                 if st.button("➕ AÑADIR REUNIÓN"):
-                    # Se limpian los datos previos para asegurar que se crea una reunión vacía
+                    # Se limpian los datos previos y el modo consulta para asegurar una nueva reunión vacía
                     st.session_state.edit_reunion_data = None
+                    st.session_state.modo_consulta = False
                     st.session_state.pantalla = "REUNIONES_CREAR"
                     st.rerun()
         with col_reun2:
@@ -553,11 +554,19 @@ else:
                     if 'Enviar por correo' in df_filtrado.columns and row['Enviar por correo'] == "SÍ":
                         st.caption("📧 *Esta acta fue marcada para difusión por correo electrónico.*")
                         
-                    # === NUEVO: BOTÓN EDITAR EN CADA ELEMENTO DEL LISTADO ===
+                    # === BOTÓN INTELIGENTE: EDITAR O CONSULTAR SEGÚN ROL ===
                     if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                         if st.button("📝 EDITAR REUNIÓN", key=f"edit_reun_{index}"):
-                            # Se guardan los datos de la fila completa en el estado de la sesión
+                            # Se guardan los datos de la fila completa y se desactiva modo lectura
                             st.session_state.edit_reunion_data = row.to_dict()
+                            st.session_state.modo_consulta = False
+                            st.session_state.pantalla = "REUNIONES_CREAR"
+                            st.rerun()
+                    else:
+                        if st.button("👁️ CONSULTAR REUNIÓN", key=f"view_reun_{index}"):
+                            # Se guardan los datos de la fila completa y se activa el modo consulta de solo lectura
+                            st.session_state.edit_reunion_data = row.to_dict()
+                            st.session_state.modo_consulta = True
                             st.session_state.pantalla = "REUNIONES_CREAR"
                             st.rerun()
                         
@@ -569,11 +578,16 @@ else:
             st.error(f"Error de lectura en la hoja: {e}")
 
 
-    # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
+
+       # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
         es_edicion = st.session_state.get("edit_reunion_data") is not None
+        es_consulta = st.session_state.get("modo_consulta", False)
         
-        if es_edicion:
+        if es_consulta:
+            st.title("👁️ CONSULTA DE REUNIÓN")
+            datos_previos = st.session_state.edit_reunion_data
+        elif es_edicion:
             st.title("📝 EDITAR REUNIÓN")
             datos_previos = st.session_state.edit_reunion_data
         else:
@@ -585,7 +599,7 @@ else:
         
         # --- 1. CONFIGURACIÓN DE VALORES INICIALES (EVITA KEYERROR) ---
         fecha_cruda = datos_previos.get('Fecha', '')
-        if es_edicion and fecha_cruda:
+        if (es_edicion or es_consulta) and fecha_cruda:
             try:
                 fecha_inicial_dt = pd.to_datetime(fecha_cruda, format='%d/%m/%Y').date()
             except:
@@ -603,16 +617,16 @@ else:
         miembros_actuales = datos_previos.get('Miembros', '')
         
         # --- 2. RENDERIZADO DE LOS ENTRADAS DE LA INTERFAZ ---
-        fecha_reunion = st.date_input("FECHA DE LA REUNIÓN", value=fecha_inicial_dt)
+        fecha_reunion = st.date_input("FECHA DE LA REUNIÓN", value=fecha_inicial_dt, disabled=es_consulta)
         
         tipos_disponibles = ["Ordinaria", "Extraordinaria", "Voto de colores", "Asamblea General"]
         idx_tipo = tipos_disponibles.index(tipo_actual) if tipo_actual in tipos_disponibles else 0
-        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", tipos_disponibles, index=idx_tipo)
+        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", tipos_disponibles, index=idx_tipo, disabled=es_consulta)
         
-        descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA", value=resumen_actual)
-        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=pdf_actual)
+        descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA", value=resumen_actual, disabled=es_consulta)
+        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=pdf_actual, disabled=es_consulta)
         
-        enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=(correo_actual == "SÍ"))
+        enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=(correo_actual == "SÍ"), disabled=es_consulta)
         string_correo = "SÍ" if enviar_mail_check else "NO"
         
         st.subheader("👥 CONTROL DE ASISTENCIA")
@@ -628,9 +642,9 @@ else:
             listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
             
             for miembro in listado_miembros:
-                # Si es edición respeta el Sheet; si es nueva reunión, todos marcados por defecto
-                marcado_defecto = miembro in asistentes_antiguos if es_edicion else True
-                if st.checkbox(f"🏍️ {miembro}", value=marcado_defecto, key=f"reun_real_{miembro}"):
+                # Si es edición o consulta respeta el Sheet; si es nueva reunión, todos marcados por defecto
+                marcado_defecto = miembro in asistentes_antiguos if (es_edicion or es_consulta) else True
+                if st.checkbox(f"🏍️ {miembro}", value=marcado_defecto, key=f"reun_real_{miembro}", disabled=es_consulta):
                     asistentes_lista.append(miembro)
         except Exception as e:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
@@ -639,9 +653,6 @@ else:
         
         # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
-        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
-        st.write("---")
-        
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
         col_accion1, col_accion2 = st.columns(2)
         
@@ -708,8 +719,6 @@ else:
                 st.session_state.modo_consulta = False
                 st.session_state.pantalla = "REUNIONES_MENU"
                 st.rerun()
-
-
 
      # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
