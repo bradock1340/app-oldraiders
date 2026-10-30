@@ -645,7 +645,7 @@ else:
         if st.button(texto_boton_principal):
             if descripcion_reunion:
                 fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                URL_PROCESADOR_GOOGLE = "https://google.com"
+                URL_PROCESADOR_GOOGLE = "URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
                 
                 if es_edicion:
                     payload = {
