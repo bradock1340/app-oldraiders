@@ -637,68 +637,69 @@ else:
             
         string_asistentes_comas = ", ".join(asistentes_lista)
         
-                        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
+        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
         
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
         col_accion1, col_accion2 = st.columns(2)
-with col_accion1:
-    if st.button(texto_boton_principal):
-        if descripcion_reunion:
-            fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-            
-            # ⚠️ PEGA AQUÍ TU URL DE APPS SCRIPT TERMINADA EN /exec
-            URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-            
-            if es_edicion:
-                payload = {
-                    "accion": "editar_reunion_real",
-                    "fecha_original": str(datos_previos.get('Fecha', '')),
-                    "resumen_original": str(datos_previos.get('Resumen', '')),
-                    "fecha": fecha_formateada,
-                    "tipo": tipo_reunion,
-                    "miembros": string_asistentes_comas,
-                    "resumen": descripcion_reunion,
-                    "enlace_pdf": enlace_acta,
-                    "enviar_correo": string_correo
-                }
-            else:
-                payload = {
-                    "accion": "crear_reunion_real",
-                    "fecha": fecha_formateada,
-                    "tipo": tipo_reunion,
-                    "miembros": string_asistentes_comas,
-                    "resumen": descripcion_reunion,
-                    "enlace_pdf": enlace_acta,
-                    "enviar_correo": string_correo
-                }
-            
-            try:
-                res = requests.post(
-                    URL_DIRECTA, 
-                    data=json.dumps(payload), 
-                    headers={"Content-Type": "application/json"}
-                )
-                
-                if "OK_REUNION" in res.text:
-                    st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
-                    import time
-                    time.sleep(2.0)
-                    st.session_state.edit_reunion_data = None
-                    st.session_state.pantalla = "REUNIONES_MENU"
-                    st.rerun()
+        
+        with col_accion1:
+            if st.button(texto_boton_principal):
+                if descripcion_reunion:
+                    fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
+                    
+                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                    
+                    if es_edicion:
+                        payload = {
+                            "accion": "editar_reunion_real",
+                            "fecha_original": str(datos_previos.get('Fecha', '')),
+                            "resumen_original": str(datos_previos.get('Resumen', '')),
+                            "fecha": fecha_formateada,
+                            "tipo": tipo_reunion,
+                            "miembros": string_asistentes_comas,
+                            "resumen": descripcion_reunion,
+                            "enlace_pdf": enlace_acta,
+                            "enviar_correo": string_correo
+                        }
+                    else:
+                        payload = {
+                            "accion": "crear_reunion_real",
+                            "fecha": fecha_formateada,
+                            "tipo": tipo_reunion,
+                            "miembros": string_asistentes_comas,
+                            "resumen": descripcion_reunion,
+                            "enlace_pdf": enlace_acta,
+                            "enviar_correo": string_correo
+                        }
+                    
+                    try:
+                        res = requests.post(
+                            URL_DIRECTA, 
+                            data=json.dumps(payload), 
+                            headers={"Content-Type": "application/json"}
+                        )
+                        
+                        if "OK_REUNION" in res.text:
+                            st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
+                            import time
+                            time.sleep(2.0)
+                            st.session_state.edit_reunion_data = None
+                            st.session_state.pantalla = "REUNIONES_MENU"
+                            st.rerun()
+                        else:
+                            st.error(f"Google rechazó la estructura: {res.text}")
+                    except Exception as e:
+                        st.error(f"Error de conexión con el servidor: {e}")
                 else:
-                    st.error(f"Google rechazó la estructura: {res.text}")
-            except Exception as e:
-                st.error(f"Error de conexión con el servidor: {e}")
-        else:
-            st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
-            
-with col_accion2:
-    if st.button("❌ CANCELAR"):
-        st.session_state.edit_reunion_data = None
-        st.session_state.pantalla = "REUNIONES_MENU"
-        st.rerun()
+                    st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+                    
+        with col_accion2:
+            if st.button("❌ CANCELAR"):
+                st.session_state.edit_reunion_data = None
+                st.session_state.pantalla = "REUNIONES_MENU"
+                st.rerun()
+
 
      # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
