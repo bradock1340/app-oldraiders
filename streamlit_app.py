@@ -493,19 +493,16 @@ else:
         
         col_reun1, col_reun2 = st.columns(2)
         with col_reun1:
-           if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                        if st.button("📝 EDITAR REUNIÓN", key=f"edit_reun_{index}"):
-                            st.session_state.edit_reunion_data = row.to_dict()
-                            st.session_state.modo_consulta = False # Modo edición activo
-                            st.session_state.pantalla = "REUNIONES_CREAR"
-                            st.rerun()
-                    else:
-                        # Si es un miembro común, le mostramos el botón de consulta
-                        if st.button("👁️ CONSULTAR REUNIÓN", key=f"view_reun_{index}"):
-                            st.session_state.edit_reunion_data = row.to_dict()
-                            st.session_state.modo_consulta = True # Modo lectura activado
-                            st.session_state.pantalla = "REUNIONES_CREAR"
-                            st.rerun()
+            if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
+                if st.button("➕ AÑADIR REUNIÓN"):
+                    # Se limpian los datos previos para asegurar que se crea una reunión vacía
+                    st.session_state.edit_reunion_data = None
+                    st.session_state.pantalla = "REUNIONES_CREAR"
+                    st.rerun()
+        with col_reun2:
+            if st.button("⬅️ VOLVER"):
+                st.session_state.pantalla = "PRINCIPAL"
+                st.rerun()
                 
         st.write("---")
         
@@ -639,164 +636,9 @@ else:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
             
         string_asistentes_comas = ", ".join(asistentes_lista)
-         # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
-    elif st.session_state.pantalla == "REUNIONES_MENU":
-        st.title("REUNIONES Y ACTAS")
         
-        col_reun1, col_reun2 = st.columns(2)
-        with col_reun1:
-            if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                if st.button("➕ AÑADIR REUNIÓN"):
-                    st.session_state.edit_reunion_data = None
-                    st.session_state.modo_consulta = False
-                    st.session_state.pantalla = "REUNIONES_CREAR"
-                    st.rerun()
-        with col_reun2:
-            if st.button("⬅️ VOLVER"):
-                st.session_state.pantalla = "PRINCIPAL"
-                st.rerun()
-                
+        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
-        
-        try:
-            # === URL limpia oficial de Google Docs ===
-            URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
-            df_reuniones = pd.read_csv(URL_REUNIONES)
-            df_reuniones.columns = df_reuniones.columns.str.strip()
-            
-            # Formatear fechas para poder extraer el año correctamente
-            df_reuniones['Fecha_DT'] = pd.to_datetime(df_reuniones['Fecha'], format='%d/%m/%Y', errors='coerce')
-            
-            # --- SECCIÓN DE FILTROS ---
-            st.subheader("🔍 BUSCADOR E HISTORIAL")
-            
-            # Filtro por Año
-            df_reuniones['Año'] = df_reuniones['Fecha_DT'].dt.year.fillna(2026).astype(int)
-            lista_años = ["TODOS"] + sorted(list(df_reuniones['Año'].unique()), reverse=True)
-            año_sel = st.selectbox("Filtrar por Año", lista_años)
-            
-            # Filtro por palabra clave (Tema)
-            busqueda_tema = st.text_input("Buscar por contenido o resumen...").strip().lower()
-            
-            st.write("---")
-            
-            # Aplicar los filtros
-            df_filtrado = df_reuniones.copy()
-            if año_sel != "TODOS":
-                df_filtrado = df_filtrado[df_filtrado['Año'] == int(año_sel)]
-            if busqueda_tema:
-                df_filtrado = df_filtrado[
-                    df_filtrado['Tipo'].astype(str).str.lower().str.contains(busqueda_tema) | 
-                    df_filtrado['Resumen'].astype(str).str.lower().str.contains(busqueda_tema)
-                ]
-            
-            # --- MOSTRAR LAS REUNIONES EN PANTALLA ---
-            if not df_filtrado.empty:
-                for index, row in df_filtrado.iterrows():
-                    st.markdown(f"### 📅 {row['Fecha']} — {row['Tipo']}")
-                    st.write(f"**Resumen / Orden del día:** {row['Resumen']}")
-                    
-                    if 'Miembros' in df_filtrado.columns and pd.notna(row['Miembros']) and str(row['Miembros']).strip() != "":
-                        st.markdown(f"👥 **Asistentes:** *{row['Miembros']}*")
-                        
-                    if 'Enlace PDF' in df_filtrado.columns and pd.notna(row['Enlace PDF']) and str(row['Enlace PDF']).strip() != "":
-                        st.markdown(f"🔗 [📥 Descargar Acta PDF]({row['Enlace PDF']})")
-                        
-                    if 'Enviar por correo' in df_filtrado.columns and row['Enviar por correo'] == "SÍ":
-                        st.caption("📧 *Esta acta fue marcada para difusión por correo electrónico.*")
-                        
-                    # === BOTÓN INTELIGENTE: EDITAR O CONSULTAR SEGÚN ROL ===
-                    if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                        if st.button("📝 EDITAR REUNIÓN", key=f"edit_reun_{index}"):
-                            st.session_state.edit_reunion_data = row.to_dict()
-                            st.session_state.modo_consulta = False
-                            st.session_state.pantalla = "REUNIONES_CREAR"
-                            st.rerun()
-                    else:
-                        if st.button("👁️ CONSULTAR REUNIÓN", key=f"view_reun_{index}"):
-                            st.session_state.edit_reunion_data = row.to_dict()
-                            st.session_state.modo_consulta = True
-                            st.session_state.pantalla = "REUNIONES_CREAR"
-                            st.rerun()
-                        
-                    st.write("<hr style='border:1px dashed #D4AF37'>", unsafe_allow_html=True)
-            else:
-                st.warning("No se encontraron reuniones guardadas.")
-                
-        except Exception as e:
-            st.error(f"Error de lectura en la hoja: {e}")
-   
-
-
-    # === 2.2 PANTALLA: CREAR / EDITAR / CONSULTAR REUNIÓN ===
-    elif st.session_state.pantalla == "REUNIONES_CREAR":
-        es_edicion = st.session_state.get("edit_reunion_data") is not None
-        es_consulta = st.session_state.get("modo_consulta", False)
-        
-        if es_consulta:
-            st.title("👁️ CONSULTA DE REUNIÓN")
-            datos_previos = st.session_state.edit_reunion_data
-        elif es_edicion:
-            st.title("📝 EDITAR REUNIÓN")
-            datos_previos = st.session_state.edit_reunion_data
-        else:
-            st.title("➕ NUEVA REUNIÓN")
-            datos_previos = {}
-            
-        import requests
-        import json
-        
-        # --- 1. CONFIGURACIÓN DE VALORES INICIALES ---
-        fecha_cruda = datos_previos.get('Fecha', '')
-        if (es_edicion or es_consulta) and fecha_cruda:
-            try:
-                fecha_inicial_dt = pd.to_datetime(fecha_cruda, format='%d/%m/%Y').date()
-            except:
-                fecha_inicial_dt = pd.Timestamp.now().date()
-        else:
-            fecha_inicial_dt = pd.Timestamp.now().date()
-            
-        tipo_actual = datos_previos.get('Tipo', 'Ordinaria')
-        resumen_actual = datos_previos.get('Resumen', '')
-        pdf_actual = datos_previos.get('Enlace PDF', '')
-        if pd.isna(pdf_actual) or str(pdf_actual).strip().lower() == 'nan':
-            pdf_actual = ""
-            
-        correo_actual = datos_previos.get('Enviar por correo', 'NO')
-        miembros_actuales = datos_previos.get('Miembros', '')
-        
-        # --- 2. RENDERIZADO DE LOS ENTRADAS CON BLOQUEO INTELIGENTE ---
-        fecha_reunion = st.date_input("FECHA DE LA REUNIÓN", value=fecha_inicial_dt, disabled=es_consulta)
-        tipos_disponibles = ["Ordinaria", "Extraordinaria", "Voto de colores", "Asamblea General"]
-        idx_tipo = tipos_disponibles.index(tipo_actual) if tipo_actual in tipos_disponibles else 0
-        tipo_reunion = st.selectbox("TIPO DE REUNIÓN", tipos_disponibles, index=idx_tipo, disabled=es_consulta)
-        
-        descripcion_reunion = st.text_area("RESUMEN / ORDEN DEL DÍA", value=resumen_actual, disabled=es_consulta)
-        enlace_acta = st.text_input("ENLACE AL PDF DEL ACTA (Opcional)", value=pdf_actual, disabled=es_consulta)
-        
-        enviar_mail_check = st.checkbox("✉️ Enviar copia del acta por correo a todo el club", value=(correo_actual == "SÍ"), disabled=es_consulta)
-        string_correo = "SÍ" if enviar_mail_check else "NO"
-        
-        st.subheader("👥 CONTROL DE ASISTENCIA")
-        st.write("Miembros presentes registrados:")
-        
-        asistentes_antiguos = [m.strip() for m in str(miembros_actuales).split(",") if m.strip()]
-        
-        asistentes_lista = []
-        try:
-            df_usuarios = pd.read_csv(URL_USUARIOS)
-            df_usuarios.columns = df_usuarios.columns.str.strip()
-            listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
-            
-            for miembro in listado_miembros:
-                marcado_defecto = miembro in asistentes_antiguos if (es_edicion or es_consulta) else True
-                if st.checkbox(f"🏍️ {miembro}", value=marcado_defecto, key=f"reun_real_{miembro}", disabled=es_consulta):
-                    asistentes_lista.append(miembro)
-        except Exception as e:
-            st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
-            
-        string_asistentes_comas = ", ".join(asistentes_lista)
-        
         # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
         
@@ -809,8 +651,8 @@ else:
                     if descripcion_reunion:
                         fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                         
-                        URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec
-"
+                        # ✔️ CORREGIDO: Tu URL de Apps Script real recuperada de los pasos anteriores
+                        URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         if es_edicion:
                             payload = {
@@ -867,6 +709,8 @@ else:
                 st.session_state.pantalla = "REUNIONES_MENU"
                 st.rerun()
 
+
+
      # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
         st.title("MENÚ PRINCIPAL")
@@ -895,3 +739,4 @@ else:
             st.session_state.user_alias = None
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
+
