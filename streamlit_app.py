@@ -499,6 +499,14 @@ else:
                     st.session_state.edit_reunion_data = None
                     st.session_state.pantalla = "REUNIONES_CREAR"
                     st.rerun()
+                    else:
+                        # Si es un miembro común, le mostramos el botón de consulta
+                        if st.button("👁️ CONSULTAR REUNIÓN", key=f"view_reun_{index}"):
+                            st.session_state.edit_reunion_data = row.to_dict()
+                            st.session_state.modo_consulta = True # Modo lectura activado
+                            st.session_state.pantalla = "REUNIONES_CREAR"
+                            st.rerun()
+                    
         with col_reun2:
             if st.button("⬅️ VOLVER"):
                 st.session_state.pantalla = "PRINCIPAL"
@@ -572,8 +580,12 @@ else:
     # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
         es_edicion = st.session_state.get("edit_reunion_data") is not None
+es_consulta = st.session_state.get("modo_consulta", False)
         
-        if es_edicion:
+        if es_consulta:
+            st.title("👁️ CONSULTA DE REUNIÓN")
+            datos_previos = st.session_state.edit_reunion_data
+        elif es_edicion:
             st.title("📝 EDITAR REUNIÓN")
             datos_previos = st.session_state.edit_reunion_data
         else:
@@ -616,7 +628,7 @@ else:
         string_correo = "SÍ" if enviar_mail_check else "NO"
         
         st.subheader("👥 CONTROL DE ASISTENCIA")
-        st.write("Selecciona los oficiales y miembros presentes:")
+        st.write("Selecciona los miembros presentes:")
         
         # Procesar asistentes previos de forma segura
         asistentes_antiguos = [m.strip() for m in str(miembros_actuales).split(",") if m.strip()]
