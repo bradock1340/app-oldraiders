@@ -78,19 +78,20 @@ st.markdown("""
         letter-spacing: 2px !important;
         text-transform: uppercase !important;
 .stButton>button {
-    background-color: #000000 !important; /* Fondo negro */
+    background-color: #000000 !important; /* Fondo negro absoluto */
     color: #FFFFFF !important;            /* Texto blanco */
     font-weight: bold !important;
-    font-size: 20px !important;           /* Un poco más grande para el estilo */
-    border-radius: 4px !important;        /* Esquinas menos redondeadas como la imagen */
-    border: 5px solid #FFD700 !important; /* Borde grueso amarillo/dorado */
-    width: 100% !important;
-    height: 60px !important;              /* Un poco más alto para dar aire al texto */
-    margin-top: 10px !important;
-    margin-bottom: 10px !important;
-    text-transform: uppercase !important; /* Forzar mayúsculas como en tu diseño */
-    box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 0.2); /* Ligero relieve interno */
+    font-size: 16px !important;           /* Tamaño ideal para menús laterales */
+    border-radius: 6px !important;        
+    border: 3px solid #FFD700 !important; /* Borde amarillo grueso forzado */
+    width: 100% !important;               /* Ocupa todo el ancho disponible */
+    padding: 10px 15px !important;        /* Espacio interno para que no quede pegado al borde */
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+    text-transform: uppercase !important; /* Fuerza las mayúsculas como en tu diseño */
+    box-shadow: none !important;          /* Quita sombras nativas de Streamlit que puedan interferir */
 }
+
 
     .stButton>button:hover { 
         background-color: #FFFFFF !important; 
