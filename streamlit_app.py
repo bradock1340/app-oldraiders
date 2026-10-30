@@ -637,62 +637,66 @@ else:
             
         string_asistentes_comas = ", ".join(asistentes_lista)
         
-        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
+              # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
         st.write("---")
         
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
         
-        if st.button(texto_boton_principal):
-            if descripcion_reunion:
-                fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                #URL_PROCESADOR_GOOGLE =  f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
-                URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec
-                if es_edicion:
-                    payload = {
-                        "accion": "editar",
-                        "indice_fila": int(datos_previos.get("indice_fila", 0)),
-                        "fecha": fecha_formateada,
-                        "tipo": tipo_reunion,
-                        "miembros": string_asistentes_comas,
-                        "resumen": descripcion_reunion,
-                        "enlace_pdf": enlace_acta,
-                        "enviar_correo": string_correo
-                    }
-                else:
-                    # Aquí continuaría el bloque de payload para "crear" nueva fila
-                  
-                    payload = {
-                        "accion": "crear_reunion_real",
-                        "fecha": fecha_formateada,
-                        "tipo": tipo_reunion,
-                        "miembros": string_asistentes_comas,
-                        "resumen": descripcion_reunion,
-                        "enlace_pdf": enlace_acta,
-                        "enviar_correo": string_correo
-                    }
-                
-                try:
-                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                    if "OK_REUNION" in respuesta.text or "OK_CREAR" in respuesta.text:
-                        st.success("✔️ Acta y asistencia guardadas correctamente.")
-                        st.session_state.pantalla = "REUNIONES_MENU"
-                        st.rerun()
-                    elif "OK_EDITAR" in respuesta.text or "OK" in respuesta.text:
-                        st.success("✔️ Reunión modificada correctamente.")
-                        st.session_state.edit_reunion_data = None
-                        st.session_state.pantalla = "REUNIONES_MENU"
-                        st.rerun()
+        col_accion1, col_accion2 = st.columns(2)
+        with col_accion1:
+            if st.button(texto_boton_principal):
+                if descripcion_reunion:
+                    fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
+                    
+                    # CORREGIDO: Eliminamos "https://google.com" para usar la URL global de tu app
+                    if es_edicion:
+                        payload = {
+                            "accion": "editar",
+                            "indice_fila": int(datos_previos.get("indice_fila", 0)),
+                            "fecha": fecha_formateada,
+                            "tipo": tipo_reunion,
+                            "miembros": string_asistentes_comas,
+                            "resumen": descripcion_reunion,
+                            "enlace_pdf": enlace_acta,
+                            "enviar_correo": string_correo
+                        }
                     else:
-                        st.error(f"Google rechazó la estructura: {respuesta.text}")
-                except Exception as err:
-                    st.error(f"Fallo de red: {err}")
-            else:
-                st.error("Por favor, rellena el resumen u orden del día.")
-                
-        if st.button("CANCELAR"):
-            st.session_state.edit_reunion_data = None
-            st.session_state.pantalla = "REUNIONES_MENU"
-            st.rerun()
+                        payload = {
+                            "accion": "crear",
+                            "fecha": fecha_formateada,
+                            "tipo": tipo_reunion,
+                            "miembros": string_asistentes_comas,
+                            "resumen": descripcion_reunion,
+                            "enlace_pdf": enlace_acta,
+                            "enviar_correo": string_correo
+                        }
+                        
+                    try:
+                        # Enviamos los datos usando la variable de tu sistema con la estructura exacta de headers
+                        res = requests.post(
+                            URL_PROCESADOR_GOOGLE, 
+                            data=json.dumps(payload), 
+                            headers={"Content-Type": "application/json"}
+                        )
+                        
+                        if res.status_code == 200:
+                            st.success("¡Operación realizada con éxito!")
+                            st.session_state.edit_reunion_data = None
+                            st.session_state.pantalla = "REUNIONES_MENU"
+                            st.rerun()
+                        else:
+                            st.error(f"Google rechazó la estructura: {res.text}")
+                    except Exception as e:
+                        st.error(f"Error de conexión con el servidor: {e}")
+                else:
+                    st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+                    
+        with col_accion2:
+            if st.button("❌ CANCELAR"):
+                st.session_state.edit_reunion_data = None
+                st.session_state.pantalla = "REUNIONES_MENU"
+                st.rerun()
+
     # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
         st.title("MENÚ PRINCIPAL")
