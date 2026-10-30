@@ -648,7 +648,7 @@ else:
                     fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                     
                     # ⚠️ PEGA AQUÍ TU URL DE APPS SCRIPT TERMINADA EN /exec
-                    URL_DIRECTA = "TU_NUEVA_URL_DE_APPS_SCRIPT_AQUÍ"
+                    URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                     
                     if es_edicion:
                         payload = {
