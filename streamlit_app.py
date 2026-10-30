@@ -266,7 +266,7 @@ else:
             df_normativa = pd.read_csv(URL_NORMATIVA)
             df_normativa.columns = df_normativa.columns.str.strip()
             
-            st.subheader("🔍 BUSCADOR DE REGLAS")
+            st.subheader("🔍 BUSCADOR DE NORMAS")
             busqueda = st.text_input("Escribe una palabra clave...").strip().lower()
             
             opciones_filtro = ["MOSTRAR TODAS"] + categorias_principales
@@ -317,7 +317,7 @@ else:
 
 
     # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
-         # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
+  
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         es_edicion = st.session_state.edit_norma_data is not None
         
@@ -355,7 +355,7 @@ else:
                     
                     if es_edicion:
                         payload = {
-                            "accion": "editar",  # Corregido a "editar" para que coincida con tu Script
+                            "accion": "editar",  
                             "indice_fila": int(datos_previos["indice_fila"]), # Obligamos a que sea un número entero limpio
                             "tipo": tipo_seleccionado,
                             "subtipo": subtipo_seleccionado,
