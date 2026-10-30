@@ -237,7 +237,7 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
  
-       # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
+             # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
@@ -247,7 +247,9 @@ else:
         with col_botones1:
             if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                 if st.button("➕ AÑADIR NORMA"):
+                    # CORREGIDO: Limpiamos los datos previos y desactivamos el modo lectura
                     st.session_state.edit_norma_data = None
+                    st.session_state.modo_consulta_norma = False
                     st.session_state.pantalla = "NORMATIVA_CREAR"
                     st.rerun()
                     
@@ -292,6 +294,7 @@ else:
                     if 'Tiempo' in df_filtrado.columns and pd.notna(row['Tiempo']):
                         st.markdown(f"⏱️ **Vigencia:** *{row['Tiempo']}*")
                     
+                    # === NUEVA LÓGICA INTELIGENTE: EDITAR O CONSULTAR SEGÚN ROL ===
                     if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
                         if st.button(f"📝 EDITAR REGLA", key=f"edit_{index}"):
                             st.session_state.edit_norma_data = {
@@ -301,6 +304,20 @@ else:
                                 "descripcion": row['Descripcion'],
                                 "tiempo": row['Tiempo']
                             }
+                            st.session_state.modo_consulta_norma = False # Modo edición activo
+                            st.session_state.pantalla = "NORMATIVA_CREAR"
+                            st.rerun()
+                    else:
+                        # Si entra un miembro normal, le pintamos el botón para consultar los detalles
+                        if st.button(f"👁️ CONSULTAR REGLA", key=f"view_{index}"):
+                            st.session_state.edit_norma_data = {
+                                "indice_fila": int(index),
+                                "tipo": row['Tipo'],
+                                "subtipo": row['Subtipo'],
+                                "descripcion": row['Descripcion'],
+                                "tiempo": row['Tiempo']
+                            }
+                            st.session_state.modo_consulta_norma = True # Modo lectura activado
                             st.session_state.pantalla = "NORMATIVA_CREAR"
                             st.rerun()
                             
@@ -311,17 +328,20 @@ else:
         except Exception as e:
             st.error(f"Error de conexión o lectura: {e}")
 
-        if st.button("VOLVER"):
+        if st.button("VOLVER", key="btn_volver_final"):
             st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
 
 
-    # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
-         # === 3.2 PANTALLA: CREAR / EDITAR NORMATIVA ===
+      # === 3.2 PANTALLA: CREAR / EDITAR / CONSULTAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
         es_edicion = st.session_state.edit_norma_data is not None
+        es_consulta = st.session_state.get("modo_consulta_norma", False)
         
-        if es_edicion:
+        if es_consulta:
+            st.title("👁️ CONSULTA DE NORMA")
+            datos_previos = st.session_state.edit_norma_data
+        elif es_edicion:
             st.title("📝 EDITAR NORMA")
             datos_previos = st.session_state.edit_norma_data
         else:
@@ -337,61 +357,78 @@ else:
             categorias_principales = list(df_cat.columns)
             
             idx_tipo = categorias_principales.index(datos_previos["tipo"]) if datos_previos["tipo"] in categorias_principales else 0
-            tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales, index=idx_tipo)
+            tipo_seleccionado = st.selectbox("TIPO (Categoría Principal)", categorias_principales, index=idx_tipo, disabled=es_consulta)
             
             subtipos_disponibles = list(df_cat[tipo_seleccionado].dropna().astype(str).unique())
             idx_sub = subtipos_disponibles.index(datos_previos["subtipo"]) if datos_previos["subtipo"] in subtipos_disponibles else 0
-            subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles, index=idx_sub)
+            subtipo_seleccionado = st.selectbox("SUBTIPO (Regla Específica)", subtipos_disponibles, index=idx_sub, disabled=es_consulta)
             
-            descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA", value=datos_previos["descripcion"])
-            tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)", value=datos_previos["tiempo"])
+            descripcion_norma = st.text_area("DESCRIPCION DE LA NORMA", value=datos_previos["descripcion"], disabled=es_consulta)
+            tiempo_norma = st.text_input("TIEMPO / VIGENCIA (Ej: Permanente)", value=datos_previos["tiempo"], disabled=es_consulta)
             
-            texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR NORMA"
+            # --- ZONA DE BOTONES DE ACCIÓN ---
+            st.write("---")
             
-            if st.button(texto_boton):
-                if descripcion_norma and tiempo_norma:
-                    
-                    URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
-                    
-                    if es_edicion:
-                        payload = {
-                            "accion": "editar",  # Corregido a "editar" para que coincida con tu Script
-                            "indice_fila": int(datos_previos["indice_fila"]), # Obligamos a que sea un número entero limpio
-                            "tipo": tipo_seleccionado,
-                            "subtipo": subtipo_seleccionado,
-                            "descripcion": descripcion_norma,
-                            "tiempo": tiempo_norma
-                        }
+            if not es_consulta:
+                texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR NORMA"
+                if st.button(texto_boton):
+                    if descripcion_norma and tiempo_norma:
+                        
+                        URL_PROCESADOR_GOOGLE = f"https://script.google.com/macros/s/AKfycby2x4Fz5QDCkRWnQR6NoEIM_4gMRbGA9OjBSWp2R1DC91ABQKTuV7pXFIcsQyrlPe6B/exec"
+                        
+                        if es_edicion:
+                            payload = {
+                                "accion": "editar",
+                                "indice_fila": int(datos_previos["indice_fila"]),
+                                "tipo": tipo_seleccionado,
+                                "subtipo": subtipo_seleccionado,
+                                "descripcion": descripcion_norma,
+                                "tiempo": tiempo_norma
+                            }
+                        else:
+                            payload = {
+                                "accion": "crear",
+                                "tipo": tipo_seleccionado,
+                                "subtipo": subtipo_seleccionado,
+                                "descripcion": descripcion_norma,
+                                "tiempo": tiempo_norma
+                            }
+                        
+                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                        
+                        if "OK_CREAR" in respuesta.text:
+                            st.success("✔️ ¡Nueva norma guardada con éxito!")
+                            st.balloons()
+                            import time
+                            time.sleep(2.0)
+                            st.session_state.edit_norma_data = None
+                            st.session_state.modo_consulta_norma = False
+                            st.session_state.pantalla = "NORMATIVA_VER"
+                            st.rerun()
+                        elif "OK_EDITAR" in respuesta.text:
+                            st.success("✔️ ¡Norma modificada y actualizada con éxito!")
+                            import time
+                            time.sleep(2.0)
+                            st.session_state.edit_norma_data = None
+                            st.session_state.modo_consulta_norma = False
+                            st.session_state.pantalla = "NORMATIVA_VER"
+                            st.rerun()
+                        else:
+                            st.error("Google rechazó la operación.")
                     else:
-                        payload = {
-                            "accion": "crear",
-                            "tipo": tipo_seleccionado,
-                            "subtipo": subtipo_seleccionado,
-                            "descripcion": descripcion_norma,
-                            "tiempo": tiempo_norma
-                        }
-                    
-                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                    
-                    if "OK_CREAR" in respuesta.text:
-                        st.success("✔️ ¡Nueva norma guardada con éxito!")
-                        st.balloons()
-                    elif "OK_EDITAR" in respuesta.text:
-                        st.success("✔️ ¡Norma modificada y actualizada con éxito!")
-                       # st.balloons()
-                    else:
-                        st.error("Google rechazó la operación.")
-                else:
-                    st.error("Por favor, rellena todos los campos antes de continuar.")
+                        st.error("Por favor, rellena todos los campos antes de continuar.")
+            else:
+                st.info("ℹ️ Estás en modo consulta (Lectura).")
                     
         except Exception as e:
             st.error(f"Error en el módulo de datos: {e}")
             
-        if st.button("VOLVER"):
+        texto_volver = "⬅️ VOLVER AL LISTADO" if es_consulta else "VOLVER"
+        if st.button(texto_volver, key="btn_volver_crear"):
             st.session_state.edit_norma_data = None
+            st.session_state.modo_consulta_norma = False
             st.session_state.pantalla = "NORMATIVA_VER"
             st.rerun()
-
     
     # === 3.3 PANTALLA: HISTÒRIA DEL CLUB (Text de la Pantalla 1 de l'esbós) ===
     elif st.session_state.pantalla == "HISTORIA_VER":
