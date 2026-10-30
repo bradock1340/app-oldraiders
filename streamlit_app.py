@@ -486,6 +486,7 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
     # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
+    # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.pantalla == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         
@@ -505,22 +506,28 @@ else:
         st.write("---")
         
         try:
-            URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
+            # === URL limpia oficial de Google Docs ===
+            URL_REUNIONES = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
             df_reuniones = pd.read_csv(URL_REUNIONES)
             df_reuniones.columns = df_reuniones.columns.str.strip()
             
+            # Formatear fechas para poder extraer el año correctamente
             df_reuniones['Fecha_DT'] = pd.to_datetime(df_reuniones['Fecha'], format='%d/%m/%Y', errors='coerce')
             
+            # --- SECCIÓN DE FILTROS ---
             st.subheader("🔍 BUSCADOR E HISTORIAL")
             
+            # Filtro por Año
             df_reuniones['Año'] = df_reuniones['Fecha_DT'].dt.year.fillna(2026).astype(int)
             lista_años = ["TODOS"] + sorted(list(df_reuniones['Año'].unique()), reverse=True)
             año_sel = st.selectbox("Filtrar por Año", lista_años)
             
+            # Filtro por palabra clave (Tema)
             busqueda_tema = st.text_input("Buscar por contenido o resumen...").strip().lower()
             
             st.write("---")
             
+            # Aplicar los filtros
             df_filtrado = df_reuniones.copy()
             if año_sel != "TODOS":
                 df_filtrado = df_filtrado[df_filtrado['Año'] == int(año_sel)]
@@ -567,6 +574,8 @@ else:
             st.error(f"Error de lectura en la hoja: {e}")
 
 
+
+    # === 2.2 PANTALLA: CREAR / EDITAR / CONSULTAR REUNIÓN ===
     # === 2.2 PANTALLA: CREAR / EDITAR / CONSULTAR REUNIÓN ===
     elif st.session_state.pantalla == "REUNIONES_CREAR":
         es_edicion = st.session_state.get("edit_reunion_data") is not None
@@ -677,32 +686,103 @@ else:
                         try:
                             res = requests.post(
                                 URL_DIRECTA, 
-                                data=json.dumps(payload),
-headers={"Content-Type": "application/json"}
-)
-if "OK_REUNION" in res.text:
-st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
-import time
-time.sleep(2.0)
-st.session_state.edit_reunion_data = None
-st.session_state.modo_consulta = False
-st.session_state.pantalla = "REUNIONES_MENU"
-st.rerun()
-else:
-st.error(f"Google rechazó la estructura: {res.text}")
-except Exception as e:
-st.error(f"Error de conexión con el servidor: {e}")
-else:
-st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
-else:
-st.info("ℹ️ Estás en modo consulta (Lectura).")
-with col_accion2:
-texto_volver = "⬅️ VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
-if st.button(texto_volver):
-st.session_state.edit_reunion_data = None
-st.session_state.modo_consulta = False
-st.session_state.pantalla = "REUNIONES_MENU"
-st.rerun()
+                                data=json.dumps(payload), 
+                                headers={"Content-Type": "application/json"}
+                            )
+                            
+                            if "OK_REUNION" in res.text:
+                                st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
+                                import time
+                                time.sleep(2.0)
+                                st.session_state.edit_reunion_data = None
+                                st.session_state.modo_consulta = False
+                                st.session_state.pantalla = "REUNIONES_MENU"
+                                st.rerun()
+                            else:
+                                st.error(f"Google rechazó la estructura: {res.text}")
+                        except Exception as e:
+                            st.error(f"Error de conexión con el servidor: {e}")
+                    else:
+                        st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+            else:
+                st.info("ℹ️ Estás en modo consulta (Lectura).")
+                    
+        with col_accion2:
+            texto_volver = "⬅️ VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
+            if st.button(texto_volver):
+                st.session_state.edit_reunion_data = None
+                st.session_state.modo_consulta = False
+                st.session_state.pantalla = "REUNIONES_MENU"
+                st.rerun()
+        # --- 3. BOTONES DE ACCIÓN (SIEMPRE VISIBLES AL FINAL) ---
+        st.write("---")
+        
+        texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
+        col_accion1, col_accion2 = st.columns(2)
+        
+        with col_accion1:
+            if not es_consulta:
+                if st.button(texto_boton_principal):
+                    if descripcion_reunion:
+                        fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
+                        
+                        URL_DIRECTA = "https://google.com"
+                        
+                        if es_edicion:
+                            payload = {
+                                "accion": "editar_reunion_real",
+                                "fecha_original": str(datos_previos.get('Fecha', '')),
+                                "resumen_original": str(datos_previos.get('Resumen', '')),
+                                "fecha": fecha_formateada,
+                                "tipo": tipo_reunion,
+                                "miembros": string_asistentes_comas,
+                                "resumen": descripcion_reunion,
+                                "enlace_pdf": enlace_acta,
+                                "enviar_correo": string_correo
+                            }
+                        else:
+                            payload = {
+                                "accion": "crear_reunion_real",
+                                "fecha": fecha_formateada,
+                                "tipo": tipo_reunion,
+                                "miembros": string_asistentes_comas,
+                                "resumen": descripcion_reunion,
+                                "enlace_pdf": enlace_acta,
+                                "enviar_correo": string_correo
+                            }
+                        
+                        try:
+                            res = requests.post(
+                                URL_DIRECTA, 
+                                data=json.dumps(payload), 
+                                headers={"Content-Type": "application/json"}
+                            )
+                            
+                            if "OK_REUNION" in res.text:
+                                st.success("✔️ ¡Reunión modificada y actualizada con éxito!")
+                                import time
+                                time.sleep(2.0)
+                                st.session_state.edit_reunion_data = None
+                                st.session_state.modo_consulta = False
+                                st.session_state.pantalla = "REUNIONES_MENU"
+                                st.rerun()
+                            else:
+                                st.error(f"Google rechazó la estructura: {res.text}")
+                        except Exception as e:
+                            st.error(f"Error de conexión con el servidor: {e}")
+                    else:
+                        st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+            else:
+                st.info("ℹ️ Estás en modo consulta (Lectura).")
+                    
+        with col_accion2:
+            texto_volver = "⬅️ VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
+            if st.button(texto_volver):
+                st.session_state.edit_reunion_data = None
+                st.session_state.modo_consulta = False
+                st.session_state.pantalla = "REUNIONES_MENU"
+                st.rerun()
+
      # ================= MENÚ PRINCIPAL DE BOTONES =================
     else:
         st.title("MENÚ PRINCIPAL")
