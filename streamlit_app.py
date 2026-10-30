@@ -493,16 +493,19 @@ else:
         
         col_reun1, col_reun2 = st.columns(2)
         with col_reun1:
-            if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
-                if st.button("➕ AÑADIR REUNIÓN"):
-                    # Se limpian los datos previos para asegurar que se crea una reunión vacía
-                    st.session_state.edit_reunion_data = None
-                    st.session_state.pantalla = "REUNIONES_CREAR"
-                    st.rerun()
-        with col_reun2:
-            if st.button("⬅️ VOLVER"):
-                st.session_state.pantalla = "PRINCIPAL"
-                st.rerun()
+           if rol in ["Presidente", "Vicepresidente", "Secretario", "Administrador"]:
+                        if st.button("📝 EDITAR REUNIÓN", key=f"edit_reun_{index}"):
+                            st.session_state.edit_reunion_data = row.to_dict()
+                            st.session_state.modo_consulta = False # Modo edición activo
+                            st.session_state.pantalla = "REUNIONES_CREAR"
+                            st.rerun()
+                    else:
+                        # Si es un miembro común, le mostramos el botón de consulta
+                        if st.button("👁️ CONSULTAR REUNIÓN", key=f"view_reun_{index}"):
+                            st.session_state.edit_reunion_data = row.to_dict()
+                            st.session_state.modo_consulta = True # Modo lectura activado
+                            st.session_state.pantalla = "REUNIONES_CREAR"
+                            st.rerun()
                 
         st.write("---")
         
