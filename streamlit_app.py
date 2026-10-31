@@ -235,6 +235,9 @@ else:
         if st.button("HISTORIA"):
             st.session_state.pantalla = "HISTORIA_VER"
             st.rerun()
+        if st.button("USUARIOS"):
+            st.session_state.current_menu = "USUARIOS_FICHA"
+            st.rerun()
             
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
