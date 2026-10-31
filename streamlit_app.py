@@ -236,8 +236,7 @@ else:
             st.rerun()
             
         if st.button("USUARIOS"):  # <- Esborra els espais d'aquesta línia i alinea-la exactament amb la d'adalt
-            st.session_state.pantalla = "PRINCIPAL" 
-            st.session_state.current_menu = "USUARIOS_FICHA"
+            st.session_state.pantalla = "USUARIOS_FICHA" 
             st.rerun()
             
         if st.button("VOLVER"):
