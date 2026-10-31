@@ -183,11 +183,9 @@ else:
             if st.button("ECONOMÍA"):
                 st.session_state.current_menu = "PANTALLA_ECONOMIA"
                 st.rerun()
-                    
-       if st.button("MERCHANDISING"):
-    st.session_state.current_menu = "MERCHANDISING" # <-- Guarda "MERCHANDISING"
-    st.rerun()
-            
+        if st.button("MERCHANDISING"):
+            st.session_state.current_menu = "MERCHANDISING" # <-- Guarda "MERCHANDISING"
+            st.rerun()
         if st.button("Cerrar Sesión"):
             st.session_state.authenticated = False
             st.session_state.current_menu = "PRINCIPAL"
