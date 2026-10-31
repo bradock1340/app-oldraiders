@@ -225,23 +225,23 @@ else:
             st.rerun()
 
     # === 3. PANTALLA: MENÚ OLD RIDERS (Normativa , Historia y usuarios) ===
-    elif st.session_state.pantalla == "OLD_RIDERS_MENU":
+    elif st.session_state.current_menu == "OLD_RIDERS_MENU":
         st.title("OLD RIDERS")
 
         URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
         if st.button("NORMATIVA"):
-            st.session_state.pantalla = "NORMATIVA_VER"
+            st.session_state.current_menu = "NORMATIVA_VER"
             st.rerun()
         if st.button("HISTORIA"):
-            st.session_state.pantalla = "HISTORIA_VER"
+            st.session_state.current_menu = "HISTORIA_VER"
             st.rerun()
             
         if st.button("USUARIOS"):  
-            st.session_state.pantalla = "USUARIOS_FICHA" 
+            st.session_state.current_menu = "USUARIOS_FICHA" 
             st.rerun()
             
         if st.button("VOLVER"):
-            st.session_state.pantalla = "CLUB_MENU"
+            st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
 # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
     elif st.session_state.current_menu == "USUARIOS_FICHA":
