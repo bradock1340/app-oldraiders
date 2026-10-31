@@ -242,58 +242,93 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
-    # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
+       # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
     elif st.session_state.current_menu == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
         
+        # 1. Verificar si el usuario conectado tiene permisos de edición (Presidente, Vicepresidente, Administrador)
+        puede_editar = rol in ["Presidente", "Vicepresidente", "Administrador"]
+        
+        if puede_editar:
+            st.success("🔓 Modo Edición Activado (Tienes permisos para modificar datos)")
+        else:
+            st.info("🔒 Modo Consulta (Solo los oficiales autorizados pueden modificar datos)")
+            
+        st.write("---")
+
         try:
-            # 1. Carregar les dades de la pestanya "Usuarios" des del teu Sheets
+            # 2. Descargar los datos en tiempo real de tu Google Sheets
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             
-            # Netegem espais als valors de la columna Alias o Nombre per evitar errors
-            col_nombre = 'Alias' if 'Alias' in df_usuarios.columns else 'Nombre'
-            df_usuarios[col_nombre] = df_usuarios[col_nombre].astype(str).str.strip()
+            # Buscamos por 'Alias' o 'Nombre' según cómo esté la cabecera
+            col_identificador = 'Alias' if 'Alias' in df_usuarios.columns else 'Nombre'
+            df_usuarios[col_identificador] = df_usuarios[col_identificador].astype(str).str.strip()
             
-            # 2. Desplegable per seleccionar quin membre es vol consultar
-            lista_miembros = sorted(df_usuarios[col_nombre].unique())
-            miembro_sel = st.selectbox("Selecciona un miembro para ver su ficha:", ["-- Seleccionar miembro --"] + lista_miembros)
+            # Selector interactivo de socios
+            lista_miembros = sorted(df_usuarios[col_identificador].unique())
+            miembro_sel = st.selectbox("Selecciona un miembro para gestionar su ficha:", ["-- Seleccionar miembro --"] + lista_miembros)
             
             st.write("---")
             
             if miembro_sel != "-- Seleccionar miembro --":
-                # Filtrar la fila corresponent al membre triat
-                datos_miembro = df_usuarios[df_usuarios[col_nombre] == miembro_sel].iloc[0]
+                # Extraer la fila del socio seleccionado
+                datos_miembro = df_usuarios[df_usuarios[col_identificador] == miembro_sel].iloc[0]
                 
-                # 3. Renderitzar la interfície de la Ficha en dues columnes netes
+                # Determinamos si los campos están bloqueados (si no es editor, disabled=True)
+                bloqueado = not puede_editar
+                
+                # 3. INTERFAZ EN COLUMNAS CON TODOS LOS DATOS DEL GOOGLE SHEET
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.text_input("Alias / Nombre", value=str(datos_miembro.get(col_nombre, miembro_sel)), disabled=True)
-                    st.text_input("Email / Usuario", value=str(datos_miembro.get('Usuario', datos_miembro.get('Email', ''))), disabled=True)
-                    st.text_input("Teléfono", value=str(datos_miembro.get('Telefono', 'No asignado')), disabled=True)
+                    st.subheader("Datos de Identidad")
+                    nombre = st.text_input("Nombre Real", value=str(datos_miembro.get('Nombre', '')), disabled=bloqueado)
+                    apellido = st.text_input("Apellido", value=str(datos_miembro.get('Apellido', '')), disabled=bloqueado)
+                    alias = st.text_input("Alias en el Club", value=str(datos_miembro.get('Alias', miembro_sel)), disabled=bloqueado)
+                    email = st.text_input("Email / Usuario", value=str(datos_miembro.get('Usuario', datos_miembro.get('Email', ''))), disabled=bloqueado)
+                    telefono = st.text_input("Teléfono", value=str(datos_miembro.get('Telefono', '')), disabled=bloqueado)
+                    
+                    # Mostrar contraseña oculta solo si es editor por seguridad
+                    if puede_editar:
+                        contrasena = st.text_input("Contraseña Acceso App", value=str(datos_miembro.get('Contrasena', '')), type="password")
                 
                 with col2:
-                    st.text_input("Cargo / Rol", value=str(datos_miembro.get('Rol', 'Miembro')), disabled=True)
+                    st.subheader("Estado y Fechas")
                     
-                    # Si tens columnes de Nombre real o Estado, les mostrem; si no, queden buides
-                    if 'Nombre' in df_usuarios.columns and col_nombre != 'Nombre':
-                        st.text_input("Nombre Real", value=str(datos_miembro.get('Nombre', '')), disabled=True)
+                    # Selector de cargos oficiales basados en tus roles del club
+                    lista_cargos = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Capitán de Ruta", "Sargento de Armas", "Miembro", "Prospect", "Handground"]
+                    cargo_actual = str(datos_miembro.get('Rol', datos_miembro.get('Cargo', 'Miembro'))).strip()
+                    idx_cargo = lista_cargos.index(cargo_actual) if cargo_actual in lista_cargos else 6
                     
+                    cargo = st.selectbox("Cargo / Rol", lista_cargos, index=idx_cargo, disabled=bloqueado)
+                    
+                    # Fechas y balances financieros
+                    inicio = st.text_input("Fecha Inicio en el Club (DD/MM/AAAA)", value=str(datos_miembro.get('Inicio', '')), disabled=bloqueado)
+                    final = st.text_input("Fecha Final / Baja (Si aplica)", value=str(datos_miembro.get('Final', '')), disabled=bloqueado)
+                    
+                    estado = st.text_input("Estado (Activo / Inactivo)", value=str(datos_miembro.get('Estado', 'Activo')), disabled=bloqueado)
+                    saldo = st.text_input("Saldo de Cuentas (€)", value=str(datos_miembro.get('Saldo', '0.00')), disabled=bloqueado)
+                
                 st.write("---")
+                st.subheader("Sección de Notas Internas")
+                observaciones = st.text_area("Observaciones del Miembro", value=str(datos_miembro.get('Observaciones', '')), disabled=bloqueado)
                 
-                # 4. Enllaços ràpids o sub-informació simulada per a futures fases
-                st.info("💡 En las siguientes fases vincularemos las Salidas Realizadas y la Cuenta de Mensualidades de este miembro aquí.")
-                
+                # 4. BOTÓN ACCIÓN INTELIGENTE (Solo visible para roles con permiso de escritura)
+                if puede_editar:
+                    if st.button("💾 GUARDAR Y ACTUALIZAR CAMBIOS"):
+                        # Aquí llamaremos a tu procesador macro de Google Apps Script para impactar la fila exacta
+                        st.info("Conectando con Google Sheets para aplicar cambios en la base de datos...")
+                        
         except Exception as e:
-            st.error(f"Error al conectar con la pestaña de Usuarios: {e}")
-            st.write("Asegúrate de que la URL_USUARIOS sea correcta y la hoja sea pública como enlace CSV.")
-        
-        # 5. Botó TORNAR corregit per no trencar la teva navegació actual
-        if st.button("⬅️ VOLVER AL MENÚ"):
-            st.session_state.current_menu = "PRINCIPAL" # Netegem el menú actual
-            st.session_state.pantalla = "OLD_RIDERS_MENU" # Et tornem a Old Riders a salvo
+            st.error(f"Error de lectura en la hoja 'Usuarios': {e}")
+            st.warning("Verifica que los nombres de las columnas en tu Excel coincidan (Nombre, Apellido, Telefono, Inicio, Final, Estado, Observaciones).")
+            
+        # 5. Botón Volver limpio
+        if st.button("⬅️ VOLVER"):
+            st.session_state.current_menu = "OLD_RIDERS_MENU"
             st.rerun()
+
 
             
 # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
