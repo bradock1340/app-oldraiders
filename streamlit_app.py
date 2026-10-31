@@ -207,7 +207,7 @@ else:
             st.session_state.pantalla = "PRINCIPAL"
             st.rerun()
 
-    # === 2. PANTALLA: CLUB (La de tu foto) ===
+    # === 2. PANTALLA: CLUB ) ===
     elif st.session_state.pantalla == "CLUB_MENU":
         st.title("CLUB")
         
@@ -490,7 +490,7 @@ else:
         st.write("Cargando la base de datos de miembros...")
         
         if st.button("VOLVER"):
-            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
     # ================= SECCIÓN: ECONOMÍA =================
     elif st.session_state.current_menu == "ECONOMIA_MENU":
