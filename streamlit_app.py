@@ -743,6 +743,36 @@ else:
             st.rerun()
 
    #elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
+        # === 5. PANTALLA: MENÚ MERCHANDISING (CORREGIDO EL CONFLICTO DE NOMBRES) ===
+    elif st.session_state.current_menu == "PANTALLA_MERCHANDISING" or st.session_state.current_menu == "MERCHANDISING":
+        st.title("👕 MERCHANDISING")
+        
+        if st.button("CONSULTAR PRODUCTOS"):
+            st.session_state.current_menu = "MERCH_CONSULTAR"
+            st.rerun()
+            
+        if st.button("NUEVO PRODUCTO"):
+            st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
+            st.rerun()
+            
+        if st.button("NUEVO PEDIDO"):
+            st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
+            st.rerun()
+            
+        st.write("---")
+        
+        # Botones inferiores de navegación en dos columnas (Volver / Salir)
+        col_nav1, col_nav2 = st.columns(2)
+        with col_nav1:
+            if st.button("⬅️ VOLVER"):
+                st.session_state.current_menu = "PRINCIPAL"
+                st.rerun()
+        with col_nav2:
+            if st.button("❌ SALIR"):
+                st.session_state.authenticated = False
+                st.session_state.current_menu = "PRINCIPAL"
+                st.rerun()
+
 # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
     elif st.session_state.current_menu == "MERCH_CONSULTAR":
         st.title("📦 INVENTARIO DE PRODUCTOS")
