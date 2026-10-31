@@ -745,7 +745,7 @@ else:
             st.rerun()
 
    #elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
-         # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
+# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
     elif st.session_state.current_menu == "MERCH_CONSULTAR":
         st.title("📦 INVENTARIO DE PRODUCTOS")
         st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
@@ -845,8 +845,56 @@ else:
             if st.button("❌ CANCELAR"):
                 st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                 st.rerun()
-   
-
+                
+    # === 5.3 SUBPANTALLA: REGISTRAR NUEVO PEDIDO ===
+    elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
+        st.title("🛒 REGISTRAR NUEVO PEDIDO")
+        st.write("Apunta las compras o reservas de material oficial que realizan los miembros.")
+        st.write("---")
+        
+        try:
+            # 1. Descargamos los datos de ambas hojas en tiempo real para cruzarlas
+            df_socios = pd.read_csv(URL_USUARIOS)
+            df_socios.columns = df_socios.columns.str.strip()
+            
+            df_articulos = pd.read_csv(URL_MERCHANDISING)
+            df_articulos.columns = df_articulos.columns.str.strip()
+            
+            if not df_socios.empty and not df_articulos.empty:
+                # 2. SELECTOR DE MIEMBRO (Cruza con la pestaña Usuarios)
+                col_socio = 'Alias' if 'Alias' in df_socios.columns else 'Nombre'
+                lista_socios = sorted(df_socios[col_socio].dropna().astype(str).unique())
+                socio_pedido = st.selectbox("👤 ¿Qué miembro realiza el pedido?", ["-- Seleccionar Socio --"] + lista_socios)
+                
+                # 3. SELECTOR DE PRODUCTO (Cruza con la pestaña Merchandising)
+                lista_productos = sorted(df_articulos['Producto'].dropna().astype(str).unique())
+                producto_pedido = st.selectbox("📦 ¿Qué artículo se lleva?", ["-- Seleccionar Artículo --"] + lista_productos)
+                
+                # Campos extra del pedido
+                col_cant, col_entrega = st.columns(2)
+                with col_cant:
+                    cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
+                with col_entrega:
+                    estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], horizontal=True)
+                    
+                st.write("---")
+                
+                # Botón de acción
+                if st.button("🛒 ENCARGAR PEDIDO"):
+                    if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
+                        # Aquí en el futuro crearemos el payload para guardar el historial de compras
+                        st.success(f"🎉 Pedido registrado: {cantidad}x '{producto_pedido}' asignado correctamente a **{socio_pedido}**.")
+                    else:
+                        st.warning("Por favor, selecciona obligatoriamente un miembro y un producto antes de confirmar.")
+            else:
+                st.error("Para registrar un pedido necesitas tener datos cargados tanto en la pestaña 'Usuarios' como en 'Merchandising'.")
+                
+        except Exception as e:
+            st.error(f"Error al cruzar las bases de datos para el pedido: {e}")
+            
+        if st.button("🔙 VOLVER"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
