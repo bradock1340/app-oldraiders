@@ -211,16 +211,17 @@ else:
     elif st.session_state.pantalla == "CLUB_MENU":
         st.title("CLUB")
         
-        if st.button("REUNIONES"):
-            st.session_state.pantalla = "REUNIONES_MENU"
+ if st.button("REUNIONES"):
+            st.session_state.current_menu = "REUNIONES_MENU"
             st.rerun()
             
         if st.button("OLD RIDERS"):
-            st.session_state.pantalla = "OLD_RIDERS_MENU"
+            # CORREGIDO: Cambiado .pantalla por .current_menu
+            st.session_state.current_menu = "OLD_RIDERS_MENU"
             st.rerun()
             
         if st.button("VOLVER"):
-            st.session_state.pantalla = "PRINCIPAL"
+            st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
     # === 3. PANTALLA: MENÚ OLD RIDERS (Normativa , Historia y usuarios) ===
