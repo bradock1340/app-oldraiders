@@ -227,8 +227,7 @@ else:
         if st.button("VOLVER"):
             st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
-
-    # === 4. PANTALLA: DETALLE DE LOS MIEMBROS (USUARIOS) ===
+                # === 4. PANTALLA: DETALLE DE LOS MIEMBROS (USUARIOS) ===
     elif st.session_state.current_menu == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
         
@@ -255,69 +254,82 @@ else:
             if miembro_sel != "-- Seleccionar miembro --":
                 datos_miembro = df_usuarios[df_usuarios[col_identificador] == miembro_sel].iloc[0]
                 bloqueado = not puede_editar
+                
                 col1, col2 = st.columns(2)
                 with col1:
-st.subheader("Datos de Identidad")
-nombre = st.text_input("Nombre Real", value=str(datos_miembro.get('Nombre', '')), disabled=bloqueado)
-apellido = st.text_input("Apellido", value=str(datos_miembro.get('Apellido', '')), disabled=bloqueado)
-alias = st.text_input("Alias en el Club", value=str(datos_miembro.get('Alias', miembro_sel)), disabled=bloqueado)
-email = st.text_input("Email / Usuario", value=str(datos_miembro.get('Usuario', datos_miembro.get('Email', ''))), disabled=bloqueado)
-telefono = st.text_input("Teléfono", value=str(datos_miembro.get('Telefono', '')), disabled=bloqueado)
+                    st.subheader("Datos de Identidad")
+                    nombre = st.text_input("Nombre Real", value=str(datos_miembro.get('Nombre', '')), disabled=bloqueado)
+                    apellido = st.text_input("Apellido", value=str(datos_miembro.get('Apellido', '')), disabled=bloqueado)
+                    alias = st.text_input("Alias en el Club", value=str(datos_miembro.get('Alias', miembro_sel)), disabled=bloqueado)
+                    email = st.text_input("Email / Usuario", value=str(datos_miembro.get('Usuario', datos_miembro.get('Email', ''))), disabled=bloqueado)
+                    telefono = st.text_input("Teléfono", value=str(datos_miembro.get('Telefono', '')), disabled=bloqueado)
+                    
+                    if puede_editar:
+                        contrasena = st.text_input("Contraseña Acceso App", value=str(datos_miembro.get('Contrasena', '')), type="password")
+                
+                with col2:
+                    st.subheader("Estado y Fechas")
+                    lista_cargos = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Capitán de Ruta", "Sargento de Armas", "Miembro", "Prospect", "Handground"]
+                    cargo_actual = str(datos_miembro.get('Rol', datos_miembro.get('Cargo', 'Miembro'))).strip()
+                    idx_cargo = lista_cargos.index(cargo_actual) if cargo_actual in lista_cargos else 6
+                    
+                    cargo = st.selectbox("Cargo / Rol", lista_cargos, index=idx_cargo, disabled=bloqueado)
+                    inicio = st.text_input("Fecha Inicio (DD/MM/AAAA)", value=str(datos_miembro.get('Inicio', '')), disabled=bloqueado)
+                    final = st.text_input("Fecha Final / Baja", value=str(datos_miembro.get('Final', '')), disabled=bloqueado)
+                    estado = st.text_input("Estado (Activo / Inactivo)", value=str(datos_miembro.get('Estado', 'Activo')), disabled=bloqueado)
+                    saldo = st.text_input("Saldo de Cuentas (€)", value=str(datos_miembro.get('Saldo', '0.00')), disabled=bloqueado)
+                
+                st.write("---")
+                st.subheader("Sección de Notas Internas")
+                observaciones = st.text_area("Observaciones del Miembro", value=str(datos_miembro.get('Observaciones', '')), disabled=bloqueado)
+                
+                if puede_editar:
+                    if st.button("💾 GUARDAR Y ACTUALIZAR CAMBIOS"):
+                        st.info("Conectando con Google Sheets para aplicar cambios...")
+                        
+        except Exception as e:
+            st.error(f"Error de lectura en la hoja 'Usuarios': {e}")
+            
+        if st.button("⬅️ VOLVER"):
+            st.session_state.current_menu = "OLD_RIDERS_MENU"
+            st.rerun()
 
-if puede_editar:
-contrasena = st.text_input("Contraseña Acceso App", value=str(datos_miembro.get('Contrasena', '')), type="password")
-with col2:
-st.subheader("Estado y Fechas")
-lista_cargos = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Capitán de Ruta", "Sargento de Armas", "Miembro", "Prospect", "Handground"]
-cargo_actual = str(datos_miembro.get('Rol', datos_miembro.get('Cargo', 'Miembro'))).strip()
-idx_cargo = lista_cargos.index(cargo_actual) if cargo_actual in lista_cargos else 6
-cargo = st.selectbox("Cargo / Rol", lista_cargos, index=idx_cargo, disabled=bloqueado)
-inicio = st.text_input("Fecha Inicio (DD/MM/AAAA)", value=str(datos_miembro.get('Inicio', '')), disabled=bloqueado)
-final = st.text_input("Fecha Final / Baja", value=str(datos_miembro.get('Final', '')), disabled=bloqueado)
-estado = st.text_input("Estado (Activo / Inactivo)", value=str(datos_miembro.get('Estado', 'Activo')), disabled=bloqueado)
-saldo = st.text_input("Saldo de Cuentas (€)", value=str(datos_miembro.get('Saldo', '0.00')), disabled=bloqueado)
-st.write("---")
-st.subheader("Sección de Notas Internas")
-observaciones = st.text_area("Observaciones del Miembro", value=str(datos_miembro.get('Observaciones', '')), disabled=bloqueado)
-if puede_editar:
-if st.button("💾 GUARDAR Y ACTUALIZAR CAMBIOS"):
-st.info("Conectando con Google Sheets para aplicar cambios...")
-except Exception as e:
-st.error(f"Error de lectura en la hoja 'Usuarios': {e}")
-if st.button("⬅️ VOLVER"):
-st.session_state.current_menu = "OLD_RIDERS_MENU"
-st.rerun()
-# === VISTAS DE CONTENIDO MACRO (Aisladas para que no rompan botones) ===
-elif st.session_state.current_menu == "PANTALLA_SALIDAS":
-st.subheader("Calendario de Rutas")
-try:
-df_salidas = pd.read_csv(URL_SALIDAS)
-st.dataframe(df_salidas)
-except:
-st.write("No hay rutas programadas todavía.")
-if st.button("VOLVER"):
-st.session_state.current_menu = "PRINCIPAL"
-st.rerun()
-elif st.session_state.current_menu == "PANTALLA_ECONOMIA":
-st.subheader("Control Financiero del Club")
-try:
-df_economia = pd.read_csv(URL_ECONOMIA)
-st.dataframe(df_economia)
-except:
-st.write("No hay registros financieros.")
-if st.button("VOLVER"):
-st.session_state.current_menu = "PRINCIPAL"
-st.rerun()
-elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
-st.subheader("Tienda y Pedidos")
-st.write("Gestión de stock, chalecos, parches y camisetas.")
-if st.button("VOLVER"):
-st.session_state.current_menu = "PRINCIPAL"
-st.rerun()
-# Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
-elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
-st.title(st.session_state.current_menu.replace("_", " "))
-st.info("Sección temporalmente en desarrollo...")
-if st.button("VOLVER"):
-st.session_state.current_menu = "OLD_RIDERS_MENU" if "MENU" not in st.session_state.current_menu else "CLUB_MENU"
-st.rerun()
+    # === VISTAS DE CONTENIDO MACRO (Aisladas para que no rompan botones) ===
+    elif st.session_state.current_menu == "PANTALLA_SALIDAS":
+        st.subheader("Calendario de Rutas")
+        try:
+            df_salidas = pd.read_csv(URL_SALIDAS)
+            st.dataframe(df_salidas)
+        except:
+            st.write("No hay rutas programadas todavía.")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+
+    elif st.session_state.current_menu == "PANTALLA_ECONOMIA":
+        st.subheader("Control Financiero del Club")
+        try:
+            df_economia = pd.read_csv(URL_ECONOMIA)
+            st.dataframe(df_economia)
+        except:
+            st.write("No hay registros financieros.")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+
+    elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
+        st.subheader("Tienda y Pedidos")
+        st.write("Gestión de stock, chalecos, parches y camisetas.")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+
+    # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
+    elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
+        st.title(st.session_state.current_menu.replace("_", " "))
+        st.info("Sección temporalmente en desarrollo...")
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "OLD_RIDERS_MENU" if "MENU" not in st.session_state.current_menu else "CLUB_MENU"
+            st.rerun()
+
+
