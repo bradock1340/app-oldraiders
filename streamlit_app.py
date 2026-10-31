@@ -243,7 +243,7 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
-    elif st.session__state.current_menu == "USUARIOS_FICHA":
+    elif st.session_state.current_menu == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
         
         # 1. Verificar si el usuario conectado tiene permisos de edición (Presidente, Vicepresidente, Administrador)
