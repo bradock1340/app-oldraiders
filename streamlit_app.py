@@ -398,7 +398,7 @@ else:
                 st.rerun()
 
                                 
-### 2️⃣ Bloc de NORMATIVA (`NORMATIVA_VER` i `NORMATIVA_CREAR`)
+### Bloc de NORMATIVA (`NORMATIVA_VER` i `NORMATIVA_CREAR`)
     # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.current_menu == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
@@ -554,7 +554,7 @@ else:
             st.session_state.current_menu = "NORMATIVA_VER"
             st.rerun()
 
-    # === 3.3 PANTALLA: HISTÒRIA DEL CLUB ===
+# === 3.3 PANTALLA: HISTÒRIA DEL CLUB ===
     elif st.session_state.current_menu == "HISTORIA_VER":
         st.title("HISTORIA DEL CLUB")
         st.markdown("""
@@ -596,6 +596,7 @@ else:
         if st.button("VOLVER"):
             st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
+            
       # === 4. PANTALLA: DETALLE DE LOS MIEMBROS (USUARIOS) ===
     elif st.session_state.current_menu == "USUARIOS_FICHA" or st.session_state.get("pantalla") == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
@@ -649,7 +650,7 @@ else:
                 with col2:
                     st.subheader("Estado y Gestión")
                     
-                    # Selector de càrrecs del club (s'adapta exactament al teu 'miembro' en minúscula)
+# Selector de càrrecs del club (s'adapta exactament al teu 'miembro' en minúscula)
                     lista_cargos = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Capitán de Ruta", "Sargento de Armas", "miembro", "Prospect", "Handground"]
                     cargo_actual = str(datos_miembro.get('Rol', 'miembro')).strip()
                     idx_cargo = lista_cargos.index(cargo_actual) if cargo_actual in lista_cargos else 6
@@ -697,7 +698,7 @@ else:
                             "Fecha_Nacimiento": nacimiento_val
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         with st.spinner("Sincronizando cambios con Google Sheets..."):
                             try:
