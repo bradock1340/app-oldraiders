@@ -223,7 +223,7 @@ else:
             st.session_state.pantalla = "PRINCIPAL"
             st.rerun()
 
-    # === 3. PANTALLA: MENÚ OLD RIDERS (Normativa e Historia) ===
+    # === 3. PANTALLA: MENÚ OLD RIDERS (Normativa , Historia y usuarios) ===
     elif st.session_state.pantalla == "OLD_RIDERS_MENU":
         st.title("OLD RIDERS")
 
@@ -242,14 +242,60 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
-     # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
+    # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
     elif st.session_state.current_menu == "USUARIOS_FICHA":
-        st.title("DATOS DE LOS MIEMBROS")
-        st.write("Aquí procesaremos la pestaña 'Usuarios' de tu Google Sheets...")
+        st.title("👤 DATOS DE LOS MIEMBROS")
         
-        if st.button("VOLVER"):
-            st.session_state.current_menu = "OLD_RIDERS_MENU"
+        try:
+            # 1. Carregar les dades de la pestanya "Usuarios" des del teu Sheets
+            df_usuarios = pd.read_csv(URL_USUARIOS)
+            df_usuarios.columns = df_usuarios.columns.str.strip()
+            
+            # Netegem espais als valors de la columna Alias o Nombre per evitar errors
+            col_nombre = 'Alias' if 'Alias' in df_usuarios.columns else 'Nombre'
+            df_usuarios[col_nombre] = df_usuarios[col_nombre].astype(str).str.strip()
+            
+            # 2. Desplegable per seleccionar quin membre es vol consultar
+            lista_miembros = sorted(df_usuarios[col_nombre].unique())
+            miembro_sel = st.selectbox("Selecciona un miembro para ver su ficha:", ["-- Seleccionar miembro --"] + lista_miembros)
+            
+            st.write("---")
+            
+            if miembro_sel != "-- Seleccionar miembro --":
+                # Filtrar la fila corresponent al membre triat
+                datos_miembro = df_usuarios[df_usuarios[col_nombre] == miembro_sel].iloc[0]
+                
+                # 3. Renderitzar la interfície de la Ficha en dues columnes netes
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.text_input("Alias / Nombre", value=str(datos_miembro.get(col_nombre, miembro_sel)), disabled=True)
+                    st.text_input("Email / Usuario", value=str(datos_miembro.get('Usuario', datos_miembro.get('Email', ''))), disabled=True)
+                    st.text_input("Teléfono", value=str(datos_miembro.get('Telefono', 'No asignado')), disabled=True)
+                
+                with col2:
+                    st.text_input("Cargo / Rol", value=str(datos_miembro.get('Rol', 'Miembro')), disabled=True)
+                    
+                    # Si tens columnes de Nombre real o Estado, les mostrem; si no, queden buides
+                    if 'Nombre' in df_usuarios.columns and col_nombre != 'Nombre':
+                        st.text_input("Nombre Real", value=str(datos_miembro.get('Nombre', '')), disabled=True)
+                    
+                st.write("---")
+                
+                # 4. Enllaços ràpids o sub-informació simulada per a futures fases
+                st.info("💡 En las siguientes fases vincularemos las Salidas Realizadas y la Cuenta de Mensualidades de este miembro aquí.")
+                
+        except Exception as e:
+            st.error(f"Error al conectar con la pestaña de Usuarios: {e}")
+            st.write("Asegúrate de que la URL_USUARIOS sea correcta y la hoja sea pública como enlace CSV.")
+        
+        # 5. Botó TORNAR corregit per no trencar la teva navegació actual
+        if st.button("⬅️ VOLVER AL MENÚ"):
+            st.session_state.current_menu = "PRINCIPAL" # Netegem el menú actual
+            st.session_state.pantalla = "OLD_RIDERS_MENU" # Et tornem a Old Riders a salvo
             st.rerun()
+
+            
 # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
