@@ -126,6 +126,7 @@ URL_ECONOMIA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=o
 URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
 URL_CAT_NORMAS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat_Normas" 
 URL_REUNIONES = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Reuniones" 
+URL_MERCHANDISING = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Merchandising"
 
 # --- PANTALLA 1: LOGIN ---
 if not st.session_state.authenticated:
@@ -337,7 +338,7 @@ else:
         string_asistentes_comas = ", ".join(asistentes_lista)
         st.write("---")
         
-        # --- ZONA DE ACCIÓN: COLUMNAS DE LOS BOTONES AL FINAL ---
+# --- ZONA DE ACCIÓN: COLUMNAS DE LOS BOTONES AL FINAL ---
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
         col_accion1, col_accion2 = st.columns(2)
         
@@ -597,7 +598,7 @@ else:
             st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
             
-      # === 4. PANTALLA: DETALLE DE LOS MIEMBROS (USUARIOS) ===
+# === 4. PANTALLA: DETALLE DE LOS MIEMBROS (USUARIOS) ===
     elif st.session_state.current_menu == "USUARIOS_FICHA" or st.session_state.get("pantalla") == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
         
@@ -613,29 +614,29 @@ else:
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             
-            # La columna identificadora oficial per al desplegable és 'Alias'
+# La columna identificadora oficial per al desplegable és 'Alias'
             col_identificador = 'Alias'
             df_usuarios[col_identificador] = df_usuarios[col_identificador].astype(str).str.strip()
             
-            # Selector interactiu de socis per el seu Alias
+# Selector interactiu de socis per el seu Alias
             lista_miembros = sorted(df_usuarios[col_identificador].unique())
             miembro_sel = st.selectbox("Selecciona un miembro para gestionar su ficha:", ["-- Seleccionar miembro --"] + lista_miembros)
             
             st.write("---")
             
             if miembro_sel != "-- Seleccionar miembro --":
-                # Filtrem la fila del membre elegit
+# Filtrem la fila del membre elegit
                 fila_filtrada = df_usuarios[df_usuarios[col_identificador] == miembro_sel]
                 
-                # Calculem la línia real del Sheets (+2 per capçalera i desplaçament de Python)
+# Calculem la línia real del Sheets (+2 per capçalera i desplaçament de Python)
                 num_fila_sheets = int(fila_filtrada.index[0]) + 2
                 
-                # Extraiem les dades de la primera coincidència de forma 100% segura
+# Extraiem les dades de la primera coincidència de forma 100% segura
                 datos_miembro = fila_filtrada.iloc[0]
                 
                 bloqueado = not puede_editar
                 
-                # INTERFÍCIE EN COLUMNES ADAPTADA A LES TEVES CABESES REALS
+# INTERFÍCIE EN COLUMNES ADAPTADA A LES TEVES CABESES REALS
                 col1, col2 = st.columns(2)
                 with col1:
                     st.subheader("Datos de Identidad")
@@ -743,12 +744,109 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-    elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
-        st.subheader("Tienda y Pedidos")
-        st.write("Gestión de stock, chalecos, parches y camisetas.")
-        if st.button("VOLVER"):
-            st.session_state.current_menu = "PRINCIPAL"
+   #elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
+         # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
+    elif st.session_state.current_menu == "MERCH_CONSULTAR":
+        st.title("📦 INVENTARIO DE PRODUCTOS")
+        st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
+        st.write("---")
+        
+        try:
+            # 1. Leer los datos de la pestaña Merchandising
+            df_merch = pd.read_csv(URL_MERCHANDISING)
+            df_merch.columns = df_merch.columns.str.strip()
+            
+            if not df_merch.empty:
+                # Buscador rápido por nombre de producto
+                busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
+                
+                df_filtrado_merch = df_merch.copy()
+                if busqueda_prod:
+                    df_filtrado_merch = df_filtrado_merch[df_filtrado_merch['Producto'].astype(str).str.lower().str.contains(busqueda_prod)]
+                
+                # Mostrar el inventario en una tabla bonita de Streamlit
+                st.dataframe(df_filtrado_merch, use_container_width=True, hide_index=True)
+            else:
+                st.info("No hay productos registrados en el inventario todavía.")
+                
+        except Exception as e:
+            st.error(f"Error de lectura en la hoja Merchandising: {e}")
+            
+        if st.button("🔙 VOLVER"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+
+    # === 5.2 SUBPANTALLA: NUEVO PRODUCTO (FORMULARIO E INTEGRACIÓN) ===
+    elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
+        st.title("➕ AÑADIR NUEVO PRODUCTO")
+        
+        # Validamos que solo los roles autorizados puedan añadir material al inventario
+        if rol not in ["Presidente", "Vicepresidente", "Tesorero", "Administrador"]:
+            st.warning("⚠️ No tienes permisos para añadir productos al inventario.")
+            if st.button("🔙 VOLVER"):
+                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                st.rerun()
+        else:
+            st.write("Introduce los datos del nuevo artículo para el catálogo del club.")
+            st.write("---")
+            
+            import requests
+            import json
+            import time
+            
+            # Formulario organizado con tus columnas reales
+            col1, col2 = st.columns(2)
+            with col1:
+                id_prod = st.text_input("ID del Producto (Ej: Id_chaleco1)")
+                nombre_prod = st.text_input("Nombre del Producto (Ej: Camiseta Oficial)")
+                talla_prod = st.text_input("Talla (Ej: XL / Única / No aplica)")
+                precio_prod = st.text_input("Precio (€)")
+            with col2:
+                proveedor_prod = st.text_input("Nombre del Proveedor")
+                tel_proveedor_prod = st.text_input("Teléfono del Proveedor")
+                stock_prod = st.number_input("Stock Inicial Disponibles", min_value=0, value=10, step=1)
+                
+            desc_prod = st.text_area("Descripción detallada del producto")
+            
+            st.write("---")
+            
+            if st.button("💾 GUARDAR PRODUCTO EN SHEET"):
+                if id_prod and nombre_prod and precio_prod:
+                    # Creamos el paquete exacto para mandarlo al Apps Script
+                    payload = {
+                        "accion": "crear_producto_merch",
+                        "Id_Producto": id_prod,
+                        "Producto": nombre_prod,
+                        "Talla": talla_prod,
+                        "Precio": precio_prod,
+                        "Proveedor": proveedor_prod,
+                        "Tel_Proveedor": tel_proveedor_prod,
+                        "Descripcion": desc_prod,
+                        "Stock": int(stock_prod)
+                    }
+                    
+                    URL_PROCESADOR_GOOGLE = "https://google.com"
+                    
+                    with st.spinner("Guardando nuevo artículo en Google Sheets..."):
+                        try:
+                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                            if "OK_MERCH" in respuesta.text:
+                                st.success("🎉 ¡Nuevo producto añadido con éxito al inventario!")
+                                time.sleep(1.5)
+                                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                st.rerun()
+                            else:
+                                st.error(f"Respuesta inesperada del servidor de Google: {respuesta.text}")
+                        except Exception as err:
+                            st.error(f"Error de conexión al guardar el producto: {err}")
+                else:
+                    st.warning("Por favor, rellena obligatoriamente los campos ID, Nombre y Precio antes de continuar.")
+                    
+            if st.button("❌ CANCELAR"):
+                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                st.rerun()
+   
+
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
