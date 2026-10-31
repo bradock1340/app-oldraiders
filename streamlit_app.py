@@ -873,14 +873,14 @@ else:
                 st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                 st.rerun()
                 
-    # === 5.3 SUBPANTALLA: REGISTRAR NUEVO PEDIDO ===
+       # === 5.3 SUBPANTALLA: REGISTRAR NUEVO PEDIDO (CON TALLAS Y GUARDADO REAL) ===
     elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         st.title("🛒 REGISTRAR NUEVO PEDIDO")
         st.write("Apunta las compras o reservas de material oficial que realizan los miembros.")
         st.write("---")
         
         try:
-            # 1. Descargamos los datos de ambas hojas en tiempo real para cruzarlas
+            # 1. Descargamos los datos para cruzarlos en tiempo real
             df_socios = pd.read_csv(URL_USUARIOS)
             df_socios.columns = df_socios.columns.str.strip()
             
@@ -888,16 +888,33 @@ else:
             df_articulos.columns = df_articulos.columns.str.strip()
             
             if not df_socios.empty and not df_articulos.empty:
-                # 2. SELECTOR DE MIEMBRO (Cruza con la pestaña Usuarios)
+                import requests
+                import json
+                import time
+                from datetime import datetime
+                
+                # Generador automático de ID único de pedido basado en el momento exacto
+                id_pedido_automatico = f"PED_{datetime.now().strftime('%Y%M%d_%H%M%S')}"
+                
+                # SELECTOR DE MIEMBRO
                 col_socio = 'Alias' if 'Alias' in df_socios.columns else 'Nombre'
                 lista_socios = sorted(df_socios[col_socio].dropna().astype(str).unique())
                 socio_pedido = st.selectbox("👤 ¿Qué miembro realiza el pedido?", ["-- Seleccionar Socio --"] + lista_socios)
                 
-                # 3. SELECTOR DE PRODUCTO (Cruza con la pestaña Merchandising)
+                # SELECTOR DE PRODUCTO
                 lista_productos = sorted(df_articulos['Producto'].dropna().astype(str).unique())
                 producto_pedido = st.selectbox("📦 ¿Qué artículo se lleva?", ["-- Seleccionar Artículo --"] + lista_productos)
                 
-                # Campos extra del pedido
+                # FILTRADO DINÁMICO DE TALLAS SEGÚN EL PRODUCTO SELECCIONADO
+                tallas_disponibles = ["Única"]
+                if producto_pedido != "-- Seleccionar Artículo --":
+                    # Filtramos en tu hoja de Merchandising para extraer las tallas registradas para ese producto concreto
+                    filas_prod = df_articulos[df_articulos['Producto'] == producto_pedido]
+                    tallas_disponibles = sorted(filas_prod['Talla'].dropna().astype(str).unique())
+                
+                # SELECTOR DE TALLA (¡Añadido perfectamente!)
+                talla_seleccionada = st.selectbox("📏 Talla disponible del producto:", tallas_disponibles)
+                
                 col_cant, col_entrega = st.columns(2)
                 with col_cant:
                     cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
@@ -906,15 +923,39 @@ else:
                     
                 st.write("---")
                 
-                # Botón de acción
-                if st.button("🛒 ENCARGAR PEDIDO"):
+                # BOTÓN DE ACCIÓN COMPLETO CON POST HACIA GOOGLE APPS SCRIPT
+                if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                     if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
-                        # Aquí en el futuro crearemos el payload para guardar el historial de compras
-                        st.success(f"🎉 Pedido registrado: {cantidad}x '{producto_pedido}' asignado correctamente a **{socio_pedido}**.")
+                        
+                        payload = {
+                            "accion": "guardar_pedido_merch",
+                            "Id_Pedido": id_pedido_automatico,
+                            "Fecha": datetime.now().strftime("%d/%m/%Y"),
+                            "Socio": socio_pedido,
+                            "Producto": producto_pedido,
+                            "Talla": talla_seleccionada,
+                            "Cantidad": int(cantidad),
+                            "Estado_Entrega": estado_entrega
+                        }
+                        
+                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        
+                        with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
+                            try:
+                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                    st.success(f"🎉 Pedido de {socio_pedido} guardado con éxito en la pestaña 'Pedidos'.")
+                                    time.sleep(1.5)
+                                    st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                    st.rerun()
+                                else:
+                                    st.error(f"Fallo en la respuesta de Google: {respuesta.text}")
+                            except Exception as err:
+                                st.error(f"Error de red al guardar el pedido: {err}")
                     else:
                         st.warning("Por favor, selecciona obligatoriamente un miembro y un producto antes de confirmar.")
             else:
-                st.error("Para registrar un pedido necesitas tener datos cargados tanto en la pestaña 'Usuarios' como en 'Merchandising'.")
+                st.error("Necesitas tener miembros e inventario cargados previamente para procesar encargos.")
                 
         except Exception as e:
             st.error(f"Error al cruzar las bases de datos para el pedido: {e}")
