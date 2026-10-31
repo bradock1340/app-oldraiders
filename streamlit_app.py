@@ -938,7 +938,7 @@ else:
                             "Estado_Entrega": estado_entrega
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
                             try:
