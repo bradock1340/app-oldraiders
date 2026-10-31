@@ -855,6 +855,34 @@ else:
                 st.rerun()
 
      # ================= MENÚ PRINCIPAL DE BOTONES =================
+    else:
+        st.title("MENÚ PRINCIPAL")
+        st.write(f"Bienvenido, **{st.session_state.user_alias}** — ({rol})")
+        
+        # Muestra la navegación principal calcada al PDF
+        if st.button("CLUB"):
+            st.session_state.current_menu = "CLUB"
+            st.session_state.current_menu = "CLUB_MENU"
+            st.rerun()
+            
+        if st.button("SALIDAS"):
+            st.session_state.current_menu = "SALIDAS"
+            st.rerun()
+            
+        if st.button("USUARIOS"):
+            st.session_state.current_menu = "USUARIOS"
+            st.rerun()
+            
+        if st.button("MERCHANDISING"):
+            st.session_state.current_menu = "MERCHANDISING"
+            st.rerun()
+            
+        if st.button("CERRAR SESIÓN"):
+            st.session_state.authenticated = False
+            st.session_state.user_role = None
+            st.session_state.user_alias = None
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
 
 
 
