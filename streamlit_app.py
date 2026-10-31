@@ -242,7 +242,14 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
- 
+     # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
+    elif st.session_state.current_menu == "USUARIOS_FICHA":
+        st.title("DATOS DE LOS MIEMBROS")
+        st.write("Aquí procesaremos la pestaña 'Usuarios' de tu Google Sheets...")
+        
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "OLD_RIDERS_MENU"
+            st.rerun()
 # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
