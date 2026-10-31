@@ -235,6 +235,9 @@ else:
         if st.button("HISTORIA"):
             st.session_state.pantalla = "HISTORIA_VER"
             st.rerun()
+        if st.button("USUARIOS"):
+            st.session_state.pantalla = "USUARIOS_FICHA"
+            st.rerun()
             
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
@@ -334,7 +337,6 @@ else:
         if st.button("VOLVER", key="btn_volver_final"):
             st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
-
 
       # === 3.2 PANTALLA: CREAR / EDITAR / CONSULTAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_CREAR":
@@ -479,6 +481,16 @@ else:
         # Único botón para regresar al menú anterior
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RIDERS_MENU"
+            st.rerun()
+        # === 4. PANTALLA: FICHA DE USUARIOS ===
+    elif st.session_state.pantalla == "USUARIOS_FICHA":
+        st.title("DATOS DE LOS MIEMBROS")
+        
+        # Aquí irá la lógica para conectar con tu pestaña 'Usuarios' de Google Sheets
+        st.write("Cargando la base de datos de miembros...")
+        
+        if st.button("VOLVER"):
+            st.session_state.pantalla = "OLD_RAIDERS_MENU"
             st.rerun()
     # ================= SECCIÓN: ECONOMÍA =================
     elif st.session_state.current_menu == "ECONOMIA_MENU":
