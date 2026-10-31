@@ -742,8 +742,7 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-   #elif st.session_state.current_menu == "PANTALLA_MERCHANDISING":
-        # === 5. PANTALLA: MENÚ MERCHANDISING (CORREGIDO EL CONFLICTO DE NOMBRES) ===
+# === 5. PANTALLA: MENÚ MERCHANDISING (CORREGIDO EL CONFLICTO DE NOMBRES) ===
     elif st.session_state.current_menu == "PANTALLA_MERCHANDISING" or st.session_state.current_menu == "MERCHANDISING":
         st.title("👕 MERCHANDISING")
         
@@ -822,7 +821,7 @@ else:
             import json
             import time
             
-            # Formulario organizado con tus columnas reales
+# Formulario organizado con tus columnas reales
             col1, col2 = st.columns(2)
             with col1:
                 id_prod = st.text_input("ID del Producto (Ej: Id_chaleco1)")
@@ -853,7 +852,7 @@ else:
                         "Stock": int(stock_prod)
                     }
                     
-                    URL_PROCESADOR_GOOGLE = "https://google.com"
+                    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                     
                     with st.spinner("Guardando nuevo artículo en Google Sheets..."):
                         try:
