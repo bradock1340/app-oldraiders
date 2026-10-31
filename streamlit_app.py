@@ -211,7 +211,7 @@ else:
     elif st.session_state.pantalla == "CLUB_MENU":
         st.title("CLUB")
         
- if st.button("REUNIONES"):
+        if st.button("REUNIONES"):
             st.session_state.current_menu = "REUNIONES_MENU"
             st.rerun()
             
