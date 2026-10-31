@@ -3,7 +3,7 @@ import pandas as pd
 import base64
 
 # Configuración de la página estilo móvil
-st.set_page_config(page_title="Old Raiders MC", page_icon="🏍️", layout="centered")
+st.set_page_config(page_title="Old Riders MC", page_icon="🏍️", layout="centered")
 
 # --- 1. FUNCIÓN PARA CARGAR LA IMAGEN DE FONDO EN BASE64 ---
 def get_base64_image(image_path):
@@ -171,7 +171,7 @@ else:
     if "pantalla" not in st.session_state:
         st.session_state.pantalla = "PRINCIPAL"
 
-    # === 1. MENÚ PRINCIPAL ===
+# === 1. MENÚ PRINCIPAL ===
     if st.session_state.pantalla == "PRINCIPAL":
         st.title("MENÚ PRINCIPAL")
         st.write(f"Bienvenido, **{st.session_state.user_alias}**")
@@ -215,17 +215,17 @@ else:
             st.session_state.pantalla = "REUNIONES_MENU"
             st.rerun()
             
-        if st.button("OLD RAIDERS"):
-            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+        if st.button("OLD RIDERS"):
+            st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
             
         if st.button("VOLVER"):
             st.session_state.pantalla = "PRINCIPAL"
             st.rerun()
 
-    # === 3. PANTALLA: MENÚ OLD RAIDERS (Normativa e Historia) ===
-    elif st.session_state.pantalla == "OLD_RAIDERS_MENU":
-        st.title("OLD RAIDERS")
+    # === 3. PANTALLA: MENÚ OLD RIDERS (Normativa e Historia) ===
+    elif st.session_state.pantalla == "OLD_RIDERS_MENU":
+        st.title("OLD RIDERS")
 
         URL_NORMATIVA = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Normativa"
         if st.button("NORMATIVA"):
@@ -240,7 +240,7 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
  
-             # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
+# === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.pantalla == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
         
@@ -258,7 +258,7 @@ else:
                     
         with col_botones2:
             if st.button("⬅️ VOLVER"):
-                st.session_state.pantalla = "OLD_RAIDERS_MENU"
+                st.session_state.pantalla = "OLD_RIDERS_MENU"
                 st.rerun()
         
         st.write("---")
@@ -332,7 +332,7 @@ else:
             st.error(f"Error de conexión o lectura: {e}")
 
         if st.button("VOLVER", key="btn_volver_final"):
-            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
 
 
@@ -458,7 +458,7 @@ else:
         """)
         
         if st.button("VOLVER"):
-            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
 
     # === 4. PANTALLA: TEXTO DE LA HISTORIA (Con un único botón para volver) ===
@@ -478,7 +478,7 @@ else:
         
         # Único botón para regresar al menú anterior
         if st.button("VOLVER"):
-            st.session_state.pantalla = "OLD_RAIDERS_MENU"
+            st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
     # ================= SECCIÓN: ECONOMÍA =================
     elif st.session_state.current_menu == "ECONOMIA_MENU":
