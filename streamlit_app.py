@@ -804,10 +804,10 @@ else:
             st.rerun()
 
     # === 5.2 SUBPANTALLA: NUEVO PRODUCTO (FORMULARIO E INTEGRACIÓN) ===
+    # === 5.2 SUBPANTALLA: NUEVO PRODUCTO (ARA AMB DESPLEGABLE DE TALLES) ===
     elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
         st.title("➕ AÑADIR NUEVO PRODUCTO")
         
-        # Validamos que solo los roles autorizados puedan añadir material al inventario
         if rol not in ["Presidente", "Vicepresidente", "Tesorero", "Administrador"]:
             st.warning("⚠️ No tienes permisos para añadir productos al inventario.")
             if st.button("🔙 VOLVER"):
@@ -820,6 +820,60 @@ else:
             import requests
             import json
             import time
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                id_prod = st.text_input("ID del Producto (Ej: Id_chaleco1)")
+                nombre_prod = st.text_input("Nombre del Producto (Ej: Camiseta Oficial)")
+                
+                # 🛠️ CORREGIT: Llista fixa de talles en format desplegable
+                llista_talles_fixa = ["Única", "S", "M", "L", "XL", "XXL", "XXXL", "No aplica"]
+                talla_prod = st.selectbox("📏 Talla del Producto:", llista_talles_fixa)
+                
+                precio_prod = st.text_input("Precio (€)")
+            with col2:
+                proveedor_prod = st.text_input("Nombre del Proveedor")
+                tel_proveedor_prod = st.text_input("Teléfono del Proveedor")
+                stock_prod = st.number_input("Stock Inicial Disponibles", min_value=0, value=10, step=1)
+                
+            desc_prod = st.text_area("Descripción detallada del producto")
+            st.write("---")
+            
+            if st.button("💾 GUARDAR PRODUCTO EN SHEET"):
+                if id_prod and nombre_prod and precio_prod:
+                    payload = {
+                        "accion": "crear_producto_merch",
+                        "Id_Producto": id_prod,
+                        "Producto": nombre_prod,
+                        "Talla": talla_prod,  # Envia la talla triada al desplegable
+                        "Precio": precio_prod,
+                        "Proveedor": proveedor_prod,
+                        "Tel_Proveedor": tel_proveedor_prod,
+                        "Descripcion": desc_prod,
+                        "Stock": int(stock_prod)
+                    }
+                    
+                    URL_PROCESADOR_GOOGLE = "https://google.com"
+                    
+                    with st.spinner("Guardando nuevo artículo en Google Sheets..."):
+                        try:
+                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                            if "OK_MERCH" in respuesta.text:
+                                st.success("🎉 ¡Nuevo producto añadido con éxito al inventario!")
+                                time.sleep(1.5)
+                                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                st.rerun()
+                            else:
+                                st.error(f"Respuesta inesperada del servidor de Google: {respuesta.text}")
+                        except Exception as err:
+                            st.error(f"Error de conexión al guardar el producto: {err}")
+                else:
+                    st.warning("Por favor, rellena obligatoriamente los campos ID, Nombre y Precio antes de continuar.")
+                    
+            if st.button("❌ CANCELAR"):
+                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                st.rerun()
+
             
 # Formulario organizado con tus columnas reales
             col1, col2 = st.columns(2)
