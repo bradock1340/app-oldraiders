@@ -255,7 +255,6 @@ else:
             if miembro_sel != "-- Seleccionar miembro --":
                 datos_miembro = df_usuarios[df_usuarios[col_identificador] == miembro_sel].iloc[0]
                 bloqueado = not puede_editar
-                
                 col1, col2 = st.columns(2)
                 with col1:
 st.subheader("Datos de Identidad")
@@ -264,6 +263,7 @@ apellido = st.text_input("Apellido", value=str(datos_miembro.get('Apellido', '')
 alias = st.text_input("Alias en el Club", value=str(datos_miembro.get('Alias', miembro_sel)), disabled=bloqueado)
 email = st.text_input("Email / Usuario", value=str(datos_miembro.get('Usuario', datos_miembro.get('Email', ''))), disabled=bloqueado)
 telefono = st.text_input("Teléfono", value=str(datos_miembro.get('Telefono', '')), disabled=bloqueado)
+
 if puede_editar:
 contrasena = st.text_input("Contraseña Acceso App", value=str(datos_miembro.get('Contrasena', '')), type="password")
 with col2:
