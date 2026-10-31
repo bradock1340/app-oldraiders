@@ -398,9 +398,6 @@ else:
 
                                 
 ### 2️⃣ Bloc de NORMATIVA (`NORMATIVA_VER` i `NORMATIVA_CREAR`)
-Aquest fragment llegeix la pestanya de Normativa, organitza el cercador intel·ligent amb desplegables de categories principals/específiques i connecta la creació de noves normes:
-
-```python
     # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
     elif st.session_state.current_menu == "NORMATIVA_VER":
         st.title("NORMATIVA INTERNA")
