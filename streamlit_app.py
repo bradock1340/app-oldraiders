@@ -178,7 +178,7 @@ else:
         st.write(f"Cargo: **{st.session_state.user_role}**")
         
         if st.button("CLUB"):
-            st.subheader = "CLUB_MENU"
+            st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 
         if st.button("SALIDAS"):
