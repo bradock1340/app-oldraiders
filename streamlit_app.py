@@ -171,56 +171,49 @@ else:
     if "pantalla" not in st.session_state:
         st.session_state.pantalla = "PRINCIPAL"
 
-# === 1. MENÚ PRINCIPAL ===
-    if st.session_state.pantalla == "PRINCIPAL":
+ # === 1. MENÚ PRINCIPAL ===
+    if st.session_state.current_menu == "PRINCIPAL":
         st.title("MENÚ PRINCIPAL")
-        st.write(f"Bienvenido, **{st.session_state.user_alias}**")
-        st.write(f"Cargo: **{st.session_state.user_role}**")
+        st.write(f"Bienvenido, **{st.session_state.user_alias}** - ({rol})")
         
         if st.button("CLUB"):
-            st.session_state.pantalla = "CLUB_MENU"
+            st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
 
         if st.button("SALIDAS"):
-            st.subheader("Calendario de Rutas")
-            try:
-                df_salidas = pd.read_csv(URL_SALIDAS)
-                st.dataframe(df_salidas)
-            except:
-                st.write("No hay rutas programadas todavía.")
+            st.session_state.current_menu = "SALIDAS"
+            st.rerun()
                 
         if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
             if st.button("ECONOMÍA"):
-                st.subheader("Control Financiero del Club")
-                try:
-                    df_economia = pd.read_csv(URL_ECONOMIA)
-                    st.dataframe(df_economia)
-                except:
-                    st.write("No hay registros financieros.")
+                st.session_state.current_menu = "ECONOMIA_MENU"
+                st.rerun()
                     
         if st.button("MERCHANDISING"):
-            st.subheader("Tienda y Pedidos")
-            st.write("Gestión de stock, chalecos, parches y camisetas.")
+            st.session_state.current_menu = "MERCHANDISING"
+            st.rerun()
             
-        if st.button("Cerrar Sesión"):
+        if st.button("CERRAR SESIÓN"):
             st.session_state.authenticated = False
-            st.session_state.pantalla = "PRINCIPAL"
+            st.session_state.user_role = None
+            st.session_state.user_alias = None
+            st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-    # === 2. PANTALLA: CLUB ) ===
-    elif st.session_state.pantalla == "CLUB_MENU":
+ # === 2. PANTALLA: CLUB ===
+    elif st.session_state.current_menu == "CLUB_MENU":
         st.title("CLUB")
         
         if st.button("REUNIONES"):
-            st.session_state.pantalla = "REUNIONES_MENU"
+            st.session_state.current_menu = "REUNIONES_MENU"
             st.rerun()
             
         if st.button("OLD RIDERS"):
-            st.session_state.pantalla = "OLD_RIDERS_MENU"
+            st.session_state.current_menu = "OLD_RIDERS_MENU"
             st.rerun()
             
         if st.button("VOLVER"):
-            st.session_state.pantalla = "PRINCIPAL"
+            st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
     # === 3. PANTALLA: MENÚ OLD RIDERS (Normativa e Historia) ===
@@ -241,6 +234,14 @@ else:
             
         if st.button("VOLVER"):
             st.session_state.pantalla = "CLUB_MENU"
+            st.rerun()
+                # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
+    elif st.session_state.current_menu == "USUARIOS_FICHA":
+        st.title("DATOS DE LOS MIEMBROS")
+        st.write("Aquí procesaremos la pestaña 'Usuarios' de tu Google Sheets...")
+        
+        if st.button("VOLVER"):
+            st.session_state.current_menu = "OLD_RIDERS_MENU"
             st.rerun()
  
 # === 3.1 PANTALLA: VISUALIZAR NORMATIVA ===
@@ -491,14 +492,7 @@ else:
         if st.button("VOLVER"):
             st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
-     # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
-    elif st.session_state.current_menu == "USUARIOS_FICHA":
-        st.title("DATOS DE LOS MIEMBROS")
-        st.write("Aquí procesaremos la pestaña 'Usuarios' de tu Google Sheets...")
-        
-        if st.button("VOLVER"):
-            st.session_state.current_menu = "OLD_RIDERS_MENU"
-            st.rerun()
+
     # ================= SECCIÓN: ECONOMÍA =================
     elif st.session_state.current_menu == "ECONOMIA_MENU":
         st.title("ECONOMÍA")
