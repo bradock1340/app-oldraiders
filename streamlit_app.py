@@ -235,6 +235,7 @@ else:
         if st.button("HISTORIA"):
             st.session_state.pantalla = "HISTORIA_VER"
             st.rerun()
+            
        if st.button("USUARIOS"):
             st.session_state.pantalla = "PRINCIPAL"
             st.session_state.pantalla = "USUARIOS_FICHA"
