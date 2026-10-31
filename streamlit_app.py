@@ -179,6 +179,7 @@ else:
         
         if st.button("CLUB"):
             st.session_state.pantalla = "CLUB_MENU"
+            st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
 
         if st.button("SALIDAS"):
