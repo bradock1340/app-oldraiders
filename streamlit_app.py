@@ -236,9 +236,8 @@ else:
             st.session_state.pantalla = "HISTORIA_VER"
             st.rerun()
        if st.button("USUARIOS"):
-            # CORREGIT: Apaguem la navegació per "pantalla" i encenem "current_menu" alhora
             st.session_state.pantalla = "PRINCIPAL" 
-            st.session_state.current_menu = "USUARIOS_FICHA"
+            st.session_state.pantalla = "USUARIOS_FICHA"
             st.rerun()
             
         if st.button("VOLVER"):
