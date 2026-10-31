@@ -235,7 +235,7 @@ else:
             st.session_state.pantalla = "HISTORIA_VER"
             st.rerun()
             
-        if st.button("USUARIOS"):  # <- Esborra els espais d'aquesta línia i alinea-la exactament amb la d'adalt
+        if st.button("USUARIOS"):  
             st.session_state.pantalla = "USUARIOS_FICHA" 
             st.rerun()
             
@@ -243,7 +243,7 @@ else:
             st.session_state.pantalla = "CLUB_MENU"
             st.rerun()
 # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
-    elif st.session__state.pantalla == "USUARIOS_FICHA":
+    elif st.session__state.current_menu == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
         
         # 1. Verificar si el usuario conectado tiene permisos de edición (Presidente, Vicepresidente, Administrador)
