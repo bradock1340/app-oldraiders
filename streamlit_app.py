@@ -99,12 +99,15 @@ st.markdown("""
         box-shadow: none !important;          
     }
 
-    /* Efecte Hover adaptat al nou selector */
-    div[data-testid="stButton"] button:hover { 
-        background-color: #FFFFFF !important; 
-        color: #000000 !important;
-        border-color: #FFD700 !important;
-    }
+/* Efecte Hover complet i ultraespecífic per al fons i el text */
+div[data-testid="stButton"] button:hover,
+div[data-testid="stButton"] button:hover *,
+div[data-testid="stButton"] button:focus *,
+div[data-testid="stButton"] button:active * {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+    border-color: #FFD700 !important;
+}
     
     div[data-baseweb="input"] {
         background-color: #000000 !important;
