@@ -380,16 +380,17 @@ else:
                         except Exception as e:
                             st.error(f"Error de conexión con el servidor: {e}")
                             else:
-st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
-else:
-st.info("ℹ️ Estás en modo consulta (Lectura).")
-with col_accion2:
-texto_volver = "🔙 VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
-if st.button(texto_volver):
-st.session_state.edit_reunion_data = None
-st.session_state.modo_consulta = False
-st.session_state.current_menu = "REUNIONES_MENU"
-st.rerun()
+                        st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+                    else:
+                        st.info("ℹ️ Estás en modo consulta (Lectura).")
+                        with col_accion2:
+                            texto_volver = "🔙 VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
+                            if st.button(texto_volver):
+                                st.session_state.edit_reunion_data = None
+                                st.session_state.modo_consulta = False
+                                st.session_state.current_menu = "REUNIONES_MENU"
+                                st.rerun()
+                                
 ### 2️⃣ Bloc de NORMATIVA (`NORMATIVA_VER` i `NORMATIVA_CREAR`)
 Aquest fragment llegeix la pestanya de Normativa, organitza el cercador intel·ligent amb desplegables de categories principals/específiques i connecta la creació de noves normes:
 
