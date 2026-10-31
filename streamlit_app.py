@@ -328,21 +328,25 @@ else:
             listado_miembros = sorted(df_usuarios['Alias'].dropna().astype(str).unique())
             for miembro in listado_miembros:
                 marcado_defecto = miembro in asistentes_antiguos if (es_edicion or es_consulta) else True
-                if st.checkbox(f"🏍️ {miembro}", value=marcado_defecto, key=f"reun_real_{miembro}", disabled=es_consulta):
+                if st.checkbox(f"🇲🇨 {miembro}", value=marcado_defecto, key=f"reun_real_{miembro}", disabled=es_consulta):
                     asistentes_lista.append(miembro)
         except Exception as e:
             st.warning("No se pudo enlazar la lista de miembros de la pestaña Usuarios.")
             
         string_asistentes_comas = ", ".join(asistentes_lista)
         st.write("---")
+        
+        # --- ZONA DE ACCIÓN: COLUMNAS DE LOS BOTONES AL FINAL ---
         texto_boton_principal = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR REUNIÓN"
         col_accion1, col_accion2 = st.columns(2)
+        
         with col_accion1:
             if not es_consulta:
                 if st.button(texto_boton_principal):
                     if descripcion_reunion:
                         fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                         URL_DIRECTA = "https://google.com"
+                        
                         if es_edicion:
                             payload = {
                                 "accion": "editar_reunion_real",
@@ -379,17 +383,19 @@ else:
                                 st.error(f"Google rechazó la estructura: {res.text}")
                         except Exception as e:
                             st.error(f"Error de conexión con el servidor: {e}")
-                            else:
-                        st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
                     else:
-                        st.info("ℹ️ Estás en modo consulta (Lectura).")
-                        with col_accion2:
-                            texto_volver = "🔙 VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
-                            if st.button(texto_volver):
-                                st.session_state.edit_reunion_data = None
-                                st.session_state.modo_consulta = False
-                                st.session_state.current_menu = "REUNIONES_MENU"
-                                st.rerun()
+                        st.warning("El campo RESUMEN / ORDEN DEL DÍA es obligatorio.")
+            else:
+                st.info("ℹ️ Estás en modo consulta (Lectura).")
+                
+        with col_accion2:
+            texto_volver = "🔙 VOLVER AL LISTADO" if es_consulta else "❌ CANCELAR"
+            if st.button(texto_volver):
+                st.session_state.edit_reunion_data = None
+                st.session_state.modo_consulta = False
+                st.session_state.current_menu = "REUNIONES_MENU"
+                st.rerun()
+
                                 
 ### 2️⃣ Bloc de NORMATIVA (`NORMATIVA_VER` i `NORMATIVA_CREAR`)
 Aquest fragment llegeix la pestanya de Normativa, organitza el cercador intel·ligent amb desplegables de categories principals/específiques i connecta la creació de noves normes:
