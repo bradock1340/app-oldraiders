@@ -207,7 +207,7 @@ else:
             st.session_state.pantalla = "PRINCIPAL"
             st.rerun()
 
-    # === 2. PANTALLA: CLUB (La de tu foto) ===
+    # === 2. PANTALLA: CLUB  ===
     elif st.session_state.pantalla == "CLUB_MENU":
         st.title("CLUB")
         
@@ -238,13 +238,15 @@ else:
             
         if st.button("USUARIOS"):  
             st.session_state.current_menu = "USUARIOS_FICHA" 
+            st.session_state.pantalla = "USUARIOS_FICHA" # Aseguramos ambas
             st.rerun()
             
         if st.button("VOLVER"):
             st.session_state.current_menu = "CLUB_MENU"
             st.rerun()
-# === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
-    elif st.session_state.current_menu == "USUARIOS_FICHA":
+ # === 4. PANTALLA: DATOS DE LOS MIEMBROS (USUARIOS) ===
+    # CORREGIDO: También validamos ambas variables aquí para evitar bloqueos
+    elif st.session_state.current_menu == "USUARIOS_FICHA" or st.session_state.get("pantalla") == "USUARIOS_FICHA":
         st.title("👤 DATOS DE LOS MIEMBROS")
         
         # 1. Verificar si el usuario conectado tiene permisos de edición (Presidente, Vicepresidente, Administrador)
@@ -318,16 +320,16 @@ else:
                 # 4. BOTÓN ACCIÓN INTELIGENTE (Solo visible para roles con permiso de escritura)
                 if puede_editar:
                     if st.button("💾 GUARDAR Y ACTUALIZAR CAMBIOS"):
-                        # Aquí llamaremos a tu procesador macro de Google Apps Script para impactar la fila exacta
                         st.info("Conectando con Google Sheets para aplicar cambios en la base de datos...")
                         
         except Exception as e:
             st.error(f"Error de lectura en la hoja 'Usuarios': {e}")
-            st.warning("Verifica que los nombres de las columnas en tu Excel coincidan (Nombre, Apellido, Telefono, Inicio, Final, Estado, Observaciones).")
+            st.warning("Verifica que los nombres de las columnas en tu Excel coincidan.")
             
-        # 5. Botón Volver limpio
+        # 5. Botón Volver limpio actualizando ambos estados para evitar atascos
         if st.button("⬅️ VOLVER"):
             st.session_state.current_menu = "OLD_RIDERS_MENU"
+            st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
 
 
