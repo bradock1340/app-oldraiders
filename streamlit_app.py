@@ -838,7 +838,6 @@ else:
         st.title("🛒 REGISTRAR NUEVO PEDIDO")
         st.write("Selecciona el producto y define la talla para este pedido específico.")
         st.write("---")
-        
         try:
             # Leer productos existentes para el selector
             df_merch = pd.read_csv(URL_MERCHANDISING)
