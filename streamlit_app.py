@@ -804,21 +804,20 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-# === NUEVA SUBPANTALLA 5.1.2: CONSULTAR PEDIDOS (CON FILTRADO ADAPTADO) ===
+# === NUEVA SUBPANTALLA 5.1.2: CONSULTAR PEDIDOS (CON FILTRADO Y ACCIÓN DE ENTREGA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 HISTÓRICO DE PEDIDOS Y RESERVAS")
     st.write("Gestiona las entregas y las reservas pendientes del club.")
     st.write("---")
     
     try:
-        # Cargamos la pestaña de pedidos (usando tu URL base y apuntando a la hoja de pedidos)
+        # Cargamos la pestaña de pedidos en tiempo real
         URL_PEDIDOS = URL_MERCHANDISING.replace("sheet=Merchandising", "sheet=Pedidos")
-        
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
         if not df_pedidos.empty:
-            # Buscador por Alias/Socio para saber rápido qué tiene cada uno
+            # Buscador por Alias/Socio o Artículo para filtrar rápido
             buscar_socio = st.text_input("🔍 Filtrar por Socio o Artículo...").strip().lower()
             if buscar_socio:
                 df_pedidos = df_pedidos[
@@ -830,10 +829,51 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             tab_pendientes, tab_entregados = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS"])
             
             with tab_pendientes:
-                # Filtramos por el estado exacto que envías en el radio botón
+                # Filtramos los registros que estén en estado pendiente o reservado
                 df_pendientes = df_pedidos[df_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False, na=False)]
+                
                 if not df_pendientes.empty:
-                    st.dataframe(df_pendientes, use_container_width=True, hide_index=True)
+                    # Recorremos cada pedido pendiente para mostrarlo de forma individual con su botón
+                    for index, row in df_pendientes.iterrows():
+                        # Calculamos la posición exacta de la fila en Google Sheets (+2 por cabecera y desfase)
+                        num_fila_pedido = int(index) + 2
+                        
+                        # Contenedor limpio para estructurar la info y el botón en paralelo
+                        with st.container():
+                            col_info, col_accion = st.columns([3, 1])
+                            
+                            with col_info:
+                                st.markdown(f"👤 **Socio:** {row['Socio']} | 👕 **Artículo:** {row['Producto']} *(Talla: {row.get('Talla', 'Única')}* )")
+                                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Cantidad: {row['Cantidad']} u. | ⏳ Estado: {row['Estado_Entrega']}")
+                            
+                            with col_accion:
+                                # Botón único por fila usando el index de pandas como clave
+                                if st.button("✅ ENTREGAR", key=f"btn_entregar_{index}"):
+                                    import requests
+                                    import json
+                                    import time
+                                    
+                                    # Armamos los datos que recibirá tu Google Apps Script para modificar la fila
+                                    payload = {
+                                        "accion": "editar_pedido_merch",
+                                        "num_fila": num_fila_pedido,
+                                        "Estado_Entrega": "Entregado"
+                                    }
+                                    
+                                    URL_PROCESADOR_GOOGLE = "https://google.com"
+                                    
+                                    with st.spinner("Actualizando histórico en Google Sheets..."):
+                                        try:
+                                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                            if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                st.success("🎉 ¡Pedido marcado como Entregado!")
+                                                time.sleep(1.0)
+                                                st.rerun()
+                                            else:
+                                                st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                                        except Exception as err:
+                                            st.error(f"Error de conexión: {err}")
+                        st.write("---") # Separador visual entre filas
                 else:
                     st.success("🎉 ¡No hay pedidos pendientes de entrega!")
                     
