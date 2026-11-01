@@ -838,43 +838,27 @@ else:
         st.title("🛒 REGISTRAR NUEVO PEDIDO")
         st.write("Selecciona el producto y define la talla para este pedido específico.")
         st.write("---")
+        
         try:
-            # Leer productos existentes para el selector
+            # 1. Leer productos existentes para el selector
             df_merch = pd.read_csv(URL_MERCHANDISING)
             df_merch.columns = df_merch.columns.str.strip()
-            lista_productos = df_merch['Producto'].tolist() if not df_merch.empty else []
             
-            if lista_productos:
-                producto_seleccionado = st.selectbox("Selecciona el Producto", lista_productos)
-                
-                # Definir la talla AQUÍ en el momento del pedido
-                talla_seleccionada = st.selectbox("Selecciona la Talla", ["Única", "S", "M", "L", "XL", "XXL"])
-                
-                cantidad = st.number_input("Cantidad", min_value=1, step=1)
-                detalles_pedido = st.text_input("Notas / Detalles del Pedido")
-                
-                if st.button("📦 REALIZAR PEDIDO"):
-                    # Lógica para guardar el pedido en tu pestaña de 'Pedidos'
-                    # Guardando: producto_seleccionado, talla_seleccionada, cantidad, etc.
-                    st.success(f"Pedido registrado: {cantidad}x {producto_seleccionado} (Talla {talla_seleccionada})")
-            else:
-                st.warning("No hay productos disponibles en el inventario para realizar un pedido.")
-                
-        except Exception as e:
-            st.error(f"Error al cargar los productos: {e}")
+            # Asumimos que tienes una lista de socios ya cargada previamente o la iniciamos por seguridad
+            # (Ajusta 'lista_socios' si usas otra variable en tu código global para los nombres de los miembros)
+            lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
             
-        if st.button("⬅️ VOLVER AL MENÚ"):
-            st.session_state.current_menu = "MERCHANDISING"
-            st.rerun()
-                # FILTRADO DINÁMICO DE TALLAS SEGÚN EL PRODUCTO SELECCIONADO
-                tallas_disponibles = ["Única"]
+            # Nota: Si tienes cargado tu df de socios, puedes usar sus nombres aquí. Si no, dejamos un input o selectbox genérico.
+            socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", ["-- Seleccionar Socio --"] + (lista_socios if 'lista_socios' in locals() or 'lista_socios' in globals() else ["General"]))
+            producto_pedido = st.selectbox("👕 Selecciona el Producto:", lista_productos)
+            
             if producto_pedido != "-- Seleccionar Artículo --":
-                    # Filtramos en tu hoja de Merchandising para extraer las tallas registradas para ese producto concreto
-                    filas_prod = df_articulos[df_articulos['Producto'] == producto_pedido]
-                    tallas_disponibles = sorted(filas_prod['Talla'].dropna().astype(str).unique())
                 
-                # SELECTOR DE TALLA (¡Añadido perfectamente!)
-                talla_seleccionada = st.selectbox("📏 Talla disponible del producto:", tallas_disponibles)
+                # Al no estar la talla en el inventario, ponemos las opciones fijas para elegir en el pedido
+                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL"]
+                
+                # SELECTOR DE TALLA
+                talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
                 
                 col_cant, col_entrega = st.columns(2)
                 with col_cant:
@@ -887,6 +871,9 @@ else:
                 # BOTÓN DE ACCIÓN COMPLETO CON POST HACIA GOOGLE APPS SCRIPT
                 if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                     if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
+                        
+                        # Generador de ID automático temporal si no está definido previamente
+                        id_pedido_automatico = f"PED-{int(time.time())}" if 'id_pedido_automatico' not in locals() else id_pedido_automatico
                         
                         payload = {
                             "accion": "guardar_pedido_merch",
@@ -916,14 +903,15 @@ else:
                     else:
                         st.warning("Por favor, selecciona obligatoriamente un miembro y un producto antes de confirmar.")
             else:
-                st.error("Necesitas tener miembros e inventario cargados previamente para procesar encargos.")
+                st.info("Por favor, selecciona un artículo para configurar los detalles del encargo.")
                 
         except Exception as e:
-            st.error(f"Error al cruzar las bases de datos para el pedido: {e}")
+            st.error(f"Error al procesar las bases de datos para el pedido: {e}")
             
         if st.button("🔙 VOLVER"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
