@@ -742,35 +742,33 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5. PANTALLA: MENÚ MERCHANDISING ===
 # ==============================================================================
 # === 5. ZONA DE MERCHANDISING (MÓDULO INDEPENDIENTE PARA EVITAR ERRORES) ======
 # ==============================================================================
 
-# Unificamos el control del menú en una sola estructura secuencial limpia
-if st.session_state.current_menu == "MERCHANDISING" or st.session_state.current_menu == "PANTALLA_MERCHANDISING":
+# Definimos los roles de la mesa directiva autorizados según tus reglas
+rol_usuario = st.session_state.user_role
+roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
+
+# 5.0 MENÚ PRINCIPAL DE MERCHANDISING
+if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
-    
-    # Control de roles usando tus variables reales del archivo
-    rol_actual = st.session_state.user_role
-    roles_directiva = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
     if st.button("CONSULTAR PRODUCTOS"):
         st.session_state.current_menu = "MERCH_CONSULTAR"
         st.rerun()
-        
     if st.button("CONSULTAR PEDIDOS / RESERVAS"):
         st.session_state.current_menu = "MERCH_PEDIDOS"
         st.rerun()    
         
-    # Solo la mesa directiva ve el botón para registrar productos
-    if rol_actual in roles_directiva:
+    # Restricción: Solo la mesa directiva puede registrar nuevos productos
+    if rol_usuario in roles_autorizados:
         if st.button("NUEVO PRODUCTO"):
             st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
             st.rerun()
         
-    # Solo la mesa directiva ve el botón para hacer nuevos pedidos
-    if rol_actual in roles_directiva:
+    # Restricción: Solo la mesa directiva puede realizar nuevos pedidos
+    if rol_usuario in roles_autorizados:
         if st.button("NUEVO PEDIDO"):
             st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
             st.rerun()
@@ -789,8 +787,8 @@ if st.session_state.current_menu == "MERCHANDISING" or st.session_state.current_
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (AHORA CONECTADA Y DE SOLO LECTURA) ===
-elif st.session_state.current_menu == "MERCH_CONSULTAR":
+# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (SOLO LECTURA REQUERIDA) ===
+if st.session_state.current_menu == "MERCH_CONSULTAR":
     st.title("📦 INVENTARIO DE PRODUCTOS")
     st.write("Consulta el stock disponible del material oficial del club.")
     st.write("---")
@@ -808,7 +806,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             
             st.write("---")
             
-            # Listamos cada producto de forma estrictamente informativa (Sin botones de eliminación)
+            # Listamos cada producto de forma puramente informativa (Sin botón de eliminación)
             for index, row in df_filtrado_merch.iterrows():
                 with st.container():
                     st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
@@ -823,12 +821,11 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
         st.error(f"Error de lectura en la hoja Merchandising: {e}")
         
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
-        st.session_state.current_menu = "MERCHANDISING"
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
 
-
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
-elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
+if st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     st.title("➕ REGISTRAR NUEVO PRODUCTO")
     st.write("Introduce los datos del nuevo artículo para el inventario general.")
     st.write("---")
@@ -844,7 +841,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     if st.button("💾 GUARDAR PRODUCTO"):
         if id_prod and nombre_prod:
             
-            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec" 
             payload = {
                 "accion": "crear_producto_merch",
                 "Id_Producto": id_prod,
@@ -864,7 +861,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
                 try:
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                     if "OK" in respuesta.text or "MERCH" in respuesta.text:
-                        st.success(f"🎉 ¡Producto '{nombre_prod}' guardado con éxito!")
+                        st.success(f"🎉 ¡Producto '{nombre_prod}' guardado con éxito en Google Sheets!")
                         time.sleep(1.5)
                         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                         st.rerun()
