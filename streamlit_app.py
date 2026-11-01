@@ -804,34 +804,31 @@ else:
             st.rerun()
 
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
-    elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
-        st.title("➕ REGISTRAR NUEVO PRODUCTO")
-        st.write("Introduce los datos del nuevo artículo para el inventario general.")
-        st.write("---")
-        
-        # Formulario sin el campo de Talla
-        id_prod = st.text_input("ID Producto (Ej: PROD001)")
-        nombre_prod = st.text_input("Nombre del Producto")
-        precio_prod = st.number_input("Precio (€)", min_value=0.0, step=0.5)
-        proveedor = st.text_input("Proveedor")
-        tel_proveedor = st.text_input("Teléfono Proveedor")
-        descripcion = st.text_area("Descripción")
-        stock_inicial = st.number_input("Stock Inicial", min_value=0, step=1)
-        
-        if st.button("💾 GUARDAR PRODUCTO"):
-            if id_prod and nombre_prod:
-                # Aquí realizas la lógica de inserción a tu Google Sheets
-                # Asegúrate de enviar los datos en el orden exacto de tus columnas del Sheets:
-                # [id_prod, nombre_prod, precio_prod, proveedor, tel_proveedor, descripcion, stock_inicial]
-                
-                st.success(f"Producto '{nombre_prod}' registrado correctamente sin talla asignada.")
-            else:
-                st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
-                
-        if st.button("⬅️ VOLVER AL MENÚ"):
-            st.session_state.current_menu = "MERCHANDISING"
-            st.rerun()
-# === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
+elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
+    st.title("➕ REGISTRAR NUEVO PRODUCTO")
+    st.write("Introduce los datos del nuevo artículo para el inventario general.")
+    st.write("---")
+    
+    # Formulario sin el campo de Talla
+    id_prod = st.text_input("ID Producto (Ej: PROD001)")
+    nombre_prod = st.text_input("Nombre del Producto")
+    precio_prod = st.number_input("Precio (€)", min_value=0.0, step=0.5)
+    proveedor = st.text_input("Proveedor")
+    tel_proveedor = st.text_input("Teléfono Proveedor")
+    descripcion = st.text_area("Descripción")
+    stock_inicial = st.number_input("Stock Inicial", min_value=0, step=1)
+    
+    if st.button("💾 GUARDAR PRODUCTO"):
+        if id_prod and nombre_prod:
+            # Aquí realizas la lógica de inserción a tu Google Sheets
+            st.success(f"Producto '{nombre_prod}' registrado correctamente sin talla asignada.")
+        else:
+            st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
+            
+    if st.button("⬅️ VOLVER AL MENÚ"):
+        st.session_state.current_menu = "MERCHANDISING"
+        st.rerun()
+
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
     st.title("👕 REGISTRAR NUEVO PEDIDO")
@@ -880,7 +877,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
             if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                 if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
                     
-                    # IMPORTS INTERNOS SEGUROS (Evita errores de 'not defined' de raíz)
+                    # IMPORTS INTERNOS SEGUROS
                     from datetime import datetime
                     import requests
                     import json
@@ -900,7 +897,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
                         "Estado_Entrega": estado_entrega
                     }
                     
-                    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                    URL_PROCESADOR_GOOGLE = "https://google.com"
                     
                     with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
                         try:
