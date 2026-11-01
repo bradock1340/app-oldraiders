@@ -865,7 +865,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     if st.button("💾 GUARDAR PRODUCTO"):
         if id_prod and nombre_prod:
             
-            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec" 
+            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
             payload = {
                 "accion": "crear_producto_merch",
                 "Id_Producto": id_prod,
