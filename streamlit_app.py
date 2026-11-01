@@ -852,7 +852,6 @@ else:
                 
                 if 'Alias' in df_usuarios_ped.columns:
                     lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
-                    # Añadimos los alias evitando duplicar "General" si ya existiera por error en la lista
                     socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
             except Exception as e_users:
                 st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
@@ -863,8 +862,8 @@ else:
             
             if producto_pedido != "-- Seleccionar Artículo --":
                 
-                # Al no estar la talla en el inventario, ponemos las opciones fijas para elegir en el pedido
-                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL]
+                # LISTA EXPANDIDA DE TALLAS HASTA 5XL
+                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
                 
                 # SELECTOR DE TALLA
                 talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
@@ -881,21 +880,20 @@ else:
                 if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                     if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
                         
-                        # Generador de ID automático temporal si no está definido previamente
                         id_pedido_automatico = f"PED-{int(time.time())}" if 'id_pedido_automatico' not in locals() else id_pedido_automatico
                         
                         payload = {
                             "accion": "guardar_pedido_merch",
                             "Id_Pedido": id_pedido_automatico,
                             "Fecha": datetime.now().strftime("%d/%m/%Y"),
-                            "Socio": socio_pedido,  # Enviará el Alias seleccionado o "General"
+                            "Socio": socio_pedido,  
                             "Producto": producto_pedido,
                             "Talla": talla_seleccionada,
                             "Cantidad": int(cantidad),
                             "Estado_Entrega": estado_entrega
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        URL_PROCESADOR_GOOGLE = "https://google.com"
                         
                         with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
                             try:
@@ -920,7 +918,7 @@ else:
         if st.button("🔙 VOLVER"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-                
+               
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
