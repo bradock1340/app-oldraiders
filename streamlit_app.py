@@ -867,7 +867,6 @@ else:
         if st.button("⬅️ VOLVER AL MENÚ"):
             st.session_state.current_menu = "MERCHANDISING"
             st.rerun()
-                
                 # FILTRADO DINÁMICO DE TALLAS SEGÚN EL PRODUCTO SELECCIONADO
                 tallas_disponibles = ["Única"]
                 if producto_pedido != "-- Seleccionar Artículo --":
