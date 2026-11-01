@@ -769,9 +769,10 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
             st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
             st.rerun()
         
-    if st.button("NUEVO PEDIDO"):
-        st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
-        st.rerun()
+    if rol_actual in roles_directiva:
+        if st.button("NUEVO PEDIDO"):
+            st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
+            st.rerun()
         
     st.write("---")
     
