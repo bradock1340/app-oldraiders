@@ -747,11 +747,11 @@ else:
 # === 5. ZONA DE MERCHANDISING (MÓDULO INDEPENDIENTE PARA EVITAR ERRORES) ======
 # ==============================================================================
 
-# Cambiamos el primer 'elif' por un 'if' para aislarlo de los problemas de arriba
-if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
+# Unificamos el control del menú en una sola estructura secuencial limpia
+if st.session_state.current_menu == "MERCHANDISING" or st.session_state.current_menu == "PANTALLA_MERCHANDISING":
     st.title("👕 MERCHANDISING")
     
-    # Extraemos el rol usando tu variable oficial del archivo
+    # Control de roles usando tus variables reales del archivo
     rol_actual = st.session_state.user_role
     roles_directiva = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
@@ -763,12 +763,13 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
         st.session_state.current_menu = "MERCH_PEDIDOS"
         st.rerun()    
         
-    # Solo la mesa directiva puede ver el botón para crear nuevos productos
+    # Solo la mesa directiva ve el botón para registrar productos
     if rol_actual in roles_directiva:
         if st.button("NUEVO PRODUCTO"):
             st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
             st.rerun()
         
+    # Solo la mesa directiva ve el botón para hacer nuevos pedidos
     if rol_actual in roles_directiva:
         if st.button("NUEVO PEDIDO"):
             st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
@@ -788,7 +789,7 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (SOLO LECTURA TOTAL) ===
+# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (AHORA CONECTADA Y DE SOLO LECTURA) ===
 elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.title("📦 INVENTARIO DE PRODUCTOS")
     st.write("Consulta el stock disponible del material oficial del club.")
@@ -807,14 +808,14 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             
             st.write("---")
             
-            # Listamos los productos de forma limpia y estrictamente informativa (Sin botón eliminar)
+            # Listamos cada producto de forma estrictamente informativa (Sin botones de eliminación)
             for index, row in df_filtrado_merch.iterrows():
                 with st.container():
                     st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
                     st.caption(f"🏬 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']}) | 📊 Stock Actual: {row['Stock']} u.")
                     if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                         st.info(f"📝 *{row['Descripcion']}*")
-                st.write("---") 
+                st.write("---") # Separador entre artículos
         else:
             st.info("No hay productos registrados en el inventario todavía.")
             
@@ -822,8 +823,9 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
         st.error(f"Error de lectura en la hoja Merchandising: {e}")
         
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
-        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.session_state.current_menu = "MERCHANDISING"
         st.rerun()
+
 
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
