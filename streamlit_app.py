@@ -345,7 +345,7 @@ else:
                 if st.button(texto_boton_principal):
                     if descripcion_reunion:
                         fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                        URL_DIRECTA = "https://google.com"
+                        URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         if es_edicion:
                             payload = {
@@ -512,7 +512,7 @@ else:
                 texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR NORMA"
                 if st.button(texto_boton):
                     if descripcion_norma and tiempo_norma:
-                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         if es_edicion:
                             payload = {
                                 "accion": "editar",
@@ -801,12 +801,12 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     except Exception as e:
         st.error(f"Error de lectura en la hoja Merchandising: {e}")
         
-    if st.button("🔙 VOLVER", key="btn_volver_consultar"):
+    if st.button("VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
 # === NUEVA SUBPANTALLA 5.1.2: CONSULTAR PEDIDOS (CON FILTRADO Y ACCIÓN DE ENTREGA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
-    st.title("📋 HISTÓRICO DE PEDIDOS Y RESERVAS")
+    st.title("HISTÓRICO DE PEDIDOS Y RESERVAS")
     st.write("Gestiona las entregas y las reservas pendientes del club.")
     st.write("---")
     
