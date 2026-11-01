@@ -779,120 +779,75 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
+# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (CON SISTEMA DE ELIMINACIÓN) ===
 elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.title("📦 INVENTARIO DE PRODUCTOS")
-    st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
+    st.write("Consulta y gestiona el stock disponible del material oficial del club.")
     st.write("---")
     try:
+        # 1. Leer los datos de la pestaña Merchandising en tiempo real
         df_merch = pd.read_csv(URL_MERCHANDISING)
         df_merch.columns = df_merch.columns.str.strip()
         
         if not df_merch.empty:
+            # Buscador rápido por nombre de producto
             busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
             df_filtrado_merch = df_merch.copy()
             if busqueda_prod:
                 df_filtrado_merch = df_filtrado_merch[df_filtrado_merch['Producto'].astype(str).str.lower().str.contains(busqueda_prod)]
             
-            st.dataframe(df_filtrado_merch, use_container_width=True, hide_index=True)
+            st.write("---")
+            
+            # Listamos cada producto de forma individual con su botón de acción
+            for index, row in df_filtrado_merch.iterrows():
+                # Calculamos la línea exacta en el Sheets (+2 por cabecera y desfase)
+                num_fila_producto = int(index) + 2
+                
+                with st.container():
+                    col_info, col_accion = st.columns([3, 1])
+                    
+                    with col_info:
+                        st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
+                        st.caption(f"🏬 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']}) | 📊 Stock Actual: {row['Stock']} u.")
+                        if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
+                            st.info(f"📝 *{row['Descripcion']}*")
+                            
+                    with col_accion:
+                        # Botón rojo para eliminar el artículo con confirmación de seguridad
+                        if st.button("❌ ELIMINAR", key=f"btn_eliminar_prod_{index}"):
+                            import requests
+                            import json
+                            import time
+                            
+                            payload = {
+                                "accion": "eliminar_producto_merch",
+                                "num_fila": num_fila_producto
+                            }
+                            
+                            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                            
+                            with st.spinner("Borrando producto del inventario general..."):
+                                try:
+                                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                    if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                        st.success(f"🗑️ '{row['Producto']}' eliminado del inventario.")
+                                        time.sleep(1.0)
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                                except Exception as err:
+                                    st.error(f"Error de conexión: {err}")
+                st.write("---") # Separador entre artículos
         else:
             st.info("No hay productos registrados en el inventario todavía.")
             
     except Exception as e:
         st.error(f"Error de lectura en la hoja Merchandising: {e}")
         
-    if st.button("VOLVER", key="btn_volver_consultar"):
+    if st.button("🔙 VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-# === NUEVA SUBPANTALLA 5.1.2: CONSULTAR PEDIDOS (CON FILTRADO Y ACCIÓN DE ENTREGA) ===
-elif st.session_state.current_menu == "MERCH_PEDIDOS":
-    st.title("HISTÓRICO DE PEDIDOS Y RESERVAS")
-    st.write("Gestiona las entregas y las reservas pendientes del club.")
-    st.write("---")
-    
-    try:
-        # Cargamos la pestaña de pedidos en tiempo real
-        URL_PEDIDOS = URL_MERCHANDISING.replace("sheet=Merchandising", "sheet=Pedidos")
-        df_pedidos = pd.read_csv(URL_PEDIDOS)
-        df_pedidos.columns = df_pedidos.columns.str.strip()
-        
-        if not df_pedidos.empty:
-            # Buscador por Alias/Socio o Artículo para filtrar rápido
-            buscar_socio = st.text_input("🔍 Filtrar por Socio o Artículo...").strip().lower()
-            if buscar_socio:
-                df_pedidos = df_pedidos[
-                    df_pedidos['Socio'].astype(str).str.lower().str.contains(buscar_socio) | 
-                    df_pedidos['Producto'].astype(str).str.lower().str.contains(buscar_socio)
-                ]
-            
-            # Creamos dos pestañas visuales separadas
-            tab_pendientes, tab_entregados = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS"])
-            
-            with tab_pendientes:
-                # Filtramos los registros que estén en estado pendiente o reservado
-                df_pendientes = df_pedidos[df_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False, na=False)]
-                
-                if not df_pendientes.empty:
-                    # Recorremos cada pedido pendiente para mostrarlo de forma individual con su botón
-                    for index, row in df_pendientes.iterrows():
-                        # Calculamos la posición exacta de la fila en Google Sheets (+2 por cabecera y desfase)
-                        num_fila_pedido = int(index) + 2
-                        
-                        # Contenedor limpio para estructurar la info y el botón en paralelo
-                        with st.container():
-                            col_info, col_accion = st.columns([3, 1])
-                            
-                            with col_info:
-                                st.markdown(f"👤 **Socio:** {row['Socio']} | 👕 **Artículo:** {row['Producto']} *(Talla: {row.get('Talla', 'Única')}* )")
-                                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Cantidad: {row['Cantidad']} u. | ⏳ Estado: {row['Estado_Entrega']}")
-                            
-                            with col_accion:
-                                # Botón único por fila usando el index de pandas como clave
-                                if st.button("✅ ENTREGAR", key=f"btn_entregar_{index}"):
-                                    import requests
-                                    import json
-                                    import time
-                                    
-                                    # Armamos los datos que recibirá tu Google Apps Script para modificar la fila
-                                    payload = {
-                                        "accion": "editar_pedido_merch",
-                                        "num_fila": num_fila_pedido,
-                                        "Estado_Entrega": "Entregado"
-                                    }
-                                    
-                                    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-                                    
-                                    with st.spinner("Actualizando histórico en Google Sheets..."):
-                                        try:
-                                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                                            if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                                st.success("🎉 ¡Pedido marcado como Entregado!")
-                                                time.sleep(1.0)
-                                                st.rerun()
-                                            else:
-                                                st.error(f"Fallo del servidor de Google: {respuesta.text}")
-                                        except Exception as err:
-                                            st.error(f"Error de conexión: {err}")
-                        st.write("---") # Separador visual entre filas
-                else:
-                    st.success("🎉 ¡No hay pedidos pendientes de entrega!")
-                    
-            with tab_entregados:
-                df_entregados = df_pedidos[df_pedidos['Estado_Entrega'].astype(str).str.contains("Entregado", case=False, na=False)]
-                if not df_entregados.empty:
-                    st.dataframe(df_entregados, use_container_width=True, hide_index=True)
-                else:
-                    st.info("No hay registros de pedidos entregados todavía.")
-        else:
-            st.info("No se han realizado pedidos en el sistema de histórico aún.")
-            
-    except Exception as e:
-        st.error(f"Error al conectar con la pestaña de historial de pedidos: {e}")
-        st.info("Asegúrate de que la pestaña de tu Google Sheets se llama exactamente 'Pedidos'.")
-        
-    if st.button("🔙 VOLVER", key="btn_volver_pedidos_listado"):
-        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-        st.rerun()
+
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     st.title("➕ REGISTRAR NUEVO PRODUCTO")
