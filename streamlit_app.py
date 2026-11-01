@@ -746,6 +746,7 @@ else:
 # ==============================================================================
 # === 5. ZONA DE MERCHANDISING (MÓDULO INDEPENDIENTE PARA EVITAR ERRORES) ======
 # ==============================================================================
+
 # Cambiamos el primer 'elif' por un 'if' para aislarlo de los problemas de arriba
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
@@ -778,10 +779,10 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (SOLO LECTURA / SIN ELIMINACIÓN) ===
+# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (CON SISTEMA DE ELIMINACIÓN) ===
 elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.title("📦 INVENTARIO DE PRODUCTOS")
-    st.write("Consulta el stock disponible del material oficial del club.")
+    st.write("Consulta y gestiona el stock disponible del material oficial del club.")
     st.write("---")
     try:
         # 1. Leer los datos de la pestaña Merchandising en tiempo real
@@ -797,13 +798,45 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             
             st.write("---")
             
-            # Listamos cada producto de forma de solo lectura conforme a las reglas del negocio
+            # Listamos cada producto de forma individual con su botón de acción
             for index, row in df_filtrado_merch.iterrows():
+                # Calculamos la línea exacta en el Sheets (+2 por cabecera y desfase)
+                num_fila_producto = int(index) + 2
+                
                 with st.container():
-                    st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
-                    st.caption(f"🏬 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']}) | 📊 Stock Actual: {row['Stock']} u.")
-                    if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
-                        st.info(f"📝 *{row['Descripcion']}*")
+                    col_info, col_accion = st.columns([3, 1])
+                    
+                    with col_info:
+                        st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
+                        st.caption(f"🏬 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']}) | 📊 Stock Actual: {row['Stock']} u.")
+                        if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
+                            st.info(f"📝 *{row['Descripcion']}*")
+                            
+                    with col_accion:
+                        # Botón rojo para eliminar el artículo con confirmación de seguridad
+                        if st.button("❌ ELIMINAR", key=f"btn_eliminar_prod_{index}"):
+                            import requests
+                            import json
+                            import time
+                            
+                            payload = {
+                                "accion": "eliminar_producto_merch",
+                                "num_fila": num_fila_producto
+                            }
+                            
+                            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                            
+                            with st.spinner("Borrando producto del inventario general..."):
+                                try:
+                                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                    if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                        st.success(f"🗑️ '{row['Producto']}' eliminado del inventario.")
+                                        time.sleep(1.0)
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                                except Exception as err:
+                                    st.error(f"Error de conexión: {err}")
                 st.write("---") # Separador entre artículos
         else:
             st.info("No hay productos registrados en el inventario todavía.")
@@ -850,6 +883,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
             
             with st.spinner("Registrando nuevo artículo en el inventario..."):
                 try:
+                    # S'envia a la URL global que hem centralitzat dalt del tot
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                     if "OK" in respuesta.text or "MERCH" in respuesta.text:
                         st.success(f"🎉 ¡Producto '{nombre_prod}' guardado con éxito en Google Sheets!")
@@ -866,6 +900,8 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_nuevo_prod"):
         st.session_state.current_menu = "MERCHANDISING"
         st.rerun()
+
+
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
     st.title("🛒 REGISTRAR NUEVO PEDIDO")
