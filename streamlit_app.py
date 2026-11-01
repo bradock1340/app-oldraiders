@@ -743,7 +743,12 @@ else:
             st.rerun()
 
 # === 5. PANTALLA: MENÚ MERCHANDISING ===
-elif st.session_state.current_menu == "PANTALLA_MERCHANDISING" or st.session_state.current_menu == "MERCHANDISING":
+# ==============================================================================
+# === 5. ZONA DE MERCHANDISING (MÓDULO INDEPENDIENTE PARA EVITAR ERRORES) ======
+# ==============================================================================
+
+# Cambiamos el primer 'elif' por un 'if' para aislarlo de los problemas de arriba
+if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
     
     if st.button("CONSULTAR PRODUCTOS"):
@@ -778,18 +783,15 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
     st.write("---")
     try:
-        # 1. Leer los datos de la pestaña Merchandising
         df_merch = pd.read_csv(URL_MERCHANDISING)
         df_merch.columns = df_merch.columns.str.strip()
         
         if not df_merch.empty:
-            # Buscador rápido por nombre de producto
             busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
             df_filtrado_merch = df_merch.copy()
             if busqueda_prod:
                 df_filtrado_merch = df_filtrado_merch[df_filtrado_merch['Producto'].astype(str).str.lower().str.contains(busqueda_prod)]
             
-            # Mostrar el inventario en una tabla bonita de Streamlit
             st.dataframe(df_filtrado_merch, use_container_width=True, hide_index=True)
         else:
             st.info("No hay productos registrados en el inventario todavía.")
@@ -807,7 +809,6 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     st.write("Introduce los datos del nuevo artículo para el inventario general.")
     st.write("---")
     
-    # Formulario sin el campo de Talla
     id_prod = st.text_input("ID Producto (Ej: PROD001)")
     nombre_prod = st.text_input("Nombre del Producto")
     precio_prod = st.number_input("Precio (€)", min_value=0.0, step=0.5)
@@ -818,7 +819,6 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     
     if st.button("💾 GUARDAR PRODUCTO"):
         if id_prod and nombre_prod:
-            # Aquí realizas la lógica de inserción a tu Google Sheets
             st.success(f"Producto '{nombre_prod}' registrado correctamente sin talla asignada.")
         else:
             st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
@@ -834,12 +834,10 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
     st.write("---")
     
     try:
-        # 1. Leer productos existentes para el selector
         df_merch = pd.read_csv(URL_MERCHANDISING)
         df_merch.columns = df_merch.columns.str.strip()
         lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
         
-        # 2. Leer usuarios existentes directamente desde URL_USUARIOS usando la columna 'Alias'
         socios_disponibles = ["-- Seleccionar Socio --", "General"]
         try:
             df_usuarios_ped = pd.read_csv(URL_USUARIOS)
@@ -851,16 +849,11 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         except Exception as e_users:
             st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
             
-        # Selector de Socios con "General" y los "Alias" reales incorporados
         socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
         producto_pedido = st.selectbox("📦 Selecciona el Producto:", lista_productos)
         
         if producto_pedido != "-- Seleccionar Artículo --":
-            
-            # LISTA EXPANDIDA DE TALLAS HASTA 5XL
             tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
-            
-            # SELECTOR DE TALLA
             talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
             
             col_cant, col_entrega = st.columns(2)
@@ -871,11 +864,9 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
                 
             st.write("---")
             
-            # BOTÓN DE ACCIÓN COMPLETO CON POST HACIA GOOGLE APPS SCRIPT
             if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                 if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
                     
-                    # IMPORTS INTERNOS SEGUROS
                     from datetime import datetime
                     import requests
                     import json
