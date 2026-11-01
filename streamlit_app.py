@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import base64
-
+import time
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Riders MC", page_icon="🏍️", layout="centered")
 
