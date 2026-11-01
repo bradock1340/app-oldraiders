@@ -754,7 +754,9 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     if st.button("CONSULTAR PRODUCTOS"):
         st.session_state.current_menu = "MERCH_CONSULTAR"
         st.rerun()
-        
+    if st.button("CONSULTAR PEDIDOS / RESERVAS"):
+        st.session_state.current_menu = "MERCH_PEDIDOS"
+        st.rerun()    
     if st.button("NUEVO PRODUCTO"):
         st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
         st.rerun()
@@ -802,7 +804,55 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
+# === NUEVA SUBPANTALLA 5.1.2: CONSULTAR PEDIDOS (CON FILTRADO ADAPTADO) ===
+elif st.session_state.current_menu == "MERCH_PEDIDOS":
+    st.title("📋 HISTÓRICO DE PEDIDOS Y RESERVAS")
+    st.write("Gestiona las entregas y las reservas pendientes del club.")
+    st.write("---")
+    
+    try:
+        # Cargamos la pestaña de pedidos (usando tu URL base y apuntando a la hoja de pedidos)
+        URL_PEDIDOS = URL_MERCHANDISING.replace("sheet=Merchandising", "sheet=Pedidos")
+        
+        df_pedidos = pd.read_csv(URL_PEDIDOS)
+        df_pedidos.columns = df_pedidos.columns.str.strip()
+        
+        if not df_pedidos.empty:
+            # Buscador por Alias/Socio para saber rápido qué tiene cada uno
+            buscar_socio = st.text_input("🔍 Filtrar por Socio o Artículo...").strip().lower()
+            if buscar_socio:
+                df_pedidos = df_pedidos[
+                    df_pedidos['Socio'].astype(str).str.lower().str.contains(buscar_socio) | 
+                    df_pedidos['Producto'].astype(str).str.lower().str.contains(buscar_socio)
+                ]
+            
+            # Creamos dos pestañas visuales separadas
+            tab_pendientes, tab_entregados = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS"])
+            
+            with tab_pendientes:
+                # Filtramos por el estado exacto que envías en el radio botón
+                df_pendientes = df_pedidos[df_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False, na=False)]
+                if not df_pendientes.empty:
+                    st.dataframe(df_pendientes, use_container_width=True, hide_index=True)
+                else:
+                    st.success("🎉 ¡No hay pedidos pendientes de entrega!")
+                    
+            with tab_entregados:
+                df_entregados = df_pedidos[df_pedidos['Estado_Entrega'].astype(str).str.contains("Entregado", case=False, na=False)]
+                if not df_entregados.empty:
+                    st.dataframe(df_entregados, use_container_width=True, hide_index=True)
+                else:
+                    st.info("No hay registros de pedidos entregados todavía.")
+        else:
+            st.info("No se han realizado pedidos en el sistema de histórico aún.")
+            
+    except Exception as e:
+        st.error(f"Error al conectar con la pestaña de historial de pedidos: {e}")
+        st.info("Asegúrate de que la pestaña de tu Google Sheets se llama exactamente 'Pedidos'.")
+        
+    if st.button("🔙 VOLVER", key="btn_volver_pedidos_listado"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     st.title("➕ REGISTRAR NUEVO PRODUCTO")
