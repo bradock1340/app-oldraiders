@@ -773,35 +773,34 @@ else:
                 st.rerun()
 
 # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
-    elif st.session_state.current_menu == "MERCH_CONSULTAR":
-        st.title("📦 INVENTARIO DE PRODUCTOS")
-        st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
-        st.write("---")
+   # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
+elif st.session_state.current_menu == "MERCH_CONSULTAR":
+    st.title("📦 INVENTARIO DE PRODUCTOS")
+    st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
+    st.write("---")
+    try:
+        # 1. Leer los datos de la pestaña Merchandising
+        df_merch = pd.read_csv(URL_MERCHANDISING)
+        df_merch.columns = df_merch.columns.str.strip()
         
-        try:
-            # 1. Leer los datos de la pestaña Merchandising
-            df_merch = pd.read_csv(URL_MERCHANDISING)
-            df_merch.columns = df_merch.columns.str.strip()
+        if not df_merch.empty:
+            # Buscador rápido por nombre de producto
+            busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
+            df_filtrado_merch = df_merch.copy()
+            if busqueda_prod:
+                df_filtrado_merch = df_filtrado_merch[df_filtrado_merch['Producto'].astype(str).str.lower().str.contains(busqueda_prod)]
             
-            if not df_merch.empty:
-                # Buscador rápido por nombre de producto
-                busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
-                
-                df_filtrado_merch = df_merch.copy()
-                if busqueda_prod:
-                    df_filtrado_merch = df_filtrado_merch[df_filtrado_merch['Producto'].astype(str).str.lower().str.contains(busqueda_prod)]
-                
-                # Mostrar el inventario en una tabla bonita de Streamlit
-                st.dataframe(df_filtrado_merch, use_container_width=True, hide_index=True)
-            else:
-                st.info("No hay productos registrados en el inventario todavía.")
-                
-        except Exception as e:
-            st.error(f"Error de lectura en la hoja Merchandising: {e}")
+            # Mostrar el inventario en una tabla bonita de Streamlit
+            st.dataframe(df_filtrado_merch, use_container_width=True, hide_index=True)
+        else:
+            st.info("No hay productos registrados en el inventario todavía.")
             
-        if st.button("🔙 VOLVER"):
-            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-            st.rerun()
+    except Exception as e:
+        st.error(f"Error de lectura en la hoja Merchandising: {e}")
+        
+    if st.button("🔙 VOLVER", key="btn_volver_consultar"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
 
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
