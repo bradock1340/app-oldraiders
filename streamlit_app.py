@@ -910,7 +910,8 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
             with col_cant:
                 cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
             with col_entrega:
-                estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], horizontal=True)
+               #estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], horizontal=True)
+                estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], index=1, horizontal=True)
                 
             st.write("---")
             
