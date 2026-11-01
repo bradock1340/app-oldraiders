@@ -832,6 +832,7 @@ else:
             st.session_state.current_menu = "MERCHANDISING"
             st.rerun()
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
+# === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
     elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         st.title("🛒 REGISTRAR NUEVO PEDIDO")
         st.write("Selecciona el producto y define la talla para este pedido específico.")
@@ -880,12 +881,14 @@ else:
                 if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                     if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
                         
-                        id_pedido_automatico = f"PED-{int(time.time())}" if 'id_pedido_automatico' not in locals() else id_pedido_automatico
+                        # SOLUCIÓN DEFINITIVA: Generamos el ID único usando la fecha y hora exacta (AñoMesDíaHoraMinutoSegundo) sin usar 'time'
+                        ahora = datetime.now()
+                        id_pedido_automatico = f"PED-{ahora.strftime('%Y%m%d%H%M%S')}"
                         
                         payload = {
                             "accion": "guardar_pedido_merch",
                             "Id_Pedido": id_pedido_automatico,
-                            "Fecha": datetime.now().strftime("%d/%m/%Y"),
+                            "Fecha": ahora.strftime("%d/%m/%Y"),
                             "Socio": socio_pedido,  
                             "Producto": producto_pedido,
                             "Talla": talla_seleccionada,
@@ -900,7 +903,8 @@ else:
                                 respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                                 if "OK" in respuesta.text or "éxito" in respuesta.text:
                                     st.success(f"🎉 Pedido de {socio_pedido} guardado con éxito en la pestaña 'Pedidos'.")
-                                    time.sleep(1.5)
+                                    
+                                    # Evitamos usar time.sleep(1.5) por si acaso tampoco estuviera importado
                                     st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                                     st.rerun()
                                 else:
