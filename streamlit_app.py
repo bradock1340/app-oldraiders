@@ -864,7 +864,7 @@ else:
             if producto_pedido != "-- Seleccionar Artículo --":
                 
                 # Al no estar la talla en el inventario, ponemos las opciones fijas para elegir en el pedido
-                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL"]
+                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL]
                 
                 # SELECTOR DE TALLA
                 talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
@@ -895,7 +895,7 @@ else:
                             "Estado_Entrega": estado_entrega
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
                             try:
