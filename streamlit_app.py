@@ -881,7 +881,10 @@ else:
                 if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
                     if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
                         
-                        # SOLUCIÓN DEFINITIVA: Generamos el ID único usando la fecha y hora exacta (AñoMesDíaHoraMinutoSegundo) sin usar 'time'
+                        # IMPORTS INTERNOS SEGUROS (Evita errores de 'not defined')
+                        from datetime import datetime
+                        import time
+                        
                         ahora = datetime.now()
                         id_pedido_automatico = f"PED-{ahora.strftime('%Y%m%d%H%M%S')}"
                         
@@ -903,8 +906,7 @@ else:
                                 respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                                 if "OK" in respuesta.text or "éxito" in respuesta.text:
                                     st.success(f"🎉 Pedido de {socio_pedido} guardado con éxito en la pestaña 'Pedidos'.")
-                                    
-                                    # Evitamos usar time.sleep(1.5) por si acaso tampoco estuviera importado
+                                    time.sleep(1.5)
                                     st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                                     st.rerun()
                                 else:
@@ -922,6 +924,7 @@ else:
         if st.button("🔙 VOLVER"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+
                
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
