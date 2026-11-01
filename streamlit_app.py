@@ -909,13 +909,43 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     
     if st.button("💾 GUARDAR PRODUCTO"):
         if id_prod and nombre_prod:
-            st.success(f"Producto '{nombre_prod}' registrado correctamente.")
+            
+            # Construïm les dades exactes que necessita la teva llista del Sheets (sense Talla)
+            payload = {
+                "accion": "crear_producto_merch",
+                "Id_Producto": id_prod,
+                "Producto": nombre_prod,
+                "Precio": float(precio_prod),
+                "Proveedor": proveedor,
+                "Tel_Proveedor": tel_proveedor,
+                "Descripcion": descripcion,
+                "Stock": int(stock_inicial)
+            }
+            
+            import requests
+            import json
+            import time
+            
+            with st.spinner("Registrando nuevo artículo en el inventario..."):
+                try:
+                    # S'envia a la URL global que hem centralitzat dalt del tot
+                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                    if "OK" in respuesta.text or "MERCH" in respuesta.text:
+                        st.success(f"🎉 ¡Producto '{nombre_prod}' guardado con éxito en Google Sheets!")
+                        time.sleep(1.5)
+                        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                        st.rerun()
+                    else:
+                        st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                except Exception as err:
+                    st.error(f"Error de conexión al guardar el producto: {err}")
         else:
             st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
             
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_nuevo_prod"):
         st.session_state.current_menu = "MERCHANDISING"
         st.rerun()
+
 
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
