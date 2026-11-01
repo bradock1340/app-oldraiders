@@ -989,6 +989,61 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
     if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+        # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
+elif st.session_state.current_menu == "MERCH_PEDIDOS":
+    st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
+    st.write("Consulta el estado de las reservas de merchandising.")
+    st.write("---")
+    
+    try:
+        # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
+        URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+        df_pedidos = pd.read_csv(URL_PEDIDOS)
+        df_pedidos.columns = df_pedidos.columns.str.strip()
+        
+        if not df_pedidos.empty:
+            busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
+            df_filtrado_ped = df_pedidos.copy()
+            if busqueda_ped:
+                df_filtrado_ped = df_filtrado_ped[
+                    df_filtrado_ped['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
+                    df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
+                ]
+            
+            st.write("---")
+            
+            for index, row in df_filtrado_ped.iterrows():
+                with st.container():
+                    col_info, col_accion = st.columns([3, 1])
+                    
+                    with col_info:
+                        st.markdown(f"🛍️ **Pedido ID:** {row.get('Id_Pedido', index)} — 👤 **{row.get('Socio', 'N/A')}**")
+                        st.write(f"📦 **Producto:** {row.get('Producto', 'N/A')} | 🔢 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📏 **Talla:** {row.get('Talla', 'N/A')}")
+                        
+                        estado = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
+                        if "Entregado" in estado:
+                            st.success(f"🟢 Estado: {estado}")
+                        else:
+                            st.warning(f"🟡 Estado: {estado}")
+                            
+                    with col_accion:
+                        # 🔒 Aquí aplicamos tu regla: solo Presidente, Vicepresidente, Tesorero y Secretario pueden modificar o eliminar
+                        if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario"]:
+                            if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
+                                # Aquí iría tu lógica de conexión con Google para borrar la fila
+                                st.info("Lógica para eliminar pedido")
+                        else:
+                            st.caption("🔒 *Solo Lectura*")
+                st.write("---")
+        else:
+            st.info("No hay pedidos registrados en el sistema todavía.")
+            
+    except Exception as e:
+        st.error(f"Error al leer la pestaña Pedidos: {e}")
+        
+    if st.button("🔙 VOLVER AL MENÚ", key="btn_volver_pedidos"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
