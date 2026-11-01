@@ -909,7 +909,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     
     if st.button("💾 GUARDAR PRODUCTO"):
         if id_prod and nombre_prod:
-            st.success(f"Producto '{nombre_prod}' registrado correctamente sin talla asignada.")
+            st.success(f"Producto '{nombre_prod}' registrado correctamente.")
         else:
             st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
             
