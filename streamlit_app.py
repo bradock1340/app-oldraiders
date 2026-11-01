@@ -831,9 +831,7 @@ else:
         if st.button("⬅️ VOLVER AL MENÚ"):
             st.session_state.current_menu = "MERCHANDISING"
             st.rerun()
-
-                
-     # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
+# === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
     elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         st.title("🛒 REGISTRAR NUEVO PEDIDO")
         st.write("Selecciona el producto y define la talla para este pedido específico.")
@@ -846,13 +844,20 @@ else:
             
             lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
             
-            # Construir la lista de socios incluyendo siempre "General" primero
+            # 2. Leer usuarios existentes directamente desde URL_USUARIOS usando la columna 'Alias'
             socios_disponibles = ["-- Seleccionar Socio --", "General"]
-            if 'lista_socios' in locals() or 'lista_socios' in globals():
-                # Evitamos duplicar si 'General' ya estuviera dentro de lista_socios
-                socios_disponibles += [s for s in lista_socios if s != "General"]
+            try:
+                df_usuarios_ped = pd.read_csv(URL_USUARIOS)
+                df_usuarios_ped.columns = df_usuarios_ped.columns.str.strip()
+                
+                if 'Alias' in df_usuarios_ped.columns:
+                    lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
+                    # Añadimos los alias evitando duplicar "General" si ya existiera por error en la lista
+                    socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
+            except Exception as e_users:
+                st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
             
-            # Selector de Socios con "General" incorporado
+            # Selector de Socios con "General" y los "Alias" reales incorporados
             socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
             producto_pedido = st.selectbox("👕 Selecciona el Producto:", lista_productos)
             
@@ -883,7 +888,7 @@ else:
                             "accion": "guardar_pedido_merch",
                             "Id_Pedido": id_pedido_automatico,
                             "Fecha": datetime.now().strftime("%d/%m/%Y"),
-                            "Socio": socio_pedido,
+                            "Socio": socio_pedido,  # Enviará el Alias seleccionado o "General"
                             "Producto": producto_pedido,
                             "Talla": talla_seleccionada,
                             "Cantidad": int(cantidad),
@@ -915,6 +920,7 @@ else:
         if st.button("🔙 VOLVER"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+                
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
