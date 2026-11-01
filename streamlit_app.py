@@ -742,38 +742,37 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5. PANTALLA: MENÚ MERCHANDISING  ===
-    elif st.session_state.current_menu == "PANTALLA_MERCHANDISING" or st.session_state.current_menu == "MERCHANDISING":
-        st.title("👕 MERCHANDISING")
+# === 5. PANTALLA: MENÚ MERCHANDISING ===
+elif st.session_state.current_menu == "PANTALLA_MERCHANDISING" or st.session_state.current_menu == "MERCHANDISING":
+    st.title("👕 MERCHANDISING")
+    
+    if st.button("CONSULTAR PRODUCTOS"):
+        st.session_state.current_menu = "MERCH_CONSULTAR"
+        st.rerun()
         
-        if st.button("CONSULTAR PRODUCTOS"):
-            st.session_state.current_menu = "MERCH_CONSULTAR"
-            st.rerun()
-            
-        if st.button("NUEVO PRODUCTO"):
-            st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
-            st.rerun()
-            
-        if st.button("NUEVO PEDIDO"):
-            st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
-            st.rerun()
-            
-        st.write("---")
+    if st.button("NUEVO PRODUCTO"):
+        st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
+        st.rerun()
         
-        # Botones inferiores de navegación en dos columnas (Volver / Salir)
-        col_nav1, col_nav2 = st.columns(2)
-        with col_nav1:
-            if st.button("⬅️ VOLVER"):
-                st.session_state.current_menu = "PRINCIPAL"
-                st.rerun()
-        with col_nav2:
-            if st.button("❌ SALIR"):
-                st.session_state.authenticated = False
-                st.session_state.current_menu = "PRINCIPAL"
-                st.rerun()
+    if st.button("NUEVO PEDIDO"):
+        st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
+        st.rerun()
+        
+    st.write("---")
+    
+    # Botones inferiores de navegación en dos columnas (Volver / Salir)
+    col_nav1, col_nav2 = st.columns(2)
+    with col_nav1:
+        if st.button("⬅️ VOLVER", key="btn_volver_merch_principal"):
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
+    with col_nav2:
+        if st.button("❌ SALIR", key="btn_salir_merch_principal"):
+            st.session_state.authenticated = False
+            st.session_state.current_menu = "PRINCIPAL"
+            st.rerun()
 
 # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
-   # === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS ===
 elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.title("📦 INVENTARIO DE PRODUCTOS")
     st.write("Consulta el stock disponible de chalecos, parches, camisetas y material oficial.")
@@ -824,13 +823,13 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
         else:
             st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
             
-    if st.button("⬅️ VOLVER AL MENÚ"):
+    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_nuevo_prod"):
         st.session_state.current_menu = "MERCHANDISING"
         st.rerun()
 
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
-    st.title("👕 REGISTRAR NUEVO PEDIDO")
+    st.title("🛒 REGISTRAR NUEVO PEDIDO")
     st.write("Selecciona el producto y define la talla para este pedido específico.")
     st.write("---")
     
@@ -918,10 +917,10 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
     except Exception as e:
         st.error(f"Error al procesar las bases de datos para el pedido: {e}")
         
-    if st.button("🔙 VOLVER"):
+    if st.button("🔙 VOLVER", key="btn_volver_pedido_final"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-               
+ 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
