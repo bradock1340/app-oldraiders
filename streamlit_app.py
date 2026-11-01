@@ -833,7 +833,7 @@ else:
             st.rerun()
 
                 
-      # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
+     # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
     elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         st.title("🛒 REGISTRAR NUEVO PEDIDO")
         st.write("Selecciona el producto y define la talla para este pedido específico.")
@@ -844,12 +844,16 @@ else:
             df_merch = pd.read_csv(URL_MERCHANDISING)
             df_merch.columns = df_merch.columns.str.strip()
             
-            # Asumimos que tienes una lista de socios ya cargada previamente o la iniciamos por seguridad
-            # (Ajusta 'lista_socios' si usas otra variable en tu código global para los nombres de los miembros)
             lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
             
-            # Nota: Si tienes cargado tu df de socios, puedes usar sus nombres aquí. Si no, dejamos un input o selectbox genérico.
-            socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", ["-- Seleccionar Socio --"] + (lista_socios if 'lista_socios' in locals() or 'lista_socios' in globals() else ["General"]))
+            # Construir la lista de socios incluyendo siempre "General" primero
+            socios_disponibles = ["-- Seleccionar Socio --", "General"]
+            if 'lista_socios' in locals() or 'lista_socios' in globals():
+                # Evitamos duplicar si 'General' ya estuviera dentro de lista_socios
+                socios_disponibles += [s for s in lista_socios if s != "General"]
+            
+            # Selector de Socios con "General" incorporado
+            socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
             producto_pedido = st.selectbox("👕 Selecciona el Producto:", lista_productos)
             
             if producto_pedido != "-- Seleccionar Artículo --":
@@ -886,7 +890,7 @@ else:
                             "Estado_Entrega": estado_entrega
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        URL_PROCESADOR_GOOGLE = "https://google.com"
                         
                         with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
                             try:
@@ -901,7 +905,7 @@ else:
                             except Exception as err:
                                 st.error(f"Error de red al guardar el pedido: {err}")
                     else:
-                        st.warning("Por favor, selecciona obligatoriamente un miembro y un producto antes de confirmar.")
+                        st.warning("Por favor, selecciona obligatoriamente un miembro o 'General' y un producto antes de confirmar.")
             else:
                 st.info("Por favor, selecciona un artículo para configurar los detalles del encargo.")
                 
@@ -911,8 +915,6 @@ else:
         if st.button("🔙 VOLVER"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-
-
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
