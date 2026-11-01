@@ -869,7 +869,7 @@ else:
             st.rerun()
                 # FILTRADO DINÁMICO DE TALLAS SEGÚN EL PRODUCTO SELECCIONADO
                 tallas_disponibles = ["Única"]
-                if producto_pedido != "-- Seleccionar Artículo --":
+            if producto_pedido != "-- Seleccionar Artículo --":
                     # Filtramos en tu hoja de Merchandising para extraer las tallas registradas para ese producto concreto
                     filas_prod = df_articulos[df_articulos['Producto'] == producto_pedido]
                     tallas_disponibles = sorted(filas_prod['Talla'].dropna().astype(str).unique())
