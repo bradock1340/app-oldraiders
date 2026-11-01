@@ -833,98 +833,98 @@ else:
             st.rerun()
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
-    elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
-        st.title("🛒 REGISTRAR NUEVO PEDIDO")
-        st.write("Selecciona el producto y define la talla para este pedido específico.")
-        st.write("---")
+elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
+    st.title("👕 REGISTRAR NUEVO PEDIDO")
+    st.write("Selecciona el producto y define la talla para este pedido específico.")
+    st.write("---")
+    
+    try:
+        # 1. Leer productos existentes para el selector
+        df_merch = pd.read_csv(URL_MERCHANDISING)
+        df_merch.columns = df_merch.columns.str.strip()
+        lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
         
+        # 2. Leer usuarios existentes directamente desde URL_USUARIOS usando la columna 'Alias'
+        socios_disponibles = ["-- Seleccionar Socio --", "General"]
         try:
-            # 1. Leer productos existentes para el selector
-            df_merch = pd.read_csv(URL_MERCHANDISING)
-            df_merch.columns = df_merch.columns.str.strip()
+            df_usuarios_ped = pd.read_csv(URL_USUARIOS)
+            df_usuarios_ped.columns = df_usuarios_ped.columns.str.strip()
             
-            lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
+            if 'Alias' in df_usuarios_ped.columns:
+                lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
+                socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
+        except Exception as e_users:
+            st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
             
-            # 2. Leer usuarios existentes directamente desde URL_USUARIOS usando la columna 'Alias'
-            socios_disponibles = ["-- Seleccionar Socio --", "General"]
-            try:
-                df_usuarios_ped = pd.read_csv(URL_USUARIOS)
-                df_usuarios_ped.columns = df_usuarios_ped.columns.str.strip()
-                
-                if 'Alias' in df_usuarios_ped.columns:
-                    lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
-                    socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
-            except Exception as e_users:
-                st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
+        # Selector de Socios con "General" y los "Alias" reales incorporados
+        socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
+        producto_pedido = st.selectbox("📦 Selecciona el Producto:", lista_productos)
+        
+        if producto_pedido != "-- Seleccionar Artículo --":
             
-            # Selector de Socios con "General" y los "Alias" reales incorporados
-            socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
-            producto_pedido = st.selectbox("👕 Selecciona el Producto:", lista_productos)
+            # LISTA EXPANDIDA DE TALLAS HASTA 5XL
+            tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
             
-            if producto_pedido != "-- Seleccionar Artículo --":
+            # SELECTOR DE TALLA
+            talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
+            
+            col_cant, col_entrega = st.columns(2)
+            with col_cant:
+                cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
+            with col_entrega:
+                estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], horizontal=True)
                 
-                # LISTA EXPANDIDA DE TALLAS HASTA 5XL
-                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
-                
-                # SELECTOR DE TALLA
-                talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
-                
-                col_cant, col_entrega = st.columns(2)
-                with col_cant:
-                    cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
-                with col_entrega:
-                    estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], horizontal=True)
+            st.write("---")
+            
+            # BOTÓN DE ACCIÓN COMPLETO CON POST HACIA GOOGLE APPS SCRIPT
+            if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
+                if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
                     
-                st.write("---")
-                
-                # BOTÓN DE ACCIÓN COMPLETO CON POST HACIA GOOGLE APPS SCRIPT
-                if st.button("🛒 ENCARGAR Y GUARDAR PEDIDO"):
-                    if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
-                        
-                        # IMPORTS INTERNOS SEGUROS (Evita errores de 'not defined')
-                        from datetime import datetime
-                        import time
-                        
-                        ahora = datetime.now()
-                        id_pedido_automatico = f"PED-{ahora.strftime('%Y%m%d%H%M%S')}"
-                        
-                        payload = {
-                            "accion": "guardar_pedido_merch",
-                            "Id_Pedido": id_pedido_automatico,
-                            "Fecha": ahora.strftime("%d/%m/%Y"),
-                            "Socio": socio_pedido,  
-                            "Producto": producto_pedido,
-                            "Talla": talla_seleccionada,
-                            "Cantidad": int(cantidad),
-                            "Estado_Entrega": estado_entrega
-                        }
-                        
-                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-                        
-                        with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
-                            try:
-                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                                if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                    st.success(f"🎉 Pedido de {socio_pedido} guardado con éxito en la pestaña 'Pedidos'.")
-                                    time.sleep(1.5)
-                                    st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-                                    st.rerun()
-                                else:
-                                    st.error(f"Fallo en la respuesta de Google: {respuesta.text}")
-                            except Exception as err:
-                                st.error(f"Error de red al guardar el pedido: {err}")
-                    else:
-                        st.warning("Por favor, selecciona obligatoriamente un miembro o 'General' y un producto antes de confirmar.")
-            else:
-                st.info("Por favor, selecciona un artículo para configurar los detalles del encargo.")
-                
-        except Exception as e:
-            st.error(f"Error al procesar las bases de datos para el pedido: {e}")
+                    # IMPORTS INTERNOS SEGUROS (Evita errores de 'not defined' de raíz)
+                    from datetime import datetime
+                    import requests
+                    import json
+                    import time
+                    
+                    ahora = datetime.now()
+                    id_pedido_automatico = f"PED-{ahora.strftime('%Y%m%d%H%M%S')}"
+                    
+                    payload = {
+                        "accion": "guardar_pedido_merch",
+                        "Id_Pedido": id_pedido_automatico,
+                        "Fecha": ahora.strftime("%d/%m/%Y"),
+                        "Socio": socio_pedido,  
+                        "Producto": producto_pedido,
+                        "Talla": talla_seleccionada,
+                        "Cantidad": int(cantidad),
+                        "Estado_Entrega": estado_entrega
+                    }
+                    
+                    URL_PROCESADOR_GOOGLE = "https://google.com"
+                    
+                    with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
+                        try:
+                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                            if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                st.success(f"🎉 Pedido de {socio_pedido} guardado con éxito en la pestaña 'Pedidos'.")
+                                time.sleep(1.5)
+                                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                st.rerun()
+                            else:
+                                st.error(f"Fallo en la respuesta de Google: {respuesta.text}")
+                        except Exception as err:
+                            st.error(f"Error de red al guardar el pedido: {err}")
+                else:
+                    st.warning("Por favor, selecciona obligatoriamente un miembro o 'General' y un producto antes de confirmar.")
+        else:
+            st.info("Por favor, selecciona un artículo para configurar los detalles del encargo.")
             
-        if st.button("🔙 VOLVER"):
-            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-            st.rerun()
-
+    except Exception as e:
+        st.error(f"Error al procesar las bases de datos para el pedido: {e}")
+        
+    if st.button("🔙 VOLVER"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
                
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
