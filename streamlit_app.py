@@ -1108,7 +1108,7 @@ def generar_lista_pedidos(dataframe, rol_usuario, roles_validos):
                             "num_fila": num_fila_pedido
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         with st.spinner("Cancelando y eliminando pedido..."):
                             try:
