@@ -1026,38 +1026,35 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
 # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
-    st.write("Consulta el estado de las reservas de merchandising.")
+    st.write("Consulta el estado de las reservas de merchandising del club.")
     st.write("---")
-    
-    # Definimos la URL de forma local e independiente para evitar fallos de variables globales
-    URL_SERVIDOR_APPS_SCRIPT = "https://google.com"
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
-        URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+        URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
         if not df_pedidos.empty:
-            # Creamos la columna indexada para mapear la fila exacta de Sheets antes de cualquier filtro
+            # Añadimos una columna con el número de fila real en Sheets para no perderlo al realizar búsquedas o filtros
             df_pedidos['Fila_Sheets'] = df_pedidos.index + 2
             
-            # Buscador rápido por texto
+            # Buscador por texto integrado de tu código original
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
             
-            # FILTRO VISUAL REQUERIDO: Selector horizontal para cambiar de vista de forma interactiva
+            # FILTRO VISUAL SOLICITADO: Filtro rápido por estado mediante un selector horizontal
             filtro_estado = st.radio("Filtrar por estado de entrega:", ["📋 Todos", "⏳ Reservados / Pendientes", "✅ Entregados"], horizontal=True)
             
             df_filtrado_ped = df_pedidos.copy()
             
-            # Aplicamos buscador de texto si existe
+            # Aplicamos la búsqueda por texto si existe
             if busqueda_ped:
                 df_filtrado_ped = df_filtrado_ped[
                     df_filtrado_ped['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
                     df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
                 
-            # Aplicamos el filtro visual seleccionado basándonos en tu columna Estado_Entrega
+            # Aplicamos el filtro visual de estado según la selección
             if "Pendientes" in filtro_estado:
                 df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
             elif "Entregados" in filtro_estado:
@@ -1069,10 +1066,10 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                 num_fila_pedido = int(row['Fila_Sheets'])
                 
                 with st.container():
-                    col_info, col_accion = st.columns([2.5, 1.5])
+                    col_info, col_accion = st.columns([2.2, 1.8])
                     
                     with col_info:
-                        st.markdown(f"🛍️ **Pedido ID:** {row.get('Id_Pedido', index)} — 👤 **{row.get('Socio', 'N/A')}**")
+                        st.markdown(f"🛍 Imprimación **Pedido ID:** {row.get('Id_Pedido', index)} — 👤 **{row.get('Socio', 'N/A')}**")
                         st.write(f"📦 **Producto:** {row.get('Producto', 'N/A')} | 🔢 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📏 **Talla:** {row.get('Talla', 'N/A')}")
                         
                         estado = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
@@ -1082,57 +1079,48 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                             st.warning(f"🟡 Estado: {estado}")
                             
                     with col_accion:
-                        # 🔒 Control de acceso por roles directivos asignados
+                        # 🔒 Control de acceso por roles directivos originales de tu archivo
                         if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
+                            col_b1, col_b2 = st.columns(2)
                             
-                            # Calculamos el string exacto que tu código de Sheets necesita recibir
-                            es_entregado = "Entregado" in estado
-                            nuevo_estado_texto = "Reservado / Pendiente" if es_entregado else "Entregado"
-                            
-                            # BOTÓN DE MODIFICACIÓN DE ESTADO (Envía la acción editar_pedido_merch que tienes en Sheets)
-                            if st.button("🔄 CAMBIAR ESTADO", key=f"btn_cambiar_est_{index}"):
-                                import requests
-                                import json
-                                import time
-                                
-                                payload_mod = {
-                                    "accion": "editar_pedido_merch",
-                                    "num_fila": num_fila_pedido,
-                                    "Estado_Entrega": nuevo_estado_texto
-                                }
-                                with st.spinner("Actualizando en Sheets..."):
+                            with col_b1:
+                                # PATRÓN RECUPERADO DE REUNIONES: Guardamos el registro en memoria y abrimos el formulario para modificar todo
+                                if st.button("📝 EDITAR", key=f"btn_editar_ped_{index}"):
+                                    pedido_diccionario = row.to_dict()
+                                    pedido_diccionario['Fila_Sheets'] = num_fila_pedido
+                                    st.session_state.edit_pedido_data = pedido_diccionario
+                                    st.session_state.current_menu = "MERCH_EDITAR_PEDIDO"
+                                    st.rerun()
+                                    
+                            with col_b2:
+                                # Botón físico para eliminar la fila del pedido
+                                if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
+                                    import requests
+                                    import json
+                                    import time
+                                    
+                                    payload_del = {
+                                        "accion": "eliminar_pedido_merch",
+                                        "num_fila": num_fila_pedido
+                                    }
+                                    
+                                    # Intentamos buscar tu variable global; si no está inicializada aún, usamos el endpoint directo de tu script
                                     try:
-                                        respuesta = requests.post(URL_SERVIDOR_APPS_SCRIPT, data=json.dumps(payload_mod), headers={"Content-Type": "application/json"})
-                                        if "OK" in respuesta.text:
-                                            st.success("¡Estado cambiado!")
-                                            time.sleep(1.0)
-                                            st.rerun()
-                                        else:
-                                            st.error(f"Error de Sheets: {respuesta.text}")
-                                    except Exception as err:
-                                        st.error(f"Error de red: {err}")
-                            
-                            # BOTÓN PARA ELIMINAR PEDIDO
-                            if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
-                                import requests
-                                import json
-                                import time
-                                
-                                payload_del = {
-                                    "accion": "eliminar_pedido_merch",
-                                    "num_fila": num_fila_pedido
-                                }
-                                with st.spinner("Borrando del Sheets..."):
-                                    try:
-                                        respuesta = requests.post(URL_SERVIDOR_APPS_SCRIPT, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
-                                        if "OK" in respuesta.text:
-                                            st.success("Pedido eliminado.")
-                                            time.sleep(1.0)
-                                            st.rerun()
-                                        else:
-                                            st.error(f"Error de Sheets: {respuesta.text}")
-                                    except Exception as err:
-                                        st.error(f"Error de red: {err}")
+                                        url_destino = URL_PROCESADOR_GOOGLE
+                                    except NameError:
+                                        url_destino = "https://google.com"
+                                        
+                                    with st.spinner("Eliminando registro..."):
+                                        try:
+                                            respuesta = requests.post(url_destino, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
+                                            if "OK" in respuesta.text:
+                                                st.success("Pedido eliminado correctamente.")
+                                                time.sleep(1.0)
+                                                st.rerun()
+                                            else:
+                                                st.error(f"Fallo del servidor: {respuesta.text}")
+                                        except Exception as err:
+                                            st.error(f"Error de red: {err}")
                         else:
                             st.caption("🔒 *Solo Lectura*")
                 st.write("---")
@@ -1145,7 +1133,75 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     if st.button("🔙 VOLVER AL MENÚ", key="btn_volver_pedidos"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
+# === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO EXISTENTE (IGUAL QUE EDITAR REUNIÓN) ===
+elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
+    st.title("📝 MODIFICAR DETALLES DEL PEDIDO")
+    st.write("Modifica el estado de la entrega, la cantidad o los datos básicos del encargo.")
+    st.write("---")
+    
+    # Extraemos el diccionario guardado temporalmente en memoria
+    datos_previos_pedido = st.session_state.get("edit_pedido_data", {})
+    fila_editar = datos_previos_pedido.get("Fila_Sheets")
+    
+    if not datos_previos_pedido:
+        st.error("No se han cargado datos para modificar.")
+        if st.button("⬅ VOLVER"):
+            st.session_state.current_menu = "MERCH_PEDIDOS"
+            st.rerun()
+    else:
+        # Campos pre-rellenados con la información original recuperada de Google Sheets
+        id_pedido_act = st.text_input("ID Pedido", value=str(datos_previos_pedido.get("Id_Pedido", "")), disabled=True)
+        socio_act = st.text_input("👤 Miembro / Socio", value=str(datos_previos_pedido.get("Socio", "")), disabled=True)
+        producto_act = st.text_input("📦 Artículo", value=str(datos_previos_pedido.get("Producto", "")), disabled=True)
+        talla_act = st.text_input("📏 Talla", value=str(datos_previos_pedido.get("Talla", "Única")), disabled=True)
+        
+        # Campos editables requeridos (Cantidad y Estado de Entrega)
+        cantidad_nueva = st.number_input("🔢 Modificar Cantidad de unidades", min_value=1, value=int(datos_previos_pedido.get("Cantidad", 1)), step=1)
+        
+        # Buscamos el índice por defecto para tu selector horizontal
+        estado_actual_str = str(datos_previos_pedido.get("Estado_Entrega", "Reservado / Pendiente"))
+        idx_defecto_radio = 0 if "Entregado" in estado_actual_str else 1
+        estado_nuevo = st.radio("🔄 Modificar Estado de Entrega:", ["Entregado", "Reservado / Pendiente"], index=idx_defecto_radio, horizontal=True)
+        
+        st.write("---")
+        
+        if st.button("💾 GUARDAR Y ACTUALIZAR CAMBIOS"):
+            import requests
+            import json
+            import time
+            
+            # Estructuramos el paquete de datos clavado para enviar a tu Google Apps Script
+            payload_update = {
+                "accion": "editar_pedido_merch",
+                "num_fila": fila_editar,
+                "Estado_Entrega": estado_nuevo
+                # Nota: Tu Apps Script actual actualiza la columna 7 con Estado_Entrega. 
+                # Si deseas actualizar también la columna de Cantidad, avísame para guiarte en cómo expandir la función del Sheets.
+            }
+            
+            try:
+                url_destino = URL_PROCESADOR_GOOGLE
+            except NameError:
+                url_destino = "https://google.com"
+                
+            with st.spinner("Sincronizando modificaciones con Google Sheets..."):
+                try:
+                    respuesta = requests.post(url_destino, data=json.dumps(payload_update), headers={"Content-Type": "application/json"})
+                    if "OK" in respuesta.text:
+                        st.success("🎉 ¡Pedido modificado con éxito en la nube!")
+                        time.sleep(1.5)
+                        st.session_state.edit_pedido_data = None
+                        st.session_state.current_menu = "MERCH_PEDIDOS"
+                        st.rerun()
+                    else:
+                        st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                except Exception as err:
+                    st.error(f"Error de conexión al actualizar el pedido: {err}")
+                    
+        if st.button("⬅ CANCELAR Y VOLVER", key="btn_cancelar_edicion_ped"):
+            st.session_state.edit_pedido_data = None
+            st.session_state.current_menu = "MERCH_PEDIDOS"
+            st.rerun()
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
