@@ -1023,7 +1023,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
 
-        # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
+# === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
     st.write("Consulta el estado de las reservas de merchandising.")
@@ -1031,25 +1031,40 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
-        
         URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
         if not df_pedidos.empty:
+            # 1. Filtro por buscador de texto
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
+            
+            # 2. FILTRO VISUAL RECUPERADO: Selector para ver según el estado de entrega
+            filtro_estado = st.radio(" Filtrar por estado de entrega:", ["📋 Todos", "⏳ Reservados / Pendientes", "✅ Entregados"], horizontal=True)
+            
             df_filtrado_ped = df_pedidos.copy()
+            
+            # Aplicamos buscador si hay texto
             if busqueda_ped:
                 df_filtrado_ped = df_filtrado_ped[
                     df_filtrado_ped['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
                     df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
+                
+            # Aplicamos filtro de estado según el selector
+            if "Pendientes" in filtro_estado:
+                df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
+            elif "Entregados" in filtro_estado:
+                df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
             
             st.write("---")
             
             for index, row in df_filtrado_ped.iterrows():
+                # Calculamos la línea exacta del Sheets basándonos en su índice real original
+                num_fila_pedido = int(index) + 2
+                
                 with st.container():
-                    col_info, col_accion = st.columns([3, 1])
+                    col_info, col_accion = st.columns([2.5, 1.5])
                     
                     with col_info:
                         st.markdown(f"🛍️ **Pedido ID:** {row.get('Id_Pedido', index)} — 👤 **{row.get('Socio', 'N/A')}**")
@@ -1063,10 +1078,56 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                             
                     with col_accion:
                         # 🔒 Aquí aplicamos tu regla: solo Presidente, Vicepresidente, Tesorero y Secretario pueden modificar o eliminar
-                        if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario"]:
+                        if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]:
+                            
+                            # Preparar los datos dinámicos para alternar el estado
+                            es_entregado = "Entregado" in estado
+                            nuevo_estado_texto = "Reservado / Pendiente" if es_entregado else "Entregado"
+                            
+                            # BOTÓN NUEVO PARA MODIFICAR EL ESTADO DIRECTAMENTE
+                            if st.button("🔄 CAMBIAR ESTADO", key=f"btn_cambiar_est_{index}"):
+                                import requests
+                                import json
+                                import time
+                                
+                                payload_mod = {
+                                    "accion": "editar_pedido_merch",
+                                    "num_fila": num_fila_pedido,
+                                    "Estado_Entrega": nuevo_estado_texto
+                                }
+                                with st.spinner("Actualizando en Sheets..."):
+                                    try:
+                                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_mod), headers={"Content-Type": "application/json"})
+                                        if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                            st.success("¡Estado cambiado!")
+                                            time.sleep(1.0)
+                                            st.rerun()
+                                        else:
+                                            st.error(f"Error: {respuesta.text}")
+                                    except Exception as err:
+                                        st.error(f"Error de red: {err}")
+                            
+                            # BOTÓN ORIGINAL PARA ELIMINAR EL PEDIDO
                             if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
-                                # Aquí iría tu lógica de conexión con Google para borrar la fila
-                                st.info("Lógica para eliminar pedido")
+                                import requests
+                                import json
+                                import time
+                                
+                                payload_del = {
+                                    "accion": "eliminar_pedido_merch",
+                                    "num_fila": num_fila_pedido
+                                }
+                                with st.spinner("Borrando del Sheets..."):
+                                    try:
+                                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
+                                        if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                            st.success("Pedido eliminado.")
+                                            time.sleep(1.0)
+                                            st.rerun()
+                                        else:
+                                            st.error(f"Error: {respuesta.text}")
+                                    except Exception as err:
+                                        st.error(f"Error de red: {err}")
                         else:
                             st.caption("🔒 *Solo Lectura*")
                 st.write("---")
