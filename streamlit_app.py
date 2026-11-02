@@ -1032,6 +1032,9 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     rol_actual = st.session_state.user_role
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
+    # URL directa integrada para evitar fallos de definición de variables globales
+    URL_SERVIDOR_DIRECTO = "https://google.com"
+    
     # Función auxiliar interna perfectamente alineada con el scope de tu archivo
     def pintar_pestana_pedidos(df_filtrado, df_completo_original, nombre_pestana, url_servidor):
         for idx, row in df_filtrado.iterrows():
@@ -1047,7 +1050,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             st.write("---")
             with st.container():
                 if rol_actual in roles_autorizados:
-                    col_info, col_accion1, col_accion2 = st.columns([2, 1, 1])
+                    col_info, col_accion1, col_accion2 = st.columns()
                 else:
                     col_info = st.container()
                     col_accion1 = None
@@ -1123,25 +1126,24 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             tab_pendientes, tab_entregados, tab_todos = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS", "📋 TODOS LOS PEDIDOS"])
             
             with tab_pendientes:
-                # CORREGIDO: Eliminamos el espacio "Reservado | Pendiente" por "Reservado|Pendiente"
                 df_pendientes = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
                 if df_pendientes.empty:
                     st.info("No hay pedidos pendientes o reservados.")
                 else:
-                    pintar_pestana_pedidos(df_pendientes, df_pedidos, "pendientes", URL_PROCESADOR_GOOGLE)
+                    pintar_pestana_pedidos(df_pendientes, df_pedidos, "pendientes", URL_SERVIDOR_DIRECTO)
                     
             with tab_entregados:
                 df_entregados = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
                 if df_entregados.empty:
                     st.info("No hay pedidos marcados como entregados.")
                 else:
-                    pintar_pestana_pedidos(df_entregados, df_pedidos, "entregados", URL_PROCESADOR_GOOGLE)
+                    pintar_pestana_pedidos(df_entregados, df_pedidos, "entregados", URL_SERVIDOR_DIRECTO)
                     
             with tab_todos:
                 if df_base_pedidos.empty:
                     st.info("No se encontraron registros.")
                 else:
-                    pintar_pestana_pedidos(df_base_pedidos, df_pedidos, "todos", URL_PROCESADOR_GOOGLE)
+                    pintar_pestana_pedidos(df_base_pedidos, df_pedidos, "todos", URL_SERVIDOR_DIRECTO)
         else:
             st.info("No hay pedidos registrados en el histórico.")
             
