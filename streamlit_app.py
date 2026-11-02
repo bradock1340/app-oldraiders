@@ -1031,7 +1031,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
-        URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+       URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
