@@ -1185,9 +1185,11 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
+# Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
-        st.title(st.session_state.current_menu.replace("_", " "))
-        st.info("Sección temporalmente en desarrollo...")
-        if st.button("VOLVER"):
-            st.session_state.current_menu = "OLD_RIDERS_MENU" if "MENU" not in st.session_state.current_menu else "CLUB_MENU"
-            st.rerun()
+st.title(st.session_state.current_menu.replace("_", " "))
+st.info("Sección temporalmente en desarrollo...")
+if st.button("VOLVER"):
+    st.session_state.current_menu = "OLD_RIDERS_MENU" if "MENU" not in st.session_state.current_menu else "CLUB_MENU"
+    st.rerun()
+
