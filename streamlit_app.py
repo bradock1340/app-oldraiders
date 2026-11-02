@@ -1031,8 +1031,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
-        #URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
-        URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+        URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
@@ -1128,8 +1127,8 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
 
-# === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO (IF INDEPENDIENTE PARA EVITAR ERRORES DE SINTAXIS) ===
-if st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
+# === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO (ENCADENADO CORRECTAMENTE EN LA SECUENCIA DE ELIF) ===
+elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
     st.title("📝 MODIFICAR DETALLES DEL PEDIDO")
     st.write("Modifica el estado de la entrega, la cantidad o los datos del encargo.")
     st.write("---")
@@ -1185,8 +1184,6 @@ if st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.edit_pedido_data = None
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
-
-
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
