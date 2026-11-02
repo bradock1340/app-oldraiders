@@ -1169,7 +1169,7 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
                 "num_fila": fila_editar,
                 "Estado_Entrega": estado_nuevo
             }
-            
+            URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
             with st.spinner("Sincronizando modificaciones con Google Sheets..."):
                 try:
                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_update), headers={"Content-Type": "application/json"})
