@@ -787,16 +787,23 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
 
-# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (TODOS CONSULTAN, SOLO DIRECTIVA ELIMINA) ===
+# === 5.1 SUBPANTALLA: CONSULTAR PRODUCTOS (CON ACCESO PROTEGIDO) ===
 elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.title("📦 INVENTARIO DE PRODUCTOS")
     st.write("Consulta y gestiona el stock disponible del material oficial del club.")
     st.write("---")
+    
+    # Control de roles oficial
+    rol_actual = st.session_state.user_role
+    roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
+    
     try:
+        # 1. Leer los datos de la pestaña Merchandising en tiempo real
         df_merch = pd.read_csv(URL_MERCHANDISING)
         df_merch.columns = df_merch.columns.str.strip()
         
         if not df_merch.empty:
+            # Buscador rápido por nombre de producto
             busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
             df_filtrado_merch = df_merch.copy()
             if busqueda_prod:
@@ -804,11 +811,17 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             
             st.write("---")
             
+            # Listamos cada producto de forma individual con su botón de acción condicionado
             for index, row in df_filtrado_merch.iterrows():
                 num_fila_producto = int(index) + 2
                 
                 with st.container():
-                    col_info, col_accion = st.columns([3, 1])
+                    # Si tiene autorización, dividimos en columnas para el botón eliminar, si no, solo info
+                    if rol_actual in roles_autorizados:
+                        col_info, col_accion = st.columns([3, 1])
+                    else:
+                        col_info = st.container()
+                        col_accion = None
                     
                     with col_info:
                         st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
@@ -816,9 +829,8 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                         if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                             st.info(f"📝 *{row['Descripcion']}*")
                             
-                    with col_accion:
-                        # 🔒 Restricción: El botón de eliminar solo aparece si eres directiva
-                        if es_directiva:
+                    if col_accion is not None:
+                        with col_accion:
                             if st.button("❌ ELIMINAR", key=f"btn_eliminar_prod_{index}"):
                                 import requests
                                 import json
@@ -829,21 +841,19 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                                     "num_fila": num_fila_producto
                                 }
                                 
-                                URL_PROCESADOR_GOOGLE = "https://google.com"
+                                URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                                 
                                 with st.spinner("Borrando producto del inventario general..."):
                                     try:
                                         respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                                         if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                            st.success(f"🗑️ '{row['Producto']}' eliminado del inventario.")
+                                            st.success(f"🗑️ '{row['Producto']}' eliminado.")
                                             time.sleep(1.0)
                                             st.rerun()
                                         else:
-                                            st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                                            st.error(f"Fallo del servidor: {respuesta.text}")
                                     except Exception as err:
                                         st.error(f"Error de conexión: {err}")
-                        else:
-                            st.caption("🔒 *Solo lectura*")
                 st.write("---")
         else:
             st.info("No hay productos registrados en el inventario todavía.")
@@ -854,6 +864,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
@@ -1010,11 +1021,107 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-        # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
+        # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y PROTECCIÓN) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
     st.write("Consulta el estado de las reservas de merchandising.")
     st.write("---")
+    
+    rol_actual = st.session_state.user_role
+    roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
+    
+    try:
+        # 1. Leer los datos de la pestaña Pedidos (Asumiendo tu URL de origen de Sheets)
+        # Si usas otra variable, cambia URL_PEDIDOS por el nombre exacto de tu enlace
+        df_pedidos = pd.read_csv(URL_MERCHANDISING) # Cambiar por tu URL_PEDIDOS si está en otra pestaña
+        df_pedidos.columns = df_pedidos.columns.str.strip()
+        
+        if not df_pedidos.empty:
+            # Buscador por texto
+            busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
+            df_base_pedidos = df_pedidos.copy()
+            
+            if busqueda_ped:
+                df_base_pedidos = df_base_pedidos[
+                    df_base_pedidos['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
+                    df_base_pedidos['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
+                ]
+            
+            # FILTRO VISUAL RECUPERADO: Pestañas interactivas para segmentar estados
+            tab_pendientes, tab_entregados, tab_todos = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS", "📋 TODOS LOS PEDIDOS"])
+            
+            # Mapeo de datos para cada pestaña según tu columna 'Estado_Entrega'
+            with tab_pendientes:
+                df_pendientes = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
+                if df_pendientes.empty: st.info("No hay pedidos pendientes o reservados.")
+                else: generar_lista_pedidos(df_pendientes, rol_actual, roles_autorizados)
+                    
+            with tab_entregados:
+                df_entregados = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
+                if df_entregados.empty: st.info("No hay pedidos marcados como entregados.")
+                else: generar_lista_pedidos(df_entregados, rol_actual, roles_autorizados)
+                    
+            with tab_todos:
+                if df_base_pedidos.empty: st.info("No se encontraron registros.")
+                else: generar_lista_pedidos(df_base_pedidos, rol_actual, roles_autorizados)
+        else:
+            st.info("No hay pedidos registrados en el histórico.")
+            
+    except Exception as e:
+        st.error(f"Error de lectura en la base de datos de Pedidos: {e}")
+        
+    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
+
+# Función auxiliar para renderizar los pedidos sin duplicar código en las pestañas
+def generar_lista_pedidos(dataframe, rol_usuario, roles_validos):
+    for index, row in dataframe.iterrows():
+        num_fila_pedido = int(index) + 2
+        st.write("---")
+        with st.container():
+            if rol_usuario in roles_validos:
+                col_info, col_accion = st.columns([3, 1])
+            else:
+                col_info = st.container()
+                col_accion = None
+                
+            with col_info:
+                st.markdown(f"🛍️ **Pedido ID: {row['Id_Pedido']}** — 👤 **{row['Socio']}**")
+                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Producto: **{row['Producto']}** | 🔢 Cantidad: {row['Cantidad']} ud. | 📐 Talla: {row['Talla']}")
+                
+                # Cuadro de estado dinámico emulando tu diseño original
+                if "Entregado" in str(row['Estado_Entrega']):
+                    st.success(f"🟢 Estado: {row['Estado_Entrega']}")
+                else:
+                    st.warning(f"🟡 Estado: {row['Estado_Entrega']}")
+                    
+            if col_accion is not None:
+                with col_accion:
+                    if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{row['Id_Pedido']}_{index}"):
+                        import requests
+                        import json
+                        import time
+                        
+                        payload = {
+                            "accion": "eliminar_pedido_merch", # Valida que tu Apps Script controle esta acción
+                            "num_fila": num_fila_pedido
+                        }
+                        
+                        URL_PROCESADOR_GOOGLE = "https://google.com"
+                        
+                        with st.spinner("Cancelando y eliminando pedido..."):
+                            try:
+                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                    st.success("🗑️ Pedido eliminado.")
+                                    time.sleep(1.0)
+                                    st.rerun()
+                                else:
+                                    st.error(f"Error de Google: {respuesta.text}")
+                            except Exception as err:
+                                st.error(f" Error de conexión: {err}")
+
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
