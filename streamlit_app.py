@@ -1032,14 +1032,12 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     rol_actual = st.session_state.user_role
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
-    # Función auxiliar interna corregida pasando explícitamente la URL del procesador
+    # Función auxiliar interna perfectamente alineada con el scope de tu archivo
     def pintar_pestana_pedidos(df_filtrado, df_completo_original, nombre_pestana, url_servidor):
         for idx, row in df_filtrado.iterrows():
             try:
-                # Buscamos de forma segura el índice de la coincidencia y sumamos 2 para la fila real de Google Sheets
                 coincidencias = df_completo_original[df_completo_original['Id_Pedido'] == row['Id_Pedido']]
                 if not coincidencias.empty:
-                    # Obtenemos el valor numérico del primer índice hallado
                     fila_real_sheets = int(coincidencias.index[0]) + 2
                 else:
                     fila_real_sheets = int(idx) + 2
@@ -1049,7 +1047,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             st.write("---")
             with st.container():
                 if rol_actual in roles_autorizados:
-                    col_info, col_accion1, col_accion2 = st.columns()
+                    col_info, col_accion1, col_accion2 = st.columns([2, 1, 1])
                 else:
                     col_info = st.container()
                     col_accion1 = None
@@ -1065,19 +1063,16 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     else:
                         st.warning(f"💡 Estado: {row['Estado_Entrega']}")
                         
-                # Si es de la directiva, habilitamos las opciones de Modificar y Eliminar
                 if col_accion1 is not None and col_accion2 is not None:
                     import requests
                     import json
                     import time
                     
                     with col_accion1:
-                        # Determinar el estado inverso para la actualización
                         es_entregado = "Entregado" in str(row['Estado_Entrega'])
                         nuevo_estado = "Reservado / Pendiente" if es_entregado else "Entregado"
                         texto_boton_estado = "⏳ PENDIENTE" if es_entregado else "✅ ENTREGADO"
                         
-                        # Botón para MODIFICAR / ACTUALIZAR ESTADO
                         if st.button(f"{texto_boton_estado}", key=f"btn_mod_estado_{row['Id_Pedido']}_{idx}_{nombre_pestana}"):
                             payload_mod = {
                                 "accion": "editar_pedido_merch",
@@ -1097,14 +1092,13 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     st.error(f"Error de conexión: {err}")
                                     
                     with col_accion2:
-                        # Botón para ELIMINAR PEDIDO
                         if st.button("❌ ELIMINAR", key=f"btn_del_ped_{row['Id_Pedido']}_{idx}_{nombre_pestana}"):
                             payload_del = {"accion": "eliminar_pedido_merch", "num_fila": fila_real_sheets}
                             with st.spinner("Eliminando pedido..."):
                                 try:
                                     respuesta = requests.post(url_servidor, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
                                     if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                        st.success("🗑️ Pedido eliminado correctamente.")
+                                        st.success("🗑️ Pedido eliminado.")
                                         time.sleep(1.0)
                                         st.rerun()
                                     else:
@@ -1113,8 +1107,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     st.error(f"Error de conexión: {err}")
 
     try:
-        # 1. Leer los datos reales de la pestaña de Pedidos
-        df_pedidos = pd.read_csv(URL_PEDIDOS) 
+        df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
         if not df_pedidos.empty:
@@ -1127,10 +1120,10 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     df_base_pedidos['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
             
-            # Pestañas limpias para segmentar los estados de entrega
             tab_pendientes, tab_entregados, tab_todos = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS", "📋 TODOS LOS PEDIDOS"])
             
             with tab_pendientes:
+                # CORREGIDO: Eliminamos el espacio "Reservado | Pendiente" por "Reservado|Pendiente"
                 df_pendientes = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
                 if df_pendientes.empty:
                     st.info("No hay pedidos pendientes o reservados.")
@@ -1155,10 +1148,9 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     except Exception as e:
         st.error(f"Error de lectura en la base de datos de Pedidos: {e}")
         
-    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
+    if st.button(" Anul./Volver", key="btn_volver_pedidos_menu"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
