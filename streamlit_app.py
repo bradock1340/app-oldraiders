@@ -1022,6 +1022,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
 # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y FILA REAL) ===
+# === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y FILA REAL) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
     st.write("Consulta el estado de las reservas de merchandising.")
@@ -1030,11 +1031,18 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     rol_actual = st.session_state.user_role
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
-    # Función auxiliar interna corregida con llaves únicas por pestaña y opción de modificar estado
+    # Función auxiliar interna corregida y optimizada para extraer el índice numérico correcto
     def pintar_pestana_pedidos(df_filtrado, df_completo_original, nombre_pestana):
         for idx, row in df_filtrado.iterrows():
-            # Buscamos la fila real exacta en Google Sheets basándonos en el Id_Pedido único
-            fila_real_sheets = int(df_completo_original[df_completo_original['Id_Pedido'] == row['Id_Pedido']].index) + 2
+            try:
+                # Buscamos de forma segura el índice de la coincidencia y sumamos 2 para la fila real de Google Sheets
+                coincidencias = df_completo_original[df_completo_original['Id_Pedido'] == row['Id_Pedido']]
+                if not coincidencias.empty:
+                    fila_real_sheets = int(coincidencias.index[0]) + 2
+                else:
+                    fila_real_sheets = int(idx) + 2
+            except Exception:
+                fila_real_sheets = int(idx) + 2
             
             st.write("---")
             with st.container():
@@ -1070,11 +1078,11 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         # Botón para MODIFICAR / ACTUALIZAR ESTADO
                         if st.button(f"{texto_boton_estado}", key=f"btn_mod_estado_{row['Id_Pedido']}_{idx}_{nombre_pestana}"):
                             payload_mod = {
-                                "accion": "editar_pedido_merch",  # Ajusta al nombre de acción de tu Apps Script si difiere
+                                "accion": "editar_pedido_merch",
                                 "num_fila": fila_real_sheets,
                                 "Estado_Entrega": nuevo_estado
                             }
-                            with st.spinner("Actualizando estado del pedido..."):
+                            with st.spinner("Actualizando estado..."):
                                 try:
                                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_mod), headers={"Content-Type": "application/json"})
                                     if "OK" in respuesta.text or "éxito" in respuesta.text:
@@ -1087,7 +1095,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     st.error(f"Error de conexión: {err}")
                                     
                     with col_accion2:
-                        # Botón para ELIMINAR PEDIDO (Con clave única combinando la pestaña para evitar duplicados)
+                        # Botón para ELIMINAR PEDIDO
                         if st.button("❌ ELIMINAR", key=f"btn_del_ped_{row['Id_Pedido']}_{idx}_{nombre_pestana}"):
                             payload_del = {"accion": "eliminar_pedido_merch", "num_fila": fila_real_sheets}
                             with st.spinner("Eliminando pedido..."):
@@ -1117,7 +1125,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     df_base_pedidos['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
             
-            # FILTRO VISUAL: Pestañas para segmentar los estados de entrega sin colisión de llaves
+            # Pestañas limpias para segmentar los estados de entrega
             tab_pendientes, tab_entregados, tab_todos = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS", "📋 TODOS LOS PEDIDOS"])
             
             with tab_pendientes:
@@ -1148,7 +1156,6 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
