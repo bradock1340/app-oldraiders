@@ -753,7 +753,7 @@ ROLES_AUTORIZADOS = ["Presidente", "Vicepresidente", "Secretario", "Tesorero"]
 es_directiva = rol_actual in ROLES_AUTORIZADOS
 
 # Enllaç automàtic per a la consulta de comandes basat en el teu SHEET_ID
-URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
 
 # Cambiamos el primer 'elif' por un 'if' para aislarlo de los problemas de arriba
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
