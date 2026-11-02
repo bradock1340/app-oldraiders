@@ -1032,13 +1032,14 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     rol_actual = st.session_state.user_role
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
-    # Función auxiliar interna corregida y optimizada para extraer el índice numérico correcto
-    def pintar_pestana_pedidos(df_filtrado, df_completo_original, nombre_pestana):
+    # Función auxiliar interna corregida pasando explícitamente la URL del procesador
+    def pintar_pestana_pedidos(df_filtrado, df_completo_original, nombre_pestana, url_servidor):
         for idx, row in df_filtrado.iterrows():
             try:
                 # Buscamos de forma segura el índice de la coincidencia y sumamos 2 para la fila real de Google Sheets
                 coincidencias = df_completo_original[df_completo_original['Id_Pedido'] == row['Id_Pedido']]
                 if not coincidencias.empty:
+                    # Obtenemos el valor numérico del primer índice hallado
                     fila_real_sheets = int(coincidencias.index[0]) + 2
                 else:
                     fila_real_sheets = int(idx) + 2
@@ -1048,7 +1049,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             st.write("---")
             with st.container():
                 if rol_actual in roles_autorizados:
-                    col_info, col_accion1, col_accion2 = st.columns([2, 1, 1])
+                    col_info, col_accion1, col_accion2 = st.columns()
                 else:
                     col_info = st.container()
                     col_accion1 = None
@@ -1085,7 +1086,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                             }
                             with st.spinner("Actualizando estado..."):
                                 try:
-                                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_mod), headers={"Content-Type": "application/json"})
+                                    respuesta = requests.post(url_servidor, data=json.dumps(payload_mod), headers={"Content-Type": "application/json"})
                                     if "OK" in respuesta.text or "éxito" in respuesta.text:
                                         st.success("🔄 Estado actualizado.")
                                         time.sleep(1.0)
@@ -1101,7 +1102,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                             payload_del = {"accion": "eliminar_pedido_merch", "num_fila": fila_real_sheets}
                             with st.spinner("Eliminando pedido..."):
                                 try:
-                                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
+                                    respuesta = requests.post(url_servidor, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
                                     if "OK" in respuesta.text or "éxito" in respuesta.text:
                                         st.success("🗑️ Pedido eliminado correctamente.")
                                         time.sleep(1.0)
@@ -1134,20 +1135,20 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                 if df_pendientes.empty:
                     st.info("No hay pedidos pendientes o reservados.")
                 else:
-                    pintar_pestana_pedidos(df_pendientes, df_pedidos, "pendientes")
+                    pintar_pestana_pedidos(df_pendientes, df_pedidos, "pendientes", URL_PROCESADOR_GOOGLE)
                     
             with tab_entregados:
                 df_entregados = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
                 if df_entregados.empty:
                     st.info("No hay pedidos marcados como entregados.")
                 else:
-                    pintar_pestana_pedidos(df_entregados, df_pedidos, "entregados")
+                    pintar_pestana_pedidos(df_entregados, df_pedidos, "entregados", URL_PROCESADOR_GOOGLE)
                     
             with tab_todos:
                 if df_base_pedidos.empty:
                     st.info("No se encontraron registros.")
                 else:
-                    pintar_pestana_pedidos(df_base_pedidos, df_pedidos, "todos")
+                    pintar_pestana_pedidos(df_base_pedidos, df_pedidos, "todos", URL_PROCESADOR_GOOGLE)
         else:
             st.info("No hay pedidos registrados en el histórico.")
             
@@ -1157,6 +1158,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
