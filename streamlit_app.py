@@ -1071,12 +1071,13 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             # Renderizamos la lista filtrada
             for index, row in df_filtrado_ped.iterrows():
                 num_fila_pedido = int(row['Fila_Sheets'])
+                id_ped_actual = row.get('Id_Pedido', index)
                 
                 with st.container():
                     col_info, col_accion = st.columns([2.5, 1.5])
                     
                     with col_info:
-                        st.markdown(f"🛍️ **Pedido ID:** {row.get('Id_Pedido', index)} — 👤 **{row.get('Socio', 'N/A')}**")
+                        st.markdown(f"🛍️ **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
                         st.write(f"📦 **Producto:** {row.get('Producto', 'N/A')} | 🔢 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📏 **Talla:** {row.get('Talla', 'N/A')}")
                         
                         estado = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
@@ -1101,23 +1102,36 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     
                             with col_b2:
                                 if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
+                                    st.session_state.pedido_a_confirmar = index
+                                    st.rerun()
                                     
-                                    
-                                    payload_del = {
-                                        "accion": "eliminar_pedido_merch",
-                                        "num_fila": num_fila_pedido
-                                    }
-                                    with st.spinner("Borrando del Sheets..."):
-                                        try:
-                                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
-                                            if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                                st.success("Pedido eliminado.")
-                                                time.sleep(1.0)
-                                                st.rerun()
-                                            else:
-                                                st.error(f"Error: {respuesta.text}")
-                                        except Exception as err:
-                                            st.error(f"Error de red: {err}")
+                            # INTERFÍCIE DE SEGURETAT: Si pulsa eliminar, abre la fianza de confirmación justo debajo
+                            if st.session_state.get("pedido_a_confirmar") == index:
+                                st.write("")
+                                st.error(f"¿Borrar pedido **{id_ped_actual}**?")
+                                col_c1, col_c2 = st.columns(2)
+                                with col_c1:
+                                    if st.button("⚠️ SÍ", key=f"btn_si_conf_{index}"):
+                                        payload_del = {
+                                            "accion": "eliminar_pedido_merch",
+                                            "num_fila": num_fila_pedido
+                                        }
+                                        with st.spinner("Borrando del Sheets..."):
+                                            try:
+                                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
+                                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                    st.success("Pedido eliminado.")
+                                                    st.session_state.pedido_a_confirmar = None
+                                                    time.sleep(1.0)
+                                                    st.rerun()
+                                                else:
+                                                    st.error(f"Error: {respuesta.text}")
+                                            except Exception as err:
+                                                st.error(f"Error de red: {err}")
+                                with col_c2:
+                                    if st.button("❌ NO", key=f"btn_no_conf_{index}"):
+                                        st.session_state.pedido_a_confirmar = None
+                                        st.rerun()
                         else:
                             st.caption("🔒 *Solo Lectura*")
                 st.write("---")
@@ -1128,8 +1142,10 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
         st.error(f"Error al leer la pestaña Pedidos: {e}")
         
     if st.button("🔙 VOLVER AL MENÚ", key="btn_volver_pedidos"):
+        st.session_state.pedido_a_confirmar = None
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO (ENCADENADO CORRECTAMENTE EN LA SECUENCIA DE ELIF) ===
 elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
