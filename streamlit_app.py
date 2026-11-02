@@ -857,138 +857,159 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
 
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
-    st.title("➕ REGISTRAR NUEVO PRODUCTO")
-    st.write("Introduce los datos del nuevo artículo para el inventario general.")
-    st.write("---")
+    # Control estricto de seguridad basado en tus variables de rol oficiales
+    rol_actual = st.session_state.user_role
+    roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
-    id_prod = st.text_input("ID Producto (Ej: PROD001)")
-    nombre_prod = st.text_input("Nombre del Producto")
-    precio_prod = st.number_input("Precio (€)", min_value=0.0, step=0.5)
-    proveedor = st.text_input("Proveedor")
-    tel_proveedor = st.text_input("Teléfono Proveedor")
-    descripcion = st.text_area("Descripción")
-    stock_inicial = st.number_input("Stock Inicial", min_value=0, step=1)
-    
-    if st.button("💾 GUARDAR PRODUCTO"):
-        if id_prod and nombre_prod:
-            URL_PROCESADOR_GOOGLE = "https://google.com"
-            payload = {
-                "accion": "crear_producto_merch",
-                "Id_Producto": id_prod,
-                "Producto": nombre_prod,
-                "Precio": float(precio_prod),
-                "Proveedor": proveedor,
-                "Tel_Proveedor": tel_proveedor,
-                "Descripcion": descripcion,
-                "Stock": int(stock_inicial)
-            }
-            
-            import requests
-            import json
-            import time
-            
-            with st.spinner("Registrando nuevo artículo en el inventario..."):
-                try:
-                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                    if "OK" in respuesta.text or "MERCH" in respuesta.text:
-                        st.success(f"🎉 ¡Producto '{nombre_prod}' guardado con éxito en Google Sheets!")
-                        time.sleep(1.5)
-                        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-                        st.rerun()
-                    else:
-                        st.error(f"Fallo del servidor de Google: {respuesta.text}")
-                except Exception as err:
-                    st.error(f"Error de conexión al guardar el producto: {err}")
-        else:
-            st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
-            
-    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_nuevo_prod"):
-        st.session_state.current_menu = "MERCHANDISING"
-        st.rerun()
+    if rol_actual not in roles_autorizados:
+        st.error("⛔ ACCESO DENEGADO: No tienes permisos para registrar nuevos artículos.")
+        if st.button("⬅️ VOLVER AL MENÚ", key="btn_error_nuevo_prod"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
+    else:
+        st.title("➕ REGISTRAR NUEVO PRODUCTO")
+        st.write("Introduce los datos del nuevo artículo para el inventario general.")
+        st.write("---")
+        
+        id_prod = st.text_input("ID Producto (Ej: PROD001)")
+        nombre_prod = st.text_input("Nombre del Producto")
+        precio_prod = st.number_input("Precio (€)", min_value=0.0, step=0.5)
+        proveedor = st.text_input("Proveedor")
+        tel_proveedor = st.text_input("Teléfono Proveedor")
+        descripcion = st.text_area("Descripción")
+        stock_inicial = st.number_input("Stock Inicial", min_value=0, step=1)
+        
+        if st.button("💾 GUARDAR PRODUCTO"):
+            if id_prod and nombre_prod:
+                URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                payload = {
+                    "accion": "crear_producto_merch",
+                    "Id_Producto": id_prod,
+                    "Producto": nombre_prod,
+                    "Precio": float(precio_prod),
+                    "Proveedor": proveedor,
+                    "Tel_Proveedor": tel_proveedor,
+                    "Descripcion": descripcion,
+                    "Stock": int(stock_inicial)
+                }
+                
+                import requests
+                import json
+                import time
+                
+                with st.spinner("Registrando nuevo artículo en el inventario..."):
+                    try:
+                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                        if "OK" in respuesta.text or "MERCH" in respuesta.text:
+                            st.success(f"🎉 ¡Producto '{nombre_prod}' guardado con éxito en Google Sheets!")
+                            time.sleep(1.5)
+                            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                            st.rerun()
+                        else:
+                            st.error(f"Fallo del servidor de Google: {respuesta.text}")
+                    except Exception as err:
+                        st.error(f"Error de conexión al guardar el producto: {err}")
+            else:
+                st.error("Por favor, rellena los campos obligatorios (ID y Nombre).")
+                
+        if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_nuevo_prod"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
+
 # === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
-    st.title("🛒 REGISTRAR NUEVO PEDIDO")
-    st.write("Selecciona el producto y define la talla para este pedido específico.")
-    st.write("---")
-    try:
-        # Carga de productos disponibles desde el inventario de Merchandising
-        df_merch = pd.read_csv(URL_MERCHANDISING)
-        df_merch.columns = df_merch.columns.str.strip()
-        lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
-        
-        socios_disponibles = ["-- Seleccionar Socio --", "General"]
+    # Control estricto de seguridad basado en tus variables de rol oficiales
+    rol_actual = st.session_state.user_role
+    roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
+    
+    if rol_actual not in roles_autorizados:
+        st.error("⛔ ACCESO DENEGADO: No tienes permisos para registrar nuevos pedidos.")
+        if st.button("⬅️ VOLVER", key="btn_error_nuevo_pedido"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
+    else:
+        st.title("🛒 REGISTRAR NUEVO PEDIDO")
+        st.write("Selecciona el producto y define la talla para este pedido específico.")
+        st.write("---")
         try:
-            # Carga de socios registrados en la pestaña Usuarios
-            df_usuarios_ped = pd.read_csv(URL_USUARIOS)
-            df_usuarios_ped.columns = df_usuarios_ped.columns.str.strip()
-            if 'Alias' in df_usuarios_ped.columns:
-                lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
-                socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
-        except Exception as e_users:
-            st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
+            # Carga de productos disponibles desde el inventario de Merchandising
+            df_merch = pd.read_csv(URL_MERCHANDISING)
+            df_merch.columns = df_merch.columns.str.strip()
+            lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
             
-        # Selectores de la interfaz
-        socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
-        producto_pedido = st.selectbox("📦 Selecciona el Producto:", lista_productos)
-        
-        if producto_pedido != "-- Seleccionar Artículo --":
-            tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
-            talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
+            socios_disponibles = ["-- Seleccionar Socio --", "General"]
+            try:
+                # Carga de socios registrados en la pestaña Usuarios
+                df_usuarios_ped = pd.read_csv(URL_USUARIOS)
+                df_usuarios_ped.columns = df_usuarios_ped.columns.str.strip()
+                if 'Alias' in df_usuarios_ped.columns:
+                    lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
+                    socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
+            except Exception as e_users:
+                st.error(f"Error al cargar la lista de miembros (Alias): {e_users}")
+                
+            # Selectores de la interfaz
+            socio_pedido = st.selectbox("👤 Selecciona el Socio / Miembro:", socios_disponibles)
+            producto_pedido = st.selectbox("📦 Selecciona el Producto:", lista_productos)
             
-            col_cant, col_entrega = st.columns(2)
-            with col_cant:
-                cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
-            with col_entrega:
-                estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], index=1, horizontal=True)
+            if producto_pedido != "-- Seleccionar Artículo --":
+                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
+                talla_seleccionada = st.selectbox("📏 Talla para este pedido:", tallas_disponibles)
+                
+                col_cant, col_entrega = st.columns(2)
+                with col_cant:
+                    cantidad = st.number_input("Cantidad de unidades", min_value=1, value=1, step=1)
+                with col_entrega:
+                    estado_entrega = st.radio("Estado de la Entrega", ["Entregado", "Reservado / Pendiente"], index=1, horizontal=True)
+                
+                st.write("---")
+                
+                if st.button("📥 ENCARGAR Y GUARDAR PEDIDO"):
+                    if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
+                        from datetime import datetime
+                        import requests
+                        import json
+                        import time
+                        
+                        ahora = datetime.now()
+                        id_pedido_automatico = f"PED-{ahora.strftime('%Y%m%d%H%M%S')}"
+                        
+                        payload = {
+                            "accion": "guardar_pedido_merch",
+                            "Id_Pedido": id_pedido_automatico,
+                            "Fecha": ahora.strftime("%d/%m/%Y"),
+                            "Socio": socio_pedido,
+                            "Producto": producto_pedido,
+                            "Talla": talla_seleccionada,
+                            "Cantidad": int(cantidad),
+                            "Estado_Entrega": estado_entrega
+                        }
+                        
+                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        
+                        with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
+                            try:
+                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                    st.success(f"🛍️ Pedido de '{socio_pedido}' guardado con éxito en la pestaña 'Pedidos'.")
+                                    time.sleep(1.5)
+                                    st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                    st.rerun()
+                                else:
+                                    st.error(f"Fallo en la respuesta de Google: {respuesta.text}")
+                            except Exception as err:
+                                st.error(f"Error de red al guardar el pedido: {err}")
+                    else:
+                        st.warning("Por favor, selecciona obligatoriamente un miembro o 'General' y un producto antes de confirmar.")
+            else:
+                st.info("Por favor, selecciona un artículo para configurar los detalles del encargo.")
+                
+        except Exception as e:
+            st.error(f"Error al procesar las bases de datos para el pedido: {e}")
             
-            st.write("---")
-            
-            if st.button("📥 ENCARGAR Y GUARDAR PEDIDO"):
-                if socio_pedido != "-- Seleccionar Socio --" and producto_pedido != "-- Seleccionar Artículo --":
-                    from datetime import datetime
-                    import requests
-                    import json
-                    import time
-                    
-                    ahora = datetime.now()
-                    id_pedido_automatico = f"PED-{ahora.strftime('%Y%m%d%H%M%S')}"
-                    
-                    payload = {
-                        "accion": "guardar_pedido_merch",
-                        "Id_Pedido": id_pedido_automatico,
-                        "Fecha": ahora.strftime("%d/%m/%Y"),
-                        "Socio": socio_pedido,
-                        "Producto": producto_pedido,
-                        "Talla": talla_seleccionada,
-                        "Cantidad": int(cantidad),
-                        "Estado_Entrega": estado_entrega
-                    }
-                    
-                    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-                    
-                    with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
-                        try:
-                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                            if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                st.success(f"🛍️ Pedido de '{socio_pedido}' guardado con éxito en la pestaña 'Pedidos'.")
-                                time.sleep(1.5)
-                                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-                                st.rerun()
-                            else:
-                                st.error(f"Fallo en la respuesta de Google: {respuesta.text}")
-                        except Exception as err:
-                            st.error(f"Error de red al guardar el pedido: {err}")
-                else:
-                    st.warning("Por favor, selecciona obligatoriamente un miembro o 'General' y un producto antes de confirmar.")
-        else:
-            st.info("Por favor, selecciona un artículo para configurar los detalles del encargo.")
-            
-    except Exception as e:
-        st.error(f"Error al procesar las bases de datos para el pedido: {e}")
-        
-    if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
-        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-        st.rerun()
+        if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
         # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
@@ -997,7 +1018,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
-        #URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+        
         URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
