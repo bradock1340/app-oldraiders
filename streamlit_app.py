@@ -1175,7 +1175,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                             except Exception as err: 
                                                 st.error(f"Error de conexión: {err}") 
                                             else: st.info("No hay pedidos registrados en el histórico.")
-                                                except Exception as e:
+                                            except Exception as e:
                                             st.error(f"Error de lectura en la base de datos de Pedidos: {e}")
                                             if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
                                                 st.session_state.current_menu = "PANTALLA_MERCHANDISING"
