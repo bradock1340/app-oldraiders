@@ -1151,7 +1151,17 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
         producto_act = st.text_input("📦 Artículo", value=str(datos_previos_pedido.get("Producto", "")), disabled=True)
         talla_act = st.text_input("📏 Talla", value=str(datos_previos_pedido.get("Talla", "Única")), disabled=True)
         
-        cantidad_nueva = st.number_input("🔢 Modificar Cantidad", min_value=1, value=int(datos_previos_pedido.get("Cantidad", 1)), step=1)
+        # --- SOLUCIÓN AL VALUE_ERROR (BLINDAJE DE CANTIDAD) ---
+        try:
+            valor_cantidad_previo = datos_previos_pedido.get("Cantidad", 1)
+            if pd.isna(valor_cantidad_previo) or str(valor_cantidad_previo).strip() == "":
+                cantidad_defecto = 1
+            else:
+                cantidad_defecto = int(float(valor_cantidad_previo))
+        except Exception:
+            cantidad_defecto = 1
+            
+        cantidad_nueva = st.number_input("🔢 Modificar Cantidad", min_value=1, value=cantidad_defecto, step=1)
         
         estado_actual_str = str(datos_previos_pedido.get("Estado_Entrega", "Reservado / Pendiente"))
         idx_defecto_radio = 0 if "Entregado" in estado_actual_str else 1
@@ -1164,9 +1174,11 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             import json
             import time
             
+            # CORRECCIÓN: Agregamos la variable Cantidad al payload que se envía al servidor
             payload_update = {
                 "accion": "editar_pedido_merch",
                 "num_fila": fila_editar,
+                "Cantidad": int(cantidad_nueva),
                 "Estado_Entrega": estado_nuevo
             }
             URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
@@ -1188,6 +1200,7 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.edit_pedido_data = None
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
+
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
 if st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
