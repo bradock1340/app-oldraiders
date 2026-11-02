@@ -513,6 +513,7 @@ else:
                 if st.button(texto_boton):
                     if descripcion_norma and tiempo_norma:
                         URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        
                         if es_edicion:
                             payload = {
                                 "accion": "editar",
