@@ -349,7 +349,7 @@ else:
                     if descripcion_reunion:
                         fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
                         URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-                        
+                                                
                         if es_edicion:
                             payload = {
                                 "accion": "editar_reunion_real",
@@ -1032,6 +1032,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
     st.write("Consulta el estado de las reservas de merchandising.")
     st.write("---")
+    URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
     
     try:
         # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
