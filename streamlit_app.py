@@ -753,6 +753,7 @@ ROLES_AUTORIZADOS = ["Presidente", "Vicepresidente", "Secretario", "Tesorero"]
 es_directiva = rol_actual in ROLES_AUTORIZADOS
 
 # Enllaç automàtic per a la consulta de comandes basat en el teu SHEET_ID
+#URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
 URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
 
 # Cambiamos el primer 'elif' por un 'if' para aislarlo de los problemas de arriba
@@ -1021,7 +1022,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-# === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y FILA REAL) ===
+
 # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y FILA REAL) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
