@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import base64
 import time
+import requests
+import json
+
 # Configuración de la página estilo móvil
 st.set_page_config(page_title="Old Riders MC", page_icon="🏍️", layout="centered")
 
@@ -1097,9 +1100,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     
                             with col_b2:
                                 if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
-                                    import requests
-                                    import json
-                                    import time
+                                    
                                     
                                     payload_del = {
                                         "accion": "eliminar_pedido_merch",
