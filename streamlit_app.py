@@ -1022,6 +1022,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
         # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y PROTECCIÓN) ===
+# === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS / RESERVAS (CON FILTRO DE ESTADO Y FILA REAL) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
     st.write("Consulta el estado de las reservas de merchandising.")
@@ -1031,13 +1032,11 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
     try:
-        # 1. Leer los datos de la pestaña Pedidos (Asumiendo tu URL de origen de Sheets)
-        # Si usas otra variable, cambia URL_PEDIDOS por el nombre exacto de tu enlace
-        df_pedidos = pd.read_csv(URL_MERCHANDISING) # Cambiar por tu URL_PEDIDOS si está en otra pestaña
+        # 1. Leer los datos reales de la pestaña de Pedidos
+        df_pedidos = pd.read_csv(URL_PEDIDOS) 
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
         if not df_pedidos.empty:
-            # Buscador por texto
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
             df_base_pedidos = df_pedidos.copy()
             
@@ -1047,132 +1046,141 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     df_base_pedidos['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
             
-            # FILTRO VISUAL RECUPERADO: Pestañas interactivas para segmentar estados
+            # FILTRO VISUAL: Pestañas para segmentar los estados tal como querías
             tab_pendientes, tab_entregados, tab_todos = st.tabs(["⏳ RESERVADOS / PENDIENTES", "✅ ENTREGADOS", "📋 TODOS LOS PEDIDOS"])
             
-            # Mapeo de datos para cada pestaña según tu columna 'Estado_Entrega'
             with tab_pendientes:
                 df_pendientes = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
-                if df_pendientes.empty: st.info("No hay pedidos pendientes o reservados.")
-                else: generar_lista_pedidos(df_pendientes, rol_actual, roles_autorizados)
+                if df_pendientes.empty: 
+                    st.info("No hay pedidos pendientes o reservados.")
+                else: 
+                    for idx, row in df_pendientes.iterrows():
+                        # Calculamos la fila real buscando su posición en el DataFrame original completo
+                        fila_real_sheets = int(df_pedidos[df_pedidos['Id_Pedido'] == row['Id_Pedido']].index[0]) + 2
+                        
+                        st.write("---")
+                        with st.container():
+                            if rol_actual in roles_autorizados:
+                                col_info, col_accion = st.columns([3, 1])
+                            else:
+                                col_info = st.container()
+                                col_accion = None
+                                
+                            with col_info:
+                                st.markdown(f"🛍️ **Pedido ID: {row['Id_Pedido']}** — 👤 **{row['Socio']}**")
+                                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Producto: **{row['Producto']}** | 🔢 Cantidad: {row['Cantidad']} ud. | 📐 Talla: {row['Talla'] if pd.notna(row['Talla']) and str(row['Talla']).strip() != '' else 'N/A'}")
+                                st.warning(f"💡 Estado: {row['Estado_Entrega']}")
+                                
+                            if col_accion is not None:
+                                with col_accion:
+                                    if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_pend_{row['Id_Pedido']}_{idx}"):
+                                        import requests
+                                        import json
+                                        import time
+                                        
+                                        payload = {"accion": "eliminar_pedido_merch", "num_fila": fila_real_sheets}
+                                        with st.spinner("Eliminando pedido..."):
+                                            try:
+                                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                    st.success("🗑️ Pedido eliminado.")
+                                                    time.sleep(1.0)
+                                                    st.rerun()
+                                                else:
+                                                    st.error(f"Error de Google: {respuesta.text}")
+                                            except Exception as err:
+                                                st.error(f"Error de conexión: {err}")
                     
             with tab_entregados:
                 df_entregados = df_base_pedidos[df_base_pedidos['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
-                if df_entregados.empty: st.info("No hay pedidos marcados como entregados.")
-                else: generar_lista_pedidos(df_entregados, rol_actual, roles_autorizados)
+                if df_entregados.empty: 
+                    st.info("No hay pedidos marcados como entregados.")
+                else: 
+                    for idx, row in df_entregados.iterrows():
+                        fila_real_sheets = int(df_pedidos[df_pedidos['Id_Pedido'] == row['Id_Pedido']].index[0]) + 2
+                        
+                        st.write("---")
+                        with st.container():
+                            if rol_actual in roles_autorizados:
+                                col_info, col_accion = st.columns([3, 1])
+                            else:
+                                col_info = st.container()
+                                col_accion = None
+                                
+                            with col_info:
+                                st.markdown(f"🛍️ **Pedido ID: {row['Id_Pedido']}** — 👤 **{row['Socio']}**")
+                                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Producto: **{row['Producto']}** | 🔢 Cantidad: {row['Cantidad']} ud. | 📐 Talla: {row['Talla'] if pd.notna(row['Talla']) and str(row['Talla']).strip() != '' else 'N/A'}")
+                                st.success(f"🟢 Estado: {row['Estado_Entrega']}")
+                                
+                            if col_accion is not None:
+                                with col_accion:
+                                    if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_entr_{row['Id_Pedido']}_{idx}"):
+                                        import requests
+                                        import json
+                                        import time
+                                        
+                                        payload = {"accion": "eliminar_pedido_merch", "num_fila": fila_real_sheets}
+                                        with st.spinner("Eliminando pedido..."):
+                                            try:
+                                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                    st.success("🗑️ Pedido eliminado.")
+                                                    time.sleep(1.0)
+                                                    st.rerun()
+                                                else:
+                                                    st.error(f"Error de Google: {respuesta.text}")
+                                            except Exception as err:
+                                                st.error(f"Error de conexión: {err}")
                     
             with tab_todos:
-                if df_base_pedidos.empty: st.info("No se encontraron registros.")
-                else: generar_lista_pedidos(df_base_pedidos, rol_actual, roles_autorizados)
-        else:
-            st.info("No hay pedidos registrados en el histórico.")
-            
-    except Exception as e:
-        st.error(f"Error de lectura en la base de datos de Pedidos: {e}")
-        
-    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
-        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-        st.rerun()
-
-# Función auxiliar para renderizar los pedidos sin duplicar código en las pestañas
-def generar_lista_pedidos(dataframe, rol_usuario, roles_validos):
-    for index, row in dataframe.iterrows():
-        num_fila_pedido = int(index) + 2
-        st.write("---")
-        with st.container():
-            if rol_usuario in roles_validos:
-                col_info, col_accion = st.columns([3, 1])
-            else:
-                col_info = st.container()
-                col_accion = None
-                
-            with col_info:
-                st.markdown(f"🛍️ **Pedido ID: {row['Id_Pedido']}** — 👤 **{row['Socio']}**")
-                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Producto: **{row['Producto']}** | 🔢 Cantidad: {row['Cantidad']} ud. | 📐 Talla: {row['Talla']}")
-                
-                # Cuadro de estado dinámico emulando tu diseño original
-                if "Entregado" in str(row['Estado_Entrega']):
-                    st.success(f"🟢 Estado: {row['Estado_Entrega']}")
-                else:
-                    st.warning(f"🟡 Estado: {row['Estado_Entrega']}")
-                    
-            if col_accion is not None:
-                with col_accion:
-                    if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{row['Id_Pedido']}_{index}"):
-                        import requests
-                        import json
-                        import time
+                if df_base_pedidos.empty: 
+                    st.info("No se encontraron registros.")
+                else: 
+                    for idx, row in df_base_pedidos.iterrows():
+                        fila_real_sheets = int(df_pedidos[df_pedidos['Id_Pedido'] == row['Id_Pedido']].index[0]) + 2
                         
-                        payload = {
-                            "accion": "eliminar_pedido_merch", # Valida que tu Apps Script controle esta acción
-                            "num_fila": num_fila_pedido
-                        }
-                        
-                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-                        
-                        with st.spinner("Cancelando y eliminando pedido..."):
-                            try:
-                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                                if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                    st.success("🗑️ Pedido eliminado.")
-                                    time.sleep(1.0)
-                                    st.rerun()
+                        st.write("---")
+                        with st.container():
+                            if rol_actual in roles_autorizados:
+                                col_info, col_accion = st.columns([3, 1])
+                            else:
+                                col_info = st.container()
+                                col_accion = None
+                                
+                            with col_info:
+                                st.markdown(f"🛍️ **Pedido ID: {row['Id_Pedido']}** — 👤 **{row['Socio']}**")
+                                st.caption(f"📅 Fecha: {row['Fecha']} | 📦 Producto: **{row['Producto']}** | 🔢 Cantidad: {row['Cantidad']} ud. | 📐 Talla: {row['Talla'] if pd.notna(row['Talla']) and str(row['Talla']).strip() != '' else 'N/A'}")
+                                if "Entregado" in str(row['Estado_Entrega']):
+                                    st.success(f"🟢 Estado: {row['Estado_Entrega']}")
                                 else:
-                                    st.error(f"Error de Google: {respuesta.text}")
-                            except Exception as err:
-                                st.error(f" Error de conexión: {err}")
+                                    st.warning(f"💡 Estado: {row['Estado_Entrega']}")
+                                
+                            if col_accion is not None:
+                                with col_accion:
+                                    if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_todo_{row['Id_Pedido']}_{idx}"):
+                                        import requests
+                                        import json
+                                        import time
+                                        
+                                        payload = {"accion": "eliminar_pedido_merch", "num_fila": fila_real_sheets}
+                                        with st.spinner("Eliminando pedido..."):
+                                            try:
+                                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                    st.success("🗑️ Pedido eliminado.")
+                                                    time.sleep(1.0)
+                                                    st.rerun()
+                                                else:
+                                                    st.error(f"Error de Google: {respuesta.text}") 
+                                            except Exception as err: 
+                                                st.error(f"Error de conexión: {err}") 
+                                            else: st.info("No hay pedidos registrados en el histórico.")
+                                                except Exception as e:
+                                            st.error(f"Error de lectura en la base de datos de Pedidos: {e}")
+                                            if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos_menu"):
+                                                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                                st.rerun()
 
-    
-    try:
-        # Generamos la URL usando tu SHEET_ID y apuntando a la pestaña 'Pedidos'
-        
-        URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
-        df_pedidos = pd.read_csv(URL_PEDIDOS)
-        df_pedidos.columns = df_pedidos.columns.str.strip()
-        
-        if not df_pedidos.empty:
-            busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
-            df_filtrado_ped = df_pedidos.copy()
-            if busqueda_ped:
-                df_filtrado_ped = df_filtrado_ped[
-                    df_filtrado_ped['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
-                    df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
-                ]
-            
-            st.write("---")
-            
-            for index, row in df_filtrado_ped.iterrows():
-                with st.container():
-                    col_info, col_accion = st.columns([3, 1])
-                    
-                    with col_info:
-                        st.markdown(f"🛍️ **Pedido ID:** {row.get('Id_Pedido', index)} — 👤 **{row.get('Socio', 'N/A')}**")
-                        st.write(f"📦 **Producto:** {row.get('Producto', 'N/A')} | 🔢 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📏 **Talla:** {row.get('Talla', 'N/A')}")
-                        
-                        estado = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
-                        if "Entregado" in estado:
-                            st.success(f"🟢 Estado: {estado}")
-                        else:
-                            st.warning(f"🟡 Estado: {estado}")
-                            
-                    with col_accion:
-                        # 🔒 Aquí aplicamos tu regla: solo Presidente, Vicepresidente, Tesorero y Secretario pueden modificar o eliminar
-                        if rol in ["Presidente", "Vicepresidente", "Tesorero", "Secretario"]:
-                            if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
-                                # Aquí iría tu lógica de conexión con Google para borrar la fila
-                                st.info("Lógica para eliminar pedido")
-                        else:
-                            st.caption("🔒 *Solo Lectura*")
-                st.write("---")
-        else:
-            st.info("No hay pedidos registrados en el sistema todavía.")
-            
-    except Exception as e:
-        st.error(f"Error al leer la pestaña Pedidos: {e}")
-        
-    if st.button("🔙 VOLVER AL MENÚ", key="btn_volver_pedidos"):
-        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-        st.rerun()
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
     elif st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
         st.title(st.session_state.current_menu.replace("_", " "))
