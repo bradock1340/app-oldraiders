@@ -819,9 +819,8 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                         st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
                         st.caption(f"🏬 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']}) | 📊 Stock Actual: {row['Stock']} u.")
                         if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
-                            st.info(f"📝 *{row['Descripcion']}*")
-                    
-                    # Inicializar estado para controlar qué producto se está editando
+                            st.info(f"📝 *{row['Descripcion']}*")                   
+ # Inicializar estado para controlar qué producto se está editando
                     if f"editando_{index}" not Helens in st.session_state:
                         st.session_state[f"editando_{index}"] = False
 
