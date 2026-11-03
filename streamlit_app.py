@@ -210,7 +210,7 @@ else:
             st.session_state.current_menu = "PRINCIPAL"
             st.rerun()
    
-    # === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
+# === 2.1 PANTALLA: REUNIONES (Listado con tus Columnas Reales) ===
     elif st.session_state.current_menu == "REUNIONES_MENU":
         st.title("REUNIONES Y ACTAS")
         col_reun1, col_reun2 = st.columns(2)
@@ -277,7 +277,7 @@ else:
         except Exception as e:
             st.error(f"Error de lectura en la hoja: {e}")
 
-    # === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
+# === 2.2 PANTALLA: CREAR / EDITAR REUNIÓN ===
     elif st.session_state.current_menu == "REUNIONES_CREAR":
         es_edicion = st.session_state.get("edit_reunion_data") is not None
         es_consulta = st.session_state.get("modo_consulta", False)
@@ -723,7 +723,7 @@ else:
             st.session_state.pantalla = "OLD_RIDERS_MENU"
             st.rerun()
         
-# === VISTAS DE CONTENIDO MACRO  ===
+# === VISTAS DE CONTENIDO  ===
     elif st.session_state.current_menu == "PANTALLA_SALIDAS":
         st.subheader("Calendario de Rutas")
         try:
@@ -749,38 +749,30 @@ else:
 # ==============================================================================
 # === 5. ZONA DE MERCHANDISING (MÓDULO INDEPENDIENTE PARA EVITAR ERRORES) ======
 # ==============================================================================
-
-# 🔒 CONTROL DE ACCESOS Y ROLES DIRECTIVOS
-# Definit segons la teva variable st.session_state.user_role de la pàgina 3
+# 🔐 CONTROL DE ACCESOS Y ROLES DIRECTIVOS
 rol_actual = st.session_state.get("user_role", None)
 ROLES_AUTORIZADOS = ["Presidente", "Vicepresidente", "Secretario", "Tesorero"]
 es_directiva = rol_actual in ROLES_AUTORIZADOS
 
-# Enllaç automàtic per a la consulta de comandes basat en el teu SHEET_ID
-#URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
 URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
 
-# Cambiamos el primer 'elif' por un 'if' para aislarlo de los problemas de arriba
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
-    
     if st.button("CONSULTAR PRODUCTOS"):
         st.session_state.current_menu = "MERCH_CONSULTAR"
         st.rerun()
     if st.button("CONSULTAR PEDIDOS / RESERVAS"):
         st.session_state.current_menu = "MERCH_PEDIDOS"
-        st.rerun()    
+        st.rerun()
     if st.button("NUEVO PRODUCTO"):
         st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
         st.rerun()
-        
     if st.button("NUEVO PEDIDO"):
         st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
         st.rerun()
-        
     st.write("---")
     
-    # Botones inferiores de navegación en dos columnas (Volver / Salir)
     col_nav1, col_nav2 = st.columns(2)
     with col_nav1:
         if st.button("⬅️ VOLVER", key="btn_volver_merch_principal"):
@@ -798,17 +790,14 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     st.write("Consulta y gestiona el stock disponible del material oficial del club.")
     st.write("---")
     
-    # Control de roles oficial
-    rol_actual = st.session_state.user_role
+    rol_actual = st.session_state.get("user_role", None)
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     
     try:
-        # 1. Leer los datos de la pestaña Merchandising en tiempo real
         df_merch = pd.read_csv(URL_MERCHANDISING)
         df_merch.columns = df_merch.columns.str.strip()
         
         if not df_merch.empty:
-            # Buscador rápido por nombre de producto
             busqueda_prod = st.text_input("🔍 Buscar Producto por nombre...").strip().lower()
             df_filtrado_merch = df_merch.copy()
             if busqueda_prod:
@@ -816,38 +805,40 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             
             st.write("---")
             
-            # Listamos cada producto de forma individual con su botón de acción condicionado
             for index, row in df_filtrado_merch.iterrows():
                 num_fila_producto = int(index) + 2
                 
                 with st.container():
-                    # Si tiene autorización, dividimos en columnas para el botón eliminar, si no, solo info
                     if rol_actual in roles_autorizados:
-                        col_info, col_accion = st.columns([3, 1])
+                        col_info, col_accion_edit, col_accion_elim = st.columns([3, 0.8, 0.8])
                     else:
                         col_info = st.container()
-                        col_accion = None
+                        col_accion_edit, col_accion_elim = None, None
                     
                     with col_info:
                         st.markdown(f"📦 **[{row['Id_Producto']}] {row['Producto']}** — **Precio:** {row['Precio']}€")
                         st.caption(f"🏬 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']}) | 📊 Stock Actual: {row['Stock']} u.")
                         if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                             st.info(f"📝 *{row['Descripcion']}*")
-                            
-                    if col_accion is not None:
-                        with col_accion:
+                    
+                    # Inicializar estado para controlar qué producto se está editando
+                    if f"editando_{index}" not Helens in st.session_state:
+                        st.session_state[f"editando_{index}"] = False
+
+                    if col_accion_edit is not None and col_accion_elim is not None:
+                        with col_accion_edit:
+                            if st.button("✏️ EDITAR", key=f"btn_editar_prod_{index}"):
+                                st.session_state[f"editando_{index}"] = not st.session_state[f"editando_{index}"]
+                        
+                        with col_accion_elim:
                             if st.button("❌ ELIMINAR", key=f"btn_eliminar_prod_{index}"):
                                 import requests
                                 import json
                                 import time
-                                
                                 payload = {
                                     "accion": "eliminar_producto_merch",
                                     "num_fila": num_fila_producto
                                 }
-                                
-                                URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
-                                
                                 with st.spinner("Borrando producto del inventario general..."):
                                     try:
                                         respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
@@ -859,7 +850,49 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                                             st.error(f"Fallo del servidor: {respuesta.text}")
                                     except Exception as err:
                                         st.error(f"Error de conexión: {err}")
-                st.write("---")
+
+                        # Formulario dinámico de edición si se pulsa "EDITAR"
+                        if st.session_state[f"editando_{index}"]:
+                            with st.expander(f"✏️ Modificar datos de: {row['Producto']}", expanded=True):
+                                form_key = f"form_edit_{index}"
+                                with st.form(key=form_key):
+                                    nuevo_nombre = st.text_input("Nombre del Producto", value=str(row['Producto']))
+                                    nuevo_precio = st.number_input("Precio (€)", value=float(row['Precio']), step=0.5)
+                                    nuevo_stock = st.number_input("Stock Actual", value=int(row['Stock']), step=1)
+                                    nuevo_proveedor = st.text_input("Proveedor", value=str(row['Proveedor']))
+                                    nuevo_tel = st.text_input("Teléfono Proveedor", value=str(row['Tel_Proveedor']))
+                                    nueva_desc = st.text_area("Descripción", value=str(row['Descripcion']) if pd.notna(row['Descripcion']) else "")
+                                    
+                                    btn_guardar = st.form_submit_button("💾 Guardar Cambios")
+                                    if btn_guardar:
+                                        import requests
+                                        import json
+                                        import time
+                                        
+                                        payload_edit = {
+                                            "accion": "editar_producto_merch",
+                                            "num_fila": num_fila_producto,
+                                            "producto": nuevo_nombre,
+                                            "precio": nuevo_precio,
+                                            "stock": nuevo_stock,
+                                            "proveedor": nuevo_proveedor,
+                                            "tel_proveedor": nuevo_tel,
+                                            "descripcion": nueva_desc
+                                        }
+                                        
+                                        with st.spinner("Actualizando producto en la base de datos..."):
+                                            try:
+                                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_edit), headers={"Content-Type": "application/json"})
+                                                if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                    st.success("✨ Producto actualizado correctamente.")
+                                                    st.session_state[f"editando_{index}"] = False
+                                                    time.sleep(1.0)
+                                                    st.rerun()
+                                                else:
+                                                    st.error(f"Fallo del servidor: {respuesta.text}")
+                                            except Exception as err:
+                                                st.error(f"Error de conexión: {err}")
+                    st.write("---")
         else:
             st.info("No hay productos registrados en el inventario todavía.")
             
@@ -869,8 +902,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
-
+s
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     # Control estricto de seguridad basado en tus variables de rol oficiales
