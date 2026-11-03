@@ -821,7 +821,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                         if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                             st.info(f"📝 *{row['Descripcion']}*")                   
  # Inicializar estado para controlar qué producto se está editando
-                    if f"editando_{index}" not Helens in st.session_state:
+                    if f"editando_{index}" not in st.session_state:
                         st.session_state[f"editando_{index}"] = False
 
                     if col_accion_edit is not None and col_accion_elim is not None:
