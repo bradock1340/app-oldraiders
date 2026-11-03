@@ -901,7 +901,6 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("🔙 VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-s
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     # Control estricto de seguridad basado en tus variables de rol oficiales
