@@ -761,8 +761,8 @@ rol_actual = st.session_state.get("user_role", None)
 ROLES_AUTORIZADOS = ["Presidente", "Vicepresidente", "Secretario", "Tesorero"]
 es_directiva = rol_actual in ROLES_AUTORIZADOS
 
-URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
-URL_PROCESADOR_GOOGLE = "https://google.com"
+URL_PEDIDOS = fhttps://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos
+URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
 
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
@@ -1205,4 +1205,3 @@ if st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORI
     if st.button("VOLVER"):
         st.session_state.current_menu = "OLD_RIDERS_MENU" if "MENU" not in st.session_state.current_menu else "CLUB_MENU"
         st.rerun()
-
