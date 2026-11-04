@@ -1033,7 +1033,6 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
                         
                         URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
-                        
                         with st.spinner("Registrando pedido en el histórico de Google Sheets..."):
                             try:
                                 respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
@@ -1057,6 +1056,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+
 
 # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
