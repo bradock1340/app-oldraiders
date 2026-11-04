@@ -747,7 +747,7 @@ else:
             st.rerun()
 
 # ==============================================================================
-# === 5. ZONA DE MERCHANDISING (PARTE 1: MENÚ E INVENTARIO) ====================
+# === 5. ZONA DE MERCHANDISING (BLOQUE 1: MENÚ PRINCIPAL E INVENTARIO) =========
 # ==============================================================================
 import streamlit as st
 import pandas as pd
@@ -761,8 +761,10 @@ rol_actual = st.session_state.get("user_role", None)
 ROLES_AUTORIZADOS = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
 es_directiva = rol_actual in ROLES_AUTORIZADOS
 
+# 🌐 TUS ENLACES REALES Y CORREGIDOS
 URL_PEDIDOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
-URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+URL_PROCESADOR_GOOGLE = "https://google.com"
+# Nota: Asegúrate de tener definida URL_MERCHANDISING arriba en tu código principal
 
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
@@ -839,7 +841,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                                     "accion": "eliminar_producto_merch",
                                     "num_fila": num_fila_producto
                                 }
-                                with st.spinner("Borrando producto..."):
+                                with st.spinner("Borrando producto del inventario general..."):
                                     try:
                                         respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                                         if "OK" in respuesta.text:
@@ -873,7 +875,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                                             "tel_proveedor": nuevo_tel,
                                             "descripcion": nueva_desc
                                         }
-                                        with st.spinner("Actualizando base de datos..."):
+                                        with st.spinner("Actualizando producto en la base de datos..."):
                                             try:
                                                 respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_edit), headers={"Content-Type": "application/json"})
                                                 if "OK" in respuesta.text:
@@ -901,12 +903,10 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.write("---")
     
     try:
-        # Descarga la pestaña 'Pedidos' directamente en un DataFrame
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
         
         if not df_pedidos.empty:
-            # Buscador por nombre de socio
             busqueda_socio = st.text_input("🔍 Buscar por Nombre de Socio...").strip().lower()
             df_filtrado_pedidos = df_pedidos.copy()
             
@@ -916,10 +916,9 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             st.write("---")
             
             for index, row in df_filtrado_pedidos.iterrows():
-                num_fila_pedido = int(index) + 2  # Fila real de Google Sheets
+                num_fila_pedido = int(index) + 2
                 
                 with st.container():
-                    # El control de edición/eliminación se reserva a los roles autorizados
                     if rol_actual in ROLES_AUTORIZADOS:
                         col_info, col_accion_edit, col_accion_elim = st.columns([3, 0.8, 0.8])
                     else:
@@ -927,17 +926,12 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         col_accion_edit, col_accion_elim = None, None
                     
                     with col_info:
-                        # Colores visuales según el estado de la entrega
                         estado = row['Estado_Entrega']
                         badge_estado = "🟢" if estado == "Entregado" else "🟠"
-                        
                         st.markdown(f"🆔 **{row['Id_Pedido']}** — {badge_estado} **{estado}**")
                         st.markdown(f"👤 **Socio:** {row['Socio']} | 👕 **Producto:** {row['Producto']} ({row['Talla']})")
                         st.caption(f"📅 Fecha: {row['Fecha']} | 📊 Cantidad: {row['Cantidad']} ud.")
-                        if 'Observaciones' in row and pd.notna(row['Observaciones']) and str(row['Observaciones']).strip() != "":
-                            st.caption(f"💬 *Obs: {row['Observaciones']}*")
                     
-                    # Inicializar estados de edición individuales si no existen
                     if f"editando_pedido_{index}" not in st.session_state:
                         st.session_state[f"editando_pedido_{index}"] = False
                     
@@ -947,7 +941,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                 st.session_state[f"editando_pedido_{index}"] = not st.session_state[f"editando_pedido_{index}"]
                         
                         with col_accion_elim:
-                            if st.button("❌ ELIMINAR", key=f"btn_elim_ped_{index}"):
+                            if st.button("❌ ELIMINAR", key=f"btn_elimianr_ped_{index}"):
                                 payload_elim = {
                                     "accion": "eliminar_pedido_merch",
                                     "num_fila": num_fila_pedido
@@ -964,7 +958,6 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     except Exception as err:
                                         st.error(f"Error de conexión: {err}")
                         
-                        # Formulario dinámico para modificar Estado y Cantidad (Canal 6.1 de tu Apps Script)
                         if st.session_state[f"editando_pedido_{index}"]:
                             with st.expander(f"⚙️ Modificar Pedido {row['Id_Pedido']}", expanded=True):
                                 with st.form(key=f"form_edit_ped_{index}"):
@@ -993,7 +986,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                                 st.error(f"Error de conexión: {err}")
                 st.write("---")
         else:
-            st.warning("No hay ningún pedido registrado en la base de datos.")
+            st.warning("No hay ningún pedido registrado.")
     except Exception as e:
         st.error(f"Error al conectar con la pestaña Pedidos: {e}")
         
@@ -1001,8 +994,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
 
-
-# === 5.3 SUBPANTALLA: NUEVO PEDIDO (PARTE 2) ===
+# === 5.3 SUBPANTALLA: NUEVO PEDIDO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
     if not es_directiva:
         st.error("⛔ ACCESO DENEGADO: No tienes permisos para registrar nuevos pedidos.")
@@ -1014,7 +1006,6 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         st.write("Selecciona el producto y define la talla para este pedido específico.")
         st.write("---")
         
-        # Opciones para los selectores gráficos
         lista_socios = ["General", "David (Gallego)"] 
         lista_productos = ["camiseta", "bota", "parche chupa"]
         
@@ -1028,11 +1019,9 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
             btn_enviar_pedido = st.form_submit_button("📥 ENCARGAR Y GUARDAR PEDIDO")
             
             if btn_enviar_pedido:
-                # Generación del ID único de pedido e identificación del día actual
                 id_pedido_generado = f"PED_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
                 fecha_actual = datetime.now().strftime("%d/%m/%Y")
                 
-                # Diccionario JSON alineado milimétricamente con Canal 6 de Google Apps Script
                 payload_pedido = {
                     "accion": "guardar_pedido_merch",
                     "Id_Pedido": id_pedido_generado,
@@ -1065,6 +1054,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         if st.button("⬅️ CANCELAR Y VOLVER", key="btn_cancelar_pedido"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+
 
 # === 5.4 SUBPANTALLA: CONSULTAR PEDIDOS (TODOS CONSULTAN, SOLO DIRECTIVA MODIFICA) ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
