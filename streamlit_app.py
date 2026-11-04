@@ -1149,7 +1149,17 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
         id_pedido_act = st.text_input("ID Pedido", value=str(datos_previos_pedido.get("Id_Pedido", "")), disabled=True)
         socio_act = st.text_input("👤 Miembro / Socio", value=str(datos_previos_pedido.get("Socio", "")), disabled=True)
         producto_act = st.text_input("📦 Artículo", value=str(datos_previos_pedido.get("Producto", "")), disabled=True)
-        talla_act = st.text_input("📐 Talla", value=str(datos_previos_pedido.get("Talla", "Única")), disabled=True)
+        # Definimos la lista de tallas disponibles
+tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
+talla_previa = str(datos_previos_pedido.get("Talla", "Única")).strip()
+
+# Buscamos qué posición ocupa la talla vieja para dejarla seleccionada por defecto
+idx_talla = tallas_disponibles.index(talla_previa) if talla_previa in tallas_disponibles else 0
+
+# Creamos el desplegable interactivo para poder cambiar la talla
+talla_nueva = st.selectbox("Modificar Talla:", tallas_disponibles, index=idx_como_talla)
+
+        #talla_act = st.text_input("📐 Talla", value=str(datos_previos_pedido.get("Talla", "Única")), disabled=True)
         
         try:
             valor_cantidad_previo = datos_previos_pedido.get("Cantidad", 1)
