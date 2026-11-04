@@ -348,7 +348,7 @@ else:
                 if st.button(texto_boton_principal):
                     if descripcion_reunion:
                         fecha_formateada = fecha_reunion.strftime('%d/%m/%Y')
-                        URL_DIRECTA = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        URL_DIRECTA = " https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                                                 
                         if es_edicion:
                             payload = {
@@ -515,7 +515,7 @@ else:
                 texto_boton = "ACTUALIZAR CAMBIOS" if es_edicion else "GUARDAR NORMA"
                 if st.button(texto_boton):
                     if descripcion_norma and tiempo_norma:
-                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        URL_PROCESADOR_GOOGLE = " https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         if es_edicion:
                             payload = {
@@ -701,7 +701,7 @@ else:
                             "Fecha_Nacimiento": nacimiento_val
                         }
                         
-                        URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
+                        URL_PROCESADOR_GOOGLE = " https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
                         
                         with st.spinner("Sincronizando cambios con Google Sheets..."):
                             try:
@@ -760,7 +760,8 @@ from datetime import datetime
 rol_actual = st.session_state.get("user_role", None)
 ROLES_AUTORIZADOS = ["Presidente", "Vicepresidente", "Secretario", "Tesorero"]
 es_directiva = rol_actual in ROLES_AUTORIZADOS
-URL_PEDIDOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos"
+
+URL_PEDIDOS = fhttps://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Pedidos
 URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpSxSI4XVZMcozObFbJemJvYtzMehlTw0PUaK6vIV4Ek5vHn0xbHvFb/exec"
 
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
@@ -1204,3 +1205,4 @@ if st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORI
     if st.button("VOLVER"):
         st.session_state.current_menu = "OLD_RIDERS_MENU" if "MENU" not in st.session_state.current_menu else "CLUB_MENU"
         st.rerun()
+
