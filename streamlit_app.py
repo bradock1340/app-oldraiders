@@ -1133,34 +1133,29 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
 
 # === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO ===
 elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
-    st.title("📝 MODIFICAR DETALLES DEL PEDIDO")
+    st.title(" MODIFICAR DETALLES DEL PEDIDO")
     st.write("Modifica el estado de la entrega, la cantidad o los datos del encargo.")
     st.write("---")
-    
+
     datos_previos_pedido = st.session_state.get("edit_pedido_data", {})
     fila_editar = datos_previos_pedido.get("Fila_Sheets")
-    
+
     if not datos_previos_pedido:
         st.error("No se han cargado datos para modificar.")
-        if st.button("⬅️ VOLVER"):
+        if st.button(" VOLVER"):
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
     else:
         id_pedido_act = st.text_input("ID Pedido", value=str(datos_previos_pedido.get("Id_Pedido", "")), disabled=True)
-        socio_act = st.text_input("👤 Miembro / Socio", value=str(datos_previos_pedido.get("Socio", "")), disabled=True)
-        producto_act = st.text_input("📦 Artículo", value=str(datos_previos_pedido.get("Producto", "")), disabled=True)
-        # Definimos la lista de tallas disponibles
-tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
-talla_previa = str(datos_previos_pedido.get("Talla", "Única")).strip()
-
-# Buscamos qué posición ocupa la talla vieja para dejarla seleccionada por defecto
-idx_talla = tallas_disponibles.index(talla_previa) if talla_previa in tallas_disponibles else 0
-
-# Creamos el desplegable interactivo para poder cambiar la talla
-talla_nueva = st.selectbox("Modificar Talla:", tallas_disponibles, index=idx_como_talla)
-
-        #talla_act = st.text_input("📐 Talla", value=str(datos_previos_pedido.get("Talla", "Única")), disabled=True)
+        socio_act = st.text_input(" Miembro / Socio", value=str(datos_previos_pedido.get("Socio", "")), disabled=True)
+        producto_act = st.text_input(" Artículo", value=str(datos_previos_pedido.get("Producto", "")), disabled=True)
         
+        # Desplegable interactivo para modificar la Talla
+        tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
+        talla_previa = str(datos_previos_pedido.get("Talla", "Única")).strip()
+        idx_talla = tallas_disponibles.index(talla_previa) if talla_previa in tallas_disponibles else 0
+        talla_nueva = st.selectbox("Modificar Talla:", tallas_disponibles, index=idx_talla)
+
         try:
             valor_cantidad_previo = datos_previos_pedido.get("Cantidad", 1)
             if pd.isna(valor_cantidad_previo) or str(valor_cantidad_previo).strip() == "":
@@ -1169,28 +1164,29 @@ talla_nueva = st.selectbox("Modificar Talla:", tallas_disponibles, index=idx_com
                 cantidad_defecto = int(float(valor_cantidad_previo))
         except Exception:
             cantidad_defecto = 1
-            
-        cantidad_nueva = st.number_input("🔢 Modificar Cantidad", min_value=1, value=cantidad_defecto, step=1)
-        
+
+        cantidad_nueva = st.number_input(" Modificar Cantidad", min_value=1, value=cantidad_defecto, step=1)
+
         estado_actual_str = str(datos_previos_pedido.get("Estado_Entrega", "Reservado / Pendiente"))
         idx_defecto_radio = 0 if "Entregado" in estado_actual_str else 1
-        estado_nuevo = st.radio("🔄 Modificar Estado de Entrega:", ["Entregado", "Reservado / Pendiente"], index=idx_defecto_radio, horizontal=True)
-        
+        estado_nuevo = st.radio(" Modificar Estado de Entrega:", ["Entregado", "Reservado / Pendiente"], index=idx_defecto_radio, horizontal=True)
+
         st.write("---")
-        
-        if st.button("💾 GUARDAR Y ACTUALIZAR CAMBIOS"):
+
+        if st.button(" GUARDAR Y ACTUALIZAR CAMBIOS"):
             payload_update = {
                 "accion": "editar_pedido_merch",
                 "num_fila": fila_editar,
+                "Talla": talla_nueva,
                 "Cantidad": int(cantidad_nueva),
                 "Estado_Entrega": estado_nuevo
             }
-            
+
             with st.spinner("Sincronizando modificaciones con Google Sheets..."):
                 try:
-                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_update), headers={"Content-Type": "application/json"})
+                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_update), headers={"Content-Type": "application/json"}, allow_redirects=True)
                     if "OK" in respuesta.text or "éxito" in respuesta.text:
-                        st.success("👍 ¡Pedido modificado con éxito!")
+                        st.success(" ¡Pedido modificado con éxito!")
                         time.sleep(1.5)
                         st.session_state.edit_pedido_data = None
                         st.session_state.current_menu = "MERCH_PEDIDOS"
@@ -1199,12 +1195,11 @@ talla_nueva = st.selectbox("Modificar Talla:", tallas_disponibles, index=idx_com
                         st.error(f"Fallo del servidor de Google: {respuesta.text}")
                 except Exception as err:
                     st.error(f"Error de conexión al actualizar el pedido: {err}")
-                    
-        if st.button("⬅️ CANCELAR Y VOLVER", key="btn_cancelar_edicion_ped"):
+
+        if st.button(" CANCELAR Y VOLVER", key="btn_cancelar_edicion_ped"):
             st.session_state.edit_pedido_data = None
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
-
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
