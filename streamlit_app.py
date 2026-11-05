@@ -1052,8 +1052,8 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
 
 # === 5.4 SUBPANTALLA: CONSULTA DE PEDIDOS Y RESERVAS ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
-    st.title("📋 CONSULTA PEDIDOS Y STOCK")
-    st.write("Consulta el estado de las reservas de merchandising.")
+    st.title("CONSULTA PEDIDOS Y STOCK")
+    st.write("Consulta el estado de las reservas de merchandising y material disponible.")
     st.write("---")
     
     try:
@@ -1064,7 +1064,8 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             df_pedidos['Fila_Sheets'] = df_pedidos.index + 2
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
             
-            filtro_estado = st.radio("Filtrar por estado de entrega:", ["📋 Todos", "⏳ Pendientes", "✅ STOCK"], horizontal=True)
+            # El radio con tus nuevos nombres modificados
+            filtro_estado = st.radio("Filtrar por estado de entrega:", ["Todos", "Pendientes", "STOCK"], horizontal=True)
             df_filtrado_ped = df_pedidos.copy()
             
             if busqueda_ped:
@@ -1072,12 +1073,15 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     df_filtrado_ped['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
                     df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
-                
+            
+            # --- CORRECCIÓN DE LOS FILTROS ---
             if "Pendientes" in filtro_estado:
+                # Busca los que están esperando recepción en el proveedor
                 df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
-            elif "Entregados" in filtro_estado:
+            elif "STOCK" in filtro_estado:
+                # CORREGIDO: Ahora sí entra aquí cuando pulsas "STOCK" y filtra los ya entregados/físicos
                 df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
-                
+            
             st.write("---")
             
             for index, row in df_filtrado_ped.iterrows():
@@ -1088,20 +1092,20 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     col_info, col_accion = st.columns([2.5, 1.5])
                     with col_info:
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
-                        st.write(f"📦 **Producto:** {row.get('Producto', 'N/A')} | 🔢 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {row.get('Talla', 'N/A')}")
+                        st.write(f"👕 **Producto:** {row.get('Producto', 'N/A')} | 📦 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {row.get('Talla', 'N/A')}")
                         
                         estado = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
                         if "Entregado" in estado:
-                            st.success(f"🟢 Estado: {estado}")
+                            st.success(f"🟢 Estado: {estado} (En Stock / Entregado)")
                         else:
-                            st.warning(f"🟡 Estado: {estado}")
+                            st.warning(f"🟡 Estado: {estado} (Pendiente Proveedor)")
                             
                     with col_accion:
                         roles_directiva = ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]
                         if rol_actual in roles_directiva:
                             col_b1, col_b2 = st.columns(2)
                             with col_b1:
-                                if st.button("✏️ EDITAR", key=f"btn_editar_ped_{index}"):
+                                if st.button("📝 EDITAR", key=f"btn_editar_ped_{index}"):
                                     pedido_diccionario = row.to_dict()
                                     pedido_diccionario['Fila_Sheets'] = num_fila_pedido
                                     st.session_state.edit_pedido_data = pedido_diccionario
@@ -1112,35 +1116,34 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     st.session_state.pedido_a_confirmar = index
                                     st.rerun()
                                     
-                            if st.session_state.get("pedido_a_confirmar") == index:
-                                st.write("")
-                                st.error(f"¿Borrar pedido **{id_ped_actual}**?")
-                                col_c1, col_c2 = st.columns(2)
-                                with col_c1:
-                                    if st.button("⚠️ SÍ", key=f"btn_si_conf_{index}"):
-                                        payload_del = {
-                                            "accion": "eliminar_pedido_merch",
-                                            "num_fila": num_fila_pedido
-                                        }
-                                        with st.spinner("Borrando del Sheets..."):
-                                            try:
-                                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
-                                                if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                                    st.success("Pedido eliminado.")
-                                                    st.session_state.pedido_a_confirmar = None
-                                                    time.sleep(1.0)
-                                                    st.rerun()
-                                                else:
-                                                    st.error(f"Error: {respuesta.text}")
-                                            except Exception as err:
-                                                st.error(f"Error de red: {err}")
-                                with col_c2:
-                                    if st.button("❌ NO", key=f"btn_no_conf_{index}"):
+                # Bloque de confirmación de eliminación (Se mantiene igual)
+                if st.session_state.get("pedido_a_confirmar") == index:
+                    st.write("")
+                    st.error(f"¿Borrar pedido **{id_ped_actual}**?")
+                    col_c1, col_c2 = st.columns(2)
+                    with col_c1:
+                        if st.button("⚠️ Sí", key=f"btn_si_conf_{index}"):
+                            payload_del = {
+                                "accion": "eliminar_pedido_merch",
+                                "num_fila": num_fila_pedido
+                            }
+                            with st.spinner("Borrando del Sheets..."):
+                                try:
+                                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
+                                    if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                        st.success("Pedido eliminado.")
                                         st.session_state.pedido_a_confirmar = None
+                                        time.sleep(1.0)
                                         st.rerun()
-                        else:
-                            st.caption("🔒 *Solo Lectura*")
-                st.write("---")
+                                    else:
+                                        st.error(f"Error: {respuesta.text}")
+                                except Exception as err:
+                                    st.error(f"Error de red: {err}")
+                    with col_c2:
+                        if st.button("❌ NO", key=f"btn_no_conf_{index}"):
+                            st.session_state.pedido_a_confirmar = None
+                            st.rerun()
+            st.write("---")
         else:
             st.info("No hay pedidos registrados en el sistema todavía.")
     except Exception as e:
