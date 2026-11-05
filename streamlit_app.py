@@ -1104,11 +1104,12 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         match_stock = df_inventario[df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()]
                     
                     if not match_stock.empty:
-                        # CORREGIDO: Ahora suma todas las unidades que coincidan para dar el valor real de stock
+                        # Suma todas las unidades que coincidan para dar el valor real de stock
                         stock_actual_item = int(pd.to_numeric(match_stock['Stock'], errors='coerce').sum())
                 
                 with st.container():
-                    col_info, col_accion = st.columns()
+                    # SOLUCIÓN AL ERROR: Le pasamos los tamaños definidos a las columnas [2.5, 1.5]
+                    col_info, col_accion = st.columns([2.5, 1.5])
                     with col_info:
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
                         st.write(f"👕 **Producto:** {nombre_producto} | 📦 **Cantidad Pedida:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {talla_pedido}")
@@ -1163,7 +1164,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         with col_c2:
                             if st.button("❌ NO", key=f"btn_no_conf_{index}"):
                                 st.session_state.pedido_a_confirmar = None
-                                r.rerun()
+                                st.rerun()
             st.write("---")
         else:
             st.info("No hay pedidos registrados en el sistema todavía.")
