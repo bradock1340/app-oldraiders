@@ -1049,7 +1049,6 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-
 # === 5.4 SUBPANTALLA: CONSULTA DE PEDIDOS Y RESERVAS ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.title("CONSULTA PEDIDOS Y STOCK")
@@ -1105,10 +1104,9 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         match_stock = df_inventario[df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()]
                     
                     if not match_stock.empty:
-                        stock_actual_item = int(match_stock.iloc[0]['Stock']) # CORREGIDO: Añadido [0]
+                        stock_actual_item = int(match_stock.iloc[0]['Stock'])
                 
                 with st.container():
-                    # CORREGIDO: Se restauran los pesos de las columnas [2.5, 1.5] para evitar el error de la imagen
                     col_info, col_accion = st.columns([2.5, 1.5])
                     with col_info:
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
@@ -1159,8 +1157,6 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                         st.rerun()
                                     else:
                                         st.error(f"Error: {respuesta.text}")
-                                try:
-                                    pass
                                 except Exception as err:
                                     st.error(f"Error de red: {err}")
                         with col_c2:
