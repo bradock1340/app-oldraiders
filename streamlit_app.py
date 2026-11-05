@@ -1220,7 +1220,7 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.edit_pedido_data = None
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
-  // === 🛒 CANAL 7: REGISTRAR VENTA DIRECTA Y DESCONTAR STOCK ===
+  #=== 🛒 CANAL 7: REGISTRAR VENTA DIRECTA Y DESCONTAR STOCK ===
   else if (data.accion === "registrar_venta_directa") {
     var sheetPedidos = ss.getSheetByName("Pedidos");
     var sheetMerch = ss.getSheetByName("Merchandising");
