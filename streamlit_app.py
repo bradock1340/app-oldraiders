@@ -836,21 +836,37 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                         
                         with col_accion_elim:
                             if st.button("❌ ELIMINAR", key=f"btn_eliminar_prod_{index}"):
-                                payload = {
-                                    "accion": "eliminar_producto_merch",
-                                    "num_fila": num_fila_producto
-                                }
-                                with st.spinner("Borrando producto del inventario general..."):
-                                    try:
-                                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                                        if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                            st.success(f"🗑️ '{row['Producto']}' eliminado.")
-                                            time.sleep(1.0)
-                                            st.rerun()
-                                        else:
-                                            st.error(f"Fallo del servidor: {respuesta.text}")
-                                    except Exception as err:
-                                        st.error(f"Error de conexión: {err}")
+                                st.session_state[f"confirmar_eliminar_prod_{index}"] = True
+                                st.rerun()
+
+                        # Bloque de confirmación de seguridad para eliminación
+                        if st.session_state.get(f"confirmar_eliminar_prod_{index}", False):
+                            st.write("")
+                            st.error(f"¿Borrar producto **{row['Producto']}**?")
+                            
+                            col_c1, col_c2 = st.columns(2)
+                            with col_c1:
+                                if st.button("⚠️ SÍ", key=f"btn_si_conf_prod_{index}"):
+                                    payload = {
+                                        "accion": "eliminar_producto_merch",
+                                        "num_fila": num_fila_producto
+                                    }
+                                    with st.spinner("Borrando producto del inventario general..."):
+                                        try:
+                                            respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                            if "OK" in respuesta.text or "éxito" in respuesta.text:
+                                                st.success(f"🗑️ '{row['Producto']}' eliminado.")
+                                                st.session_state[f"confirmar_eliminar_prod_{index}"] = False
+                                                time.sleep(1.0)
+                                                st.rerun()
+                                            else:
+                                                st.error(f"Fallo del servidor: {respuesta.text}")
+                                        except Exception as err:
+                                            st.error(f"Error de conexión: {err}")
+                            with col_c2:
+                                if st.button("❌ NO", key=f"btn_no_conf_prod_{index}"):
+                                    st.session_state[f"confirmar_eliminar_prod_{index}"] = False
+                                    st.rerun()
 
                         if st.session_state[f"editando_{index}"]:
                             with st.expander(f"✏️ Modificar datos de: {row['Producto']}", expanded=True):
@@ -895,6 +911,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("⬅️ VOLVER", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 # === 5.2 SUBPANTALLA: NUEVO PRODUCTO ===
 elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
