@@ -1064,7 +1064,6 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             df_pedidos['Fila_Sheets'] = df_pedidos.index + 2
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
             
-            # El radio con tus nuevos nombres modificados
             filtro_estado = st.radio("Filtrar por estado de entrega:", ["Todos", "Pendientes", "STOCK"], horizontal=True)
             df_filtrado_ped = df_pedidos.copy()
             
@@ -1074,12 +1073,9 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
             
-            # --- CORRECCIÓN DE LOS FILTROS ---
             if "Pendientes" in filtro_estado:
-                # Busca los que están esperando recepción en el proveedor
                 df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
             elif "STOCK" in filtro_estado:
-                # CORREGIDO: Ahora sí entra aquí cuando pulsas "STOCK" y filtra los ya entregados/físicos
                 df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
             
             st.write("---")
@@ -1094,11 +1090,12 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
                         st.write(f"👕 **Producto:** {row.get('Producto', 'N/A')} | 📦 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {row.get('Talla', 'N/A')}")
                         
-                        estado = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
-                        if "Entregado" in estado:
-                            st.success(f"🟢 Estado: {estado} (En Stock / Entregado)")
+                        # --- TEXTOS DE ESTADO REFORMATEADOS ---
+                        estado_real = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
+                        if "Entregado" in estado_real:
+                            st.success("🟢 Estado: Stock")  # Cambiado para mostrar 'Stock'
                         else:
-                            st.warning(f"🟡 Estado: {estado} (Pendiente Proveedor)")
+                            st.warning("🟡 Estado: Pendiente")  # Cambiado para mostrar 'Pendiente'
                             
                     with col_accion:
                         roles_directiva = ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]
@@ -1116,7 +1113,6 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     st.session_state.pedido_a_confirmar = index
                                     st.rerun()
                                     
-                # Bloque de confirmación de eliminación (Se mantiene igual)
                 if st.session_state.get("pedido_a_confirmar") == index:
                     st.write("")
                     st.error(f"¿Borrar pedido **{id_ped_actual}**?")
@@ -1153,6 +1149,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
         st.session_state.pedido_a_confirmar = None
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO ===
 elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
