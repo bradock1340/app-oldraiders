@@ -1221,7 +1221,7 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
 
-# === 5.6 SUBPANTALLA: NUEVA VENTA DIRECTA ===
+# === 5.6 SUBPANTALLA: NUEVA VENTA DIRECTA CON COLUMNA DE TALLA REAL ===
 elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
     roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
     if rol_actual not in roles_autorizados:
@@ -1256,15 +1256,17 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         producto_venta = st.selectbox("📦 Artículo a Vender:", lista_productos)
         
         if producto_venta != "-- Seleccionar Artículo --":
-            fila_prod = df_merch[df_merch['Producto'] == producto_venta]
+            tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
+            talla_seleccionada = st.selectbox("📏 Selecciona la Talla:", tallas_disponibles)
+            
+            # Filtramos de manera limpia por la columna 'Producto' y la nueva columna 'Talla'
+            fila_prod = df_merch[(df_merch['Producto'].str.lower().str.strip() == producto_venta.lower().strip()) & 
+                                 (df_merch['Talla'].astype(str).str.lower().str.strip() == talla_seleccionada.lower().strip())]
+            
             stock_disponible = int(fila_prod.iloc[0]['Stock']) if not fila_prod.empty else 0
             
             if stock_disponible > 0:
-                st.success(f"📊 Unidades físicas disponibles en estantería: **{stock_disponible}** u.")
-                
-                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
-                talla_seleccionada = st.selectbox("📏 Talla entregada:", tallas_disponibles)
-                
+                st.success(f"📊 Unidades físicas en estantería para la talla {talla_seleccionada}: **{stock_disponible}** u.")
                 cantidad = st.number_input("🔢 Cantidad a entregar:", min_value=1, max_value=stock_disponible, value=1, step=1)
                 st.write("---")
                 
@@ -1286,25 +1288,38 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                         with st.spinner("Procesando venta y actualizando stock real..."):
                             try:
                                 respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
-                                if "OK" in respuesta.text or "venta" in respuesta.text.toLowerCase():
-                                    st.success(f"✨ ¡Venta completada! Artículo asignado correctamente a **{socio_venta}**.")
+                                if "OK" in respuesta.text or "venta" in respuesta.text.lower():
+                                    st.success(f"✨ ¡Venta completada! Artículo asignado a **{socio_venta}**.")
                                     time.sleep(1.5)
                                     st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                                     st.rerun()
                                 else:
-                                    st.error(f"Error del servidor de Google: {respuesta.text}")
+                                    st.error(f"Error del servidor: {respuesta.text}")
                             except Exception as err:
                                 st.error(f"Error de red: {err}")
                     else:
                         st.warning("Por favor, selecciona el miembro que realiza la compra.")
             else:
-                st.error("🚨 STOCK AGOTADO: No se puede efectuar la venta de este artículo porque no quedan existencias físicas.")
+                # --- MENSAJE DE ADVERTENCIA INTERACTIVO ---
+                st.error(f"🚨 NO HAY STOCK DISPONIBLE de la talla **{talla_seleccionada}** para este producto.")
+                st.info("💡 ¿Qué deseas hacer?")
+                
+                col_btn1, col_btn2 = st.columns(2)
+                with col_btn1:
+                    if st.button("🛒 Hacer un Nuevo Pedido / Reserva"):
+                        st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
+                        st.rerun()
+                with col_btn2:
+                    st.caption("Cambia el selector de talla de arriba para buscar otra que sí tenga existencias.")
+                    
         else:
             st.info("Selecciona un artículo para verificar su disponibilidad actual.")
 
         if st.button("⬅️ VOLVER", key="btn_volver_venta_principal"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
+
+
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
 if st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
