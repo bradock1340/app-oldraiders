@@ -777,8 +777,11 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     if st.button("NUEVO PEDIDO"):
         st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
         st.rerun()
+    if st.button("🛍️ NUEVA VENTA DIRECTA"):
+        st.session_state.current_menu = "MERCH_NUEVA_VENTA"
+        st.rerun()
     st.write("---")
-    
+        
     col_nav1, col_nav2 = st.columns(2)
     with col_nav1:
         if st.button("⬅️ VOLVER", key="btn_volver_merch_principal"):
@@ -1217,6 +1220,45 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.edit_pedido_data = None
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
+  // === 🛒 CANAL 7: REGISTRAR VENTA DIRECTA Y DESCONTAR STOCK ===
+  else if (data.accion === "registrar_venta_directa") {
+    var sheetPedidos = ss.getSheetByName("Pedidos");
+    var sheetMerch = ss.getSheetByName("Merchandising");
+    
+    if (!sheetPedidos) {
+      sheetPedidos = ss.insertSheet("Pedidos");
+      sheetPedidos.appendRow(["Id_Pedido", "Fecha", "Socio", "Producto", "Talla", "Cantidad", "Estado_Entrega"]);
+    }
+    
+    // Descontamos del stock real en la pestaña Merchandising
+    if (sheetMerch) {
+      var valoresMerch = sheetMerch.getDataRange().getValues();
+      for (var i = 1; i < valoresMerch.length; i++) {
+        if (valoresMerch[i][1].toString().trim().toLowerCase() === data.Producto.toString().trim().toLowerCase()) {
+          var filaProd = i + 1;
+          var stockActual = parseInt(valoresMerch[i][6]); // Columna G (Stock)
+          var nuevaCantidad = stockActual - parseInt(data.Cantidad);
+          
+          if (nuevaCantidad < 0) nuevaCantidad = 0; 
+          sheetMerch.getRange(filaProd, 7).setValue(nuevaCantidad);
+          break;
+        }
+      }
+    }
+    
+    // Registramos la venta en la hoja de Pedidos marcándola directamente como "Entregado"
+    sheetPedidos.appendRow([
+      data.Id_Pedido,        
+      data.Fecha,            
+      data.Socio,            
+      data.Producto,         
+      data.Talla,            
+      data.Cantidad,         
+      "Entregado"    
+    ]);
+    
+    return ContentService.createTextOutput("OK_VENTA");
+  }
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
