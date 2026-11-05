@@ -768,7 +768,7 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     if st.button("CONSULTAR PRODUCTOS"):
         st.session_state.current_menu = "MERCH_CONSULTAR"
         st.rerun()
-    if st.button("CONSULTAR PEDIDOS / RESERVAS"):
+    if st.button("CONSULTAR PEDIDOS"):
         st.session_state.current_menu = "MERCH_PEDIDOS"
         st.rerun()
     if st.button("NUEVO PRODUCTO"):
@@ -777,7 +777,7 @@ if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     if st.button("NUEVO PEDIDO"):
         st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
         st.rerun()
-    if st.button("🛍️ NUEVA VENTA DIRECTA"):
+    if st.button("NUEVA VENTA"):
         st.session_state.current_menu = "MERCH_NUEVA_VENTA"
         st.rerun()
     st.write("---")
@@ -1230,7 +1230,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
     else:
-        st.title("💸 REGISTRAR VENTA DIRECTA")
+        st.title("REGISTRAR VENTA DIRECTA")
         st.write("Asigna un producto disponible en stock directamente a un miembro.")
         st.write("---")
         
@@ -1253,7 +1253,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
             st.error(f"Error al cargar la lista de miembros: {e_users}")
         
         socio_venta = st.selectbox("👤 Miembro / Comprador:", socios_disponibles)
-        producto_venta = st.selectbox("📦 Artículo a Vender:", lista_productos)
+        producto_venta = st.selectbox("Artículo a Vender:", lista_productos)
         
         if producto_venta != "-- Seleccionar Artículo --":
             tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
@@ -1266,11 +1266,11 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
             stock_disponible = int(fila_prod.iloc[0]['Stock']) if not fila_prod.empty else 0
             
             if stock_disponible > 0:
-                st.success(f"📊 Unidades físicas en estantería para la talla {talla_seleccionada}: **{stock_disponible}** u.")
-                cantidad = st.number_input("🔢 Cantidad a entregar:", min_value=1, max_value=stock_disponible, value=1, step=1)
+                st.success(f"Unidades físicas en stock para la talla {talla_seleccionada}: **{stock_disponible}** u.")
+                cantidad = st.number_input("Cantidad a entregar:", min_value=1, max_value=stock_disponible, value=1, step=1)
                 st.write("---")
                 
-                if st.button("🤝 CONFIRMAR Y ENTREGAR VENTA"):
+                if st.button("CONFIRMAR Y ENTREGAR VENTA"):
                     if socio_venta != "-- Seleccionar Socio --":
                         ahora = datetime.now()
                         id_venta = f"VENTA-{ahora.strftime('%Y%m%d%H%M%S')}"
