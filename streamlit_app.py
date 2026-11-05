@@ -1057,8 +1057,15 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
     st.write("---")
     
     try:
+        # Cargamos los pedidos y también el inventario para cruzar el stock
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
+        
+        try:
+            df_inventario = pd.read_csv(URL_MERCHANDISING)
+            df_inventario.columns = df_inventario.columns.str.strip()
+        except Exception:
+            df_inventario = pd.DataFrame()  # En caso de error, creamos un dataframe vacío de seguridad
         
         if not df_pedidos.empty:
             df_pedidos['Fila_Sheets'] = df_pedidos.index + 2
@@ -1083,19 +1090,38 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             for index, row in df_filtrado_ped.iterrows():
                 num_fila_pedido = int(row['Fila_Sheets'])
                 id_ped_actual = row.get('Id_Pedido', index)
+                nombre_producto = str(row.get('Producto', '')).strip()
+                talla_pedido = str(row.get('Talla', '')).strip()
+                
+                # --- LOGICA PARA BUSCAR EL STOCK REAL ---
+                stock_actual_item = 0
+                if not df_inventario.empty and 'Producto' in df_inventario.columns and 'Stock' in df_inventario.columns:
+                    # Si tu tabla de inventario filtra por Producto y Talla independientemente
+                    if 'Talla' in df_inventario.columns:
+                        match_stock = df_inventario[
+                            (df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()) &
+                            (df_inventario['Talla'].astype(str).str.lower().str.strip() == talla_pedido.lower())
+                        ]
+                    else:
+                        match_stock = df_inventario[df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()]
+                    
+                    if not match_stock.empty:
+                        stock_actual_item = int(match_stock.iloc[0]['Stock'])
                 
                 with st.container():
-                    col_info, col_accion = st.columns([2.5, 1.5])
+                    col_info, col_accion = st.columns()
                     with col_info:
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
-                        st.write(f"👕 **Producto:** {row.get('Producto', 'N/A')} | 📦 **Cantidad:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {row.get('Talla', 'N/A')}")
+                        st.write(f"👕 **Producto:** {nombre_producto} | 📦 **Cantidad Pedida:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {talla_pedido}")
                         
-                        # --- TEXTOS DE ESTADO REFORMATEADOS ---
+                        # Añadimos el dato del inventario general de forma visual y limpia
+                        st.caption(f"📊 **Unidades en Almacén (Inventario General):** {stock_actual_item} ud.")
+                        
                         estado_real = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
                         if "Entregado" in estado_real:
-                            st.success("🟢 Estado: Stock")  # Cambiado para mostrar 'Stock'
+                            st.success("🟢 Estado: Stock")
                         else:
-                            st.warning("🟡 Estado: Pendiente")  # Cambiado para mostrar 'Pendiente'
+                            st.warning("🟡 Estado: Pendiente")
                             
                     with col_accion:
                         roles_directiva = ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]
@@ -1149,7 +1175,6 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
         st.session_state.pedido_a_confirmar = None
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
 
 # === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO ===
 elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
