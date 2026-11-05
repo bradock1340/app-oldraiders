@@ -1220,7 +1220,7 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
             st.session_state.edit_pedido_data = None
             st.session_state.current_menu = "MERCH_PEDIDOS"
             st.rerun()
-  #=== 🛒 CANAL 7: REGISTRAR VENTA DIRECTA Y DESCONTAR STOCK ===
+#=== 🛒 CANAL 6: REGISTRAR VENTA DIRECTA Y DESCONTAR STOCK ===
   else if (data.accion === "registrar_venta_directa") {
     var sheetPedidos = ss.getSheetByName("Pedidos");
     var sheetMerch = ss.getSheetByName("Merchandising");
@@ -1260,6 +1260,90 @@ elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
     return ContentService.createTextOutput("OK_VENTA");
   }
 
+# === 5.6 SUBPANTALLA: NUEVA VENTA DIRECTA ===
+elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
+    roles_autorizados = ["Presidente", "Vicepresidente", "Secretario", "Tesorero", "Administrador"]
+    if rol_actual not in roles_autorizados:
+        st.error("🚫 ACCESO DENEGADO: No tienes permisos para registrar ventas.")
+        if st.button("⬅️ VOLVER", key="btn_error_nueva_venta"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
+    else:
+        st.title("💸 REGISTRAR VENTA DIRECTA")
+        st.write("Asigna un producto disponible en stock directamente a un miembro.")
+        st.write("---")
+        
+        try:
+            df_merch = pd.read_csv(URL_MERCHANDISING)
+            df_merch.columns = df_merch.columns.str.strip()
+            lista_productos = ["-- Seleccionar Artículo --"] + (df_merch['Producto'].dropna().unique().tolist() if not df_merch.empty else [])
+        except Exception as e:
+            st.error(f"Error al cargar inventario: {e}")
+            lista_productos = ["-- Seleccionar Artículo --"]
+
+        socios_disponibles = ["-- Seleccionar Socio --", "General"]
+        try:
+            df_usuarios_ped = pd.read_csv(URL_USUARIOS)
+            df_usuarios_ped.columns = df_usuarios_ped.columns.str.strip()
+            if 'Alias' in df_usuarios_ped.columns:
+                lista_alias = df_usuarios_ped['Alias'].dropna().unique().tolist()
+                socios_disponibles += [str(a) for a in lista_alias if str(a) != "General"]
+        except Exception as e_users:
+            st.error(f"Error al cargar la lista de miembros: {e_users}")
+        
+        socio_venta = st.selectbox("👤 Miembro / Comprador:", socios_disponibles)
+        producto_venta = st.selectbox("📦 Artículo a Vender:", lista_productos)
+        
+        if producto_venta != "-- Seleccionar Artículo --":
+            fila_prod = df_merch[df_merch['Producto'] == producto_venta]
+            stock_disponible = int(fila_prod.iloc[0]['Stock']) if not fila_prod.empty else 0
+            
+            if stock_disponible > 0:
+                st.success(f"📊 Unidades físicas disponibles en estantería: **{stock_disponible}** u.")
+                
+                tallas_disponibles = ["Única", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "5XL"]
+                talla_seleccionada = st.selectbox("📏 Talla entregada:", tallas_disponibles)
+                
+                cantidad = st.number_input("🔢 Cantidad a entregar:", min_value=1, max_value=stock_disponible, value=1, step=1)
+                st.write("---")
+                
+                if st.button("🤝 CONFIRMAR Y ENTREGAR VENTA"):
+                    if socio_venta != "-- Seleccionar Socio --":
+                        ahora = datetime.now()
+                        id_venta = f"VENTA-{ahora.strftime('%Y%m%d%H%M%S')}"
+                        
+                        payload = {
+                            "accion": "registrar_venta_directa",
+                            "Id_Pedido": id_venta,
+                            "Fecha": ahora.strftime("%d/%m/%Y"),
+                            "Socio": socio_venta,
+                            "Producto": producto_venta,
+                            "Talla": talla_seleccionada,
+                            "Cantidad": int(cantidad)
+                        }
+                        
+                        with st.spinner("Procesando venta y actualizando stock real..."):
+                            try:
+                                respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+                                if "OK" in respuesta.text or "venta" in respuesta.text.toLowerCase():
+                                    st.success(f"✨ ¡Venta completada! Artículo asignado correctamente a **{socio_venta}**.")
+                                    time.sleep(1.5)
+                                    st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                    st.rerun()
+                                else:
+                                    st.error(f"Error del servidor de Google: {respuesta.text}")
+                            except Exception as err:
+                                st.error(f"Error de red: {err}")
+                    else:
+                        st.warning("Por favor, selecciona el miembro que realiza la compra.")
+            else:
+                st.error("🚨 STOCK AGOTADO: No se puede efectuar la venta de este artículo porque no quedan existencias físicas.")
+        else:
+            st.info("Selecciona un artículo para verificar su disponibilidad actual.")
+
+        if st.button("⬅️ VOLVER", key="btn_volver_venta_principal"):
+            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+            st.rerun()
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
 if st.session_state.current_menu in ["REUNIONES_MENU", "NORMATIVA_VER", "HISTORIA_VER"]:
