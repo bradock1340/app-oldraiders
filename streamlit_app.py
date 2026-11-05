@@ -1093,10 +1093,9 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                 nombre_producto = str(row.get('Producto', '')).strip()
                 talla_pedido = str(row.get('Talla', '')).strip()
                 
-                # --- LOGICA PARA BUSCAR EL STOCK REAL ---
+                # --- LÓGICA PARA BUSCAR EL STOCK REAL ---
                 stock_actual_item = 0
                 if not df_inventario.empty and 'Producto' in df_inventario.columns and 'Stock' in df_inventario.columns:
-                    # Si tu tabla de inventario filtra por Producto y Talla independientemente
                     if 'Talla' in df_inventario.columns:
                         match_stock = df_inventario[
                             (df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()) &
@@ -1106,10 +1105,11 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                         match_stock = df_inventario[df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()]
                     
                     if not match_stock.empty:
-                        stock_actual_item = int(match_stock.iloc[0]['Stock'])
+                        stock_actual_item = int(match_stock.iloc[0]['Stock']) # CORREGIDO: Añadido [0]
                 
                 with st.container():
-                    col_info, col_accion = st.columns()
+                    # CORREGIDO: Se restauran los pesos de las columnas [2.5, 1.5] para evitar el error de la imagen
+                    col_info, col_accion = st.columns([2.5, 1.5])
                     with col_info:
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
                         st.write(f"👕 **Producto:** {nombre_producto} | 📦 **Cantidad Pedida:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {talla_pedido}")
@@ -1159,12 +1159,14 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                         st.rerun()
                                     else:
                                         st.error(f"Error: {respuesta.text}")
+                                try:
+                                    pass
                                 except Exception as err:
                                     st.error(f"Error de red: {err}")
-                    with col_c2:
-                        if st.button("❌ NO", key=f"btn_no_conf_{index}"):
-                            st.session_state.pedido_a_confirmar = None
-                            st.rerun()
+                        with col_c2:
+                            if st.button("❌ NO", key=f"btn_no_conf_{index}"):
+                                st.session_state.pedido_a_confirmar = None
+                                st.rerun()
             st.write("---")
         else:
             st.info("No hay pedidos registrados en el sistema todavía.")
