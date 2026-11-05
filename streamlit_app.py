@@ -1052,7 +1052,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
 
 # === 5.4 SUBPANTALLA: CONSULTA DE PEDIDOS Y RESERVAS ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
-    st.title("📋 CONSULTA DE PEDIDOS Y RESERVAS")
+    st.title("📋 CONSULTA PEDIDOS Y STOCK")
     st.write("Consulta el estado de las reservas de merchandising.")
     st.write("---")
     
@@ -1064,7 +1064,7 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             df_pedidos['Fila_Sheets'] = df_pedidos.index + 2
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
             
-            filtro_estado = st.radio("Filtrar por estado de entrega:", ["📋 Todos", "⏳ Pendientes", "✅ Entregados"], horizontal=True)
+            filtro_estado = st.radio("Filtrar por estado de entrega:", ["📋 Todos", "⏳ Pendientes", "✅ STOCK"], horizontal=True)
             df_filtrado_ped = df_pedidos.copy()
             
             if busqueda_ped:
