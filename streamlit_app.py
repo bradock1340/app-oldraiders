@@ -863,7 +863,12 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             for index, row in df_filtrado_merch.iterrows():
                 num_fila_producto = int(index) + 2
                 with st.container():
-                    col_info, col_accion_edit, col_accion_elim = st.columns() if rol_actual in ROLES_AUTORIZADOS else st.columns()
+                    # CORRECCIÓ DE L'ERROR: Definimos el spec de columnas correcto para evitar el fallo de Streamlit
+                    if rol_actual in ROLES_AUTORIZADOS:
+                        col_info, col_accion_edit, col_accion_elim = st.columns([3, 0.8, 0.8])
+                    else:
+                        col_info = st.container()
+                        col_accion_edit, col_accion_elim = None, None
                     
                     with col_info:
                         # Añadimos el precio oficial al título de la tarjeta
@@ -873,7 +878,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                         if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                             st.info(f"📝 *{row['Descripcion']}*")
                             
-                    if rol_actual in ROLES_AUTORIZADOS:
+                    if rol_actual in ROLES_AUTORIZADOS and col_accion_edit is not None and col_accion_elim is not None:
                         with col_accion_edit:
                             if st.button("📝 EDITAR", key=f"btn_editar_prod_{index}"):
                                 st.session_state[f"editando_{index}"] = not st.session_state.get(f"editando_{index}", False)
