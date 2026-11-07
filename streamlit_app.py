@@ -770,9 +770,8 @@ URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpS
 
 # --- NUEVAS PESTAÑAS SUGERIDAS PARA TU LOGÍSTICA ---
 URL_MERCHANDISING = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Merchandising"
-URL_STOCK = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Inventario_Stock"
-URL_VENTAS_SOCIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Ventas_Socios"
-
+URL_STOCK = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Inventario_Stock"
+URL_VENTAS_SOCIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Ventas_Socios"
 
 # ==============================================================================
 # PANTALLA PRINCIPAL: MENÚ DE MERCHANDISING
