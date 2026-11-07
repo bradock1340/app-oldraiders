@@ -1239,18 +1239,16 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         df_catalogo = pd.read_csv(URL_MERCHANDISING)
         df_catalogo.columns = df_catalogo.columns.str.strip()
         
-        # 3. LÓGICA DEL DESPLEGABLE DINÁMICO CON TU HOJA DE USUARIOS REAL
-        URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+        # 3. LÓGICA DEL DESPLEGABLE DINÁMICO CORREGIDA
+        URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
         lista_socios = ["-- Selecciona un Socio --", "Otros"]
         
         try:
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             
-            # Forzamos la lectura de tu columna 'Alias' exacta según tu captura de pantalla
             if 'Alias' in df_usuarios.columns:
                 alias_limpios = df_usuarios['Alias'].dropna().astype(str).str.strip()
-                # Filtramos para quitar posibles filas vacías o encabezados repetidos
                 alias_validos = [x for x in alias_limpios if x != "" and x.lower() != "alias"]
                 lista_socios += sorted(alias_validos)
         except Exception as e_usuarios:
@@ -1258,9 +1256,8 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
             
         socio_select = st.selectbox("👤 Selecciona el Socio Destinatario:", lista_socios)
         
-        # Si elige "Otros", abrimos una caja de texto para escribir el nombre a mano
         if socio_select == "Otros":
-            socio_final = st.text_input("✍ *Escribe el nombre / alias de la persona:*").strip()
+            socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona:").strip()
         else:
             socio_final = socio_select if socio_select != "-- Selecciona un Socio --" else ""
             
@@ -1280,27 +1277,33 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 fila_stock_real = df_disponibles.iloc[idx_seleccionado]
                 nombre_articulo = fila_stock_real['Producto']
                 
-                # Búsqueda del precio unitario en el catálogo maestro
+                # --- BÚSQUEDA DEL PRECIO UNITARIO LIMPIO ---
                 precio_unitario = 0.0
                 if not df_catalogo.empty and 'Producto' in df_catalogo.columns and 'Precio' in df_catalogo.columns:
                     match_cat = df_catalogo[df_catalogo['Producto'].astype(str).str.lower() == str(nombre_articulo).lower()]
                     if not match_cat.empty:
-                        precio_unitario = float(match_cat.iloc[0]['Precio'])
+                        # Extraemos el valor escalar de forma segura para evitar problemas de arrays
+                        precio_unitario = float(match_cat['Precio'].iloc[0])
                 
                 max_permitido = int(fila_stock_real['Stock_Fisico'])
                 cantidad_vender = st.number_input("Cantidad a entregar:", min_value=1, max_value=max_permitido, value=1, step=1)
                 
-                # Cálculos automáticos de importes de venta
-                importe_calculado = precio_unitario * cantidad_vender
-                st.info(f"💰 Precio catálogo unitario: {precio_unitario}€ | **Total Operación: {importe_calculado}€**")
+                # --- CÁLCULOS AUTOMÁTICOS INDESPLAZABLES ---
+                importe_total_fijo = precio_unitario * cantidad_vender
                 
-                # Gestión de cobros, entregas a cuenta y balance pendiente
-                importe_total_final = st.number_input("Importe total definitivo de la venta (€):", min_value=0.0, value=float(importe_calculado), step=0.5)
-                importe_pagado_cuenta = st.number_input("Cantidad entregada / pagada A CUENTA (€):", min_value=0.0, max_value=float(importe_total_final), value=float(importe_total_final), step=0.5)
+                st.info(f"💰 Precio catálogo unitario: {precio_unitario}€ | **Total Operación: {importe_total_fijo}€**")
                 
-                importe_pendiente = importe_total_final - importe_pagado_cuenta
-                if importe_pendiente > 0:
-                    st.warning(f"⚠️ Quedará una deuda pendiente de: **{importe_pendiente}€**")
+                # Deshabilitamos el campo del importe total para que NUNCA sea editable [1]
+                st.number_input("Importe total de la venta (€):", value=float(importe_total_fijo), disabled=True)
+                
+                # El único campo editable es la entrega a cuenta [1]
+                importe_pagado_cuenta = st.number_input("Cantidad entregada / pagada A CUENTA (€):", min_value=0.0, max_value=float(importe_total_fijo), value=float(importe_total_fijo), step=0.5)
+                
+                # El pendiente se calcula de forma matemática estricta [1]
+                importe_pendiente = importe_total_fijo - importe_pagado_cuenta
+                
+                if importe_pendiente > 0.01:
+                    st.warning(f"⚠️ Quedará una deuda pendiente de: **{importe_pendiente:.2f}€**")
                 else:
                     st.success("✨ Operación totalmente abonada.")
                 
@@ -1336,6 +1339,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_vta"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # ==============================================================================
 # 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS
