@@ -859,8 +859,12 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             st.write("---")
             for index, row in df_filtrado_merch.iterrows():
                 num_fila_producto = int(index) + 2
+                
+                # Inicializar el estado de edición para cada fila si no existe
+                if f"editando_{index}" not in st.session_state:
+                    st.session_state[f"editando_{index}"] = False
+
                 with st.container():
-                    # CORRECCIÓ DE L'ERROR: Definimos el spec de columnas correcto para evitar el fallo de Streamlit
                     if rol_actual in ROLES_AUTORIZADOS:
                         col_info, col_accion_edit, col_accion_elim = st.columns([3, 0.8, 0.8])
                     else:
@@ -868,25 +872,62 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                         col_accion_edit, col_accion_elim = None, None
                     
                     with col_info:
-                        # Añadimos el precio oficial al título de la tarjeta
-                        precio_oficial = f" — 💰 {row['Precio']}€" if 'Precio' in row.index and pd.notna(row['Precio']) else ""
-                        st.markdown(f"### **[{row['Id_Producto']}] {row['Producto']}{precio_oficial}**")
+                        # Controlamos de manera segura si las columnas existen y no son nulas
+                        val_precio = row.get('Precio', '')
+                        precio_oficial = f" — 💰 {val_precio}€" if pd.notna(val_precio) and str(val_precio).strip() != "" else " — 💰 Sin precio"
+                        
+                        st.markdown(f"### **[{row.get('Id_Producto', index)}] {row.get('Producto', 'Sin Nombre')}{precio_oficial}**")
                         st.caption(f"🏭 Proveedor: {row.get('Proveedor', 'N/A')} ({row.get('Tel_Proveedor', 'N/A')})")
-                        if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
+                        if 'Descripcion' in row.index and pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                             st.info(f"📝 *{row['Descripcion']}*")
                             
                     if rol_actual in ROLES_AUTORIZADOS and col_accion_edit is not None and col_accion_elim is not None:
                         with col_accion_edit:
                             if st.button("📝 EDITAR", key=f"btn_editar_prod_{index}"):
-                                st.session_state[f"editando_{index}"] = not st.session_state.get(f"editando_{index}", False)
+                                st.session_state[f"editando_{index}"] = not st.session_state[f"editando_{index}"]
+                                st.rerun()
                         with col_accion_elim:
                             if st.button("🗑️ BORRAR", key=f"btn_eliminar_prod_{index}"):
                                 st.session_state[f"confirmar_eliminar_prod_{index}"] = True
                                 st.rerun()
 
-                # Confirmación Borrado de Producto del catálogo maestro
+                # === FORMULARIO DE EDICIÓN (Esto es lo que faltaba para que el botón EDITAR funcione) ===
+                if st.session_state.get(f"editando_{index}", False):
+                    with st.expander(f"🛠️ Modificar datos de: {row.get('Producto', '')}", expanded=True):
+                        with st.form(key=f"form_edit_prod_{index}"):
+                            edit_nombre = st.text_input("Nombre del Producto", value=str(row.get('Producto', '')))
+                            edit_precio = st.number_input("Precio (€)", value=float(row.get('Precio', 0.0)) if pd.notna(row.get('Precio')) and isinstance(row.get('Precio'), (int, float)) else 0.0, step=0.5)
+                            edit_prov = st.text_input("Proveedor", value=str(row.get('Proveedor', '')))
+                            edit_tel = st.text_input("Teléfono Proveedor", value=str(row.get('Tel_Proveedor', '')))
+                            edit_desc = st.text_area("Descripción", value=str(row.get('Descripcion', '')) if pd.notna(row.get('Descripcion')) else "")
+                            
+                            btn_guardar_cambios = st.form_submit_button("💾 Guardar Cambios")
+                            if btn_guardar_cambios:
+                                payload_edit = {
+                                    "accion": "editar_producto_merch",
+                                    "num_fila": num_fila_producto,
+                                    "producto": edit_nombre,
+                                    "precio": edit_precio,
+                                    "proveedor": edit_prov,
+                                    "tel_proveedor": edit_tel,
+                                    "descripcion": edit_desc
+                                }
+                                with st.spinner("Actualizando catálogo base..."):
+                                    try:
+                                        respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_edit), headers={"Content-Type": "application/json"})
+                                        if "OK" in respuesta.text:
+                                            st.success("¡Producto actualizado correctamente!")
+                                            st.session_state[f"editando_{index}"] = False
+                                            time.sleep(1.0)
+                                            st.rerun()
+                                        else:
+                                            st.error(f"Fallo del servidor: {respuesta.text}")
+                                    except Exception as err:
+                                        st.error(f"Error de conexión: {err}")
+
+                # Confirmación Borrado de Producto
                 if st.session_state.get(f"confirmar_eliminar_prod_{index}", False):
-                    st.error(f"¿Borrar del catálogo base el producto **{row['Producto']}**?")
+                    st.error(f"¿Borrar del catálogo base el producto **{row.get('Producto', '')}**?")
                     col_c1, col_c2 = st.columns(2)
                     with col_c1:
                         if st.button("Sí, Confirmar", key=f"btn_si_conf_prod_{index}"):
@@ -895,7 +936,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
                                 try:
                                     respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                                     if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                        st.success(f"'{row['Producto']}' eliminado del catálogo.")
+                                        st.success(f"'{row.get('Producto', '')}' eliminado.")
                                         st.session_state[f"confirmar_eliminar_prod_{index}"] = False
                                         time.sleep(1.0)
                                         st.rerun()
@@ -913,7 +954,6 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
 
 # ==============================================================================
 # 5.2 SUBPANTALLA: DISEÑAR / REGISTRAR NUEVO PRODUCTO EN CATÁLOGO
