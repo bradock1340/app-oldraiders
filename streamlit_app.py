@@ -1127,7 +1127,7 @@ elif st.session_state.current_menu == "MERCH_STOCK":
                     with col_detalles:
                         st.markdown(f"### 📦 {row['Producto']}")
                         st.markdown(f"📏 **Talla:** `{row.get('Talla', 'Única')}` | Código Ref: `{row.get('Id_Producto', 'N/A')}`")
-                     with col_unidades:
+                    with col_unidades:
                         unidades = int(row.get('Stock_Fisico', 0))
                         if unidades > 5: 
                             st.metric(label="Disponible", value=f"{unidades} ud.")
@@ -1135,14 +1135,15 @@ elif st.session_state.current_menu == "MERCH_STOCK":
                             st.metric(label="⚠️ Stock Mínimo", value=f"{unidades} ud.")
                         else: 
                             st.metric(label="❌ AGOTADO", value="0 ud.")
-                                st.write("---")
+                st.write("---")
         else:
             st.info("El almacén central está vacío. Cuando el proveedor te entregue las órdenes y las marques como 'Recibido', verás el stock reflejado aquí.")
-    except Exception as e: st.error(f"Error al sincronizar con la pestaña Inventario_Stock: {e}")
-        if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_stock_master"):
-            st.session_state.current_menu = "PANTALLA_MERCHANDISING"
-            st.rerun()
+    except Exception as e: 
+        st.error(f"Error al sincronizar con la pestaña Inventario_Stock: {e}")
 
+    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_stock_master"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
 # ==============================================================================
 # 5.7 SUBPANTALLA: REGISTRAR VENTA / ENTREGA DIRECTA A UN SOCIO
 # ==============================================================================
