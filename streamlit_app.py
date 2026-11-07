@@ -765,23 +765,31 @@ URL_PROCESADOR_GOOGLE = "https://script.google.com/macros/s/AKfycbxq6-u0mVzhsxpS
 
 if st.session_state.current_menu in ["PANTALLA_MERCHANDISING", "MERCHANDISING"]:
     st.title("👕 MERCHANDISING")
-    if st.button("CONSULTAR PRODUCTOS"):
-        st.session_state.current_menu = "MERCH_CONSULTAR"
-        st.rerun()
-    if st.button("CONSULTAR PEDIDOS"):
+    
+    # Botón renombrado para mayor claridad
+    if st.button("📋 PEDIDOS RECIBIDOS / RESERVAS"):
         st.session_state.current_menu = "MERCH_PEDIDOS"
         st.rerun()
+        
+    # NUEVO BOTÓN: Pantalla exclusiva de Stock
+    if st.button("📊 CONTROL DE STOCK REAL"):
+        st.session_state.current_menu = "MERCH_STOCK"
+        st.rerun()
+        
     if st.button("NUEVO PRODUCTO"):
         st.session_state.current_menu = "MERCH_NUEVO_PRODUCTO"
         st.rerun()
+        
     if st.button("NUEVO PEDIDO"):
         st.session_state.current_menu = "MERCH_NUEVO_PEDIDO"
         st.rerun()
+        
     if st.button("NUEVA VENTA"):
         st.session_state.current_menu = "MERCH_NUEVA_VENTA"
         st.rerun()
-    st.write("---")
         
+    st.write("---")
+           
     col_nav1, col_nav2 = st.columns(2)
     with col_nav1:
         if st.button("⬅️ VOLVER", key="btn_volver_merch_principal"):
@@ -912,6 +920,51 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
         st.error(f"Error de lectura en la hoja Merchandising: {e}")
 
     if st.button("⬅️ VOLVER", key="btn_volver_consultar"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
+# === 5.1.1 SUBPANTALLA: CONTROL DE STOCK REAL ===
+elif st.session_state.current_menu == "MERCH_STOCK":
+    st.title("📊 CONTROL DE STOCK REAL")
+    st.write("Visualización detallada del inventario físico disponible en el almacén.")
+    st.write("---")
+    
+    try:
+        df_merch = pd.read_csv(URL_MERCHANDISING)
+        df_merch.columns = df_merch.columns.str.strip()
+        
+        if not df_merch.empty:
+            busqueda_prod = st.text_input("🔍 Buscar Producto en Stock...").strip().lower()
+            df_filtrado_merch = df_merch.copy()
+            
+            if busqueda_prod:
+                df_filtrado_merch = df_filtrado_merch[
+                    df_filtrado_merch['Producto'].astype(str).str.lower().str.contains(busqueda_prod)
+                ]
+            
+            # Mostramos el stock en formato tabla limpia o tarjetas resumidas
+            for index, row in df_filtrado_merch.iterrows():
+                with st.container():
+                    col_detalles, col_unidades = st.columns([3, 1])
+                    with col_detalles:
+                        talla_str = f" | Talla: {row['Talla']}" if 'Talla' in row.index else ""
+                        st.markdown(f"**[{row['Id_Producto']}] {row['Producto']}**{talla_str}")
+                        st.caption(f"Proveedor: {row.get('Proveedor', 'N/A')} | Precio: {row.get('Precio', 0)}€")
+                    with col_unidades:
+                        stock_actual = int(row.get('Stock', 0))
+                        if stock_actual > 5:
+                            st.metric(label="Disponible", value=f"{stock_actual} ud.")
+                        elif stock_actual > 0:
+                            st.metric(label="⚠️ Stock Bajo", value=f"{stock_actual} ud.")
+                        else:
+                            st.metric(label="❌ Agotado", value="0 ud.")
+                    st.write("---")
+        else:
+            st.info("No hay productos registrados en el inventario.")
+            
+    except Exception as e:
+        st.error(f"Error de lectura en la hoja de Inventario: {e}")
+        
+    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_stock_principal"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
 
@@ -1049,84 +1102,63 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PEDIDO":
         if st.button("⬅️ VOLVER", key="btn_volver_pedido_final"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-# === 5.4 SUBPANTALLA: CONSULTA DE PEDIDOS Y RESERVAS ===
+# === 5.4 SUBPANTALLA: CONSULTA DE PEDIDOS RECIBIDOS Y RESERVAS ===
 elif st.session_state.current_menu == "MERCH_PEDIDOS":
-    st.title("CONSULTA PEDIDOS Y STOCK")
-    st.write("Consulta el estado de las reservas de merchandising y material disponible.")
+    st.title("📋 PEDIDOS RECIBIDOS Y RESERVAS")
+    st.write("Consulta el estado de las solicitudes de los socios y gestiona las entregas.")
     st.write("---")
-    
+
     try:
-        # Cargamos los pedidos y también el inventario para cruzar el stock
+        # Cargamos los pedidos de manera directa para controlar su estado
         df_pedidos = pd.read_csv(URL_PEDIDOS)
         df_pedidos.columns = df_pedidos.columns.str.strip()
-        
-        try:
-            df_inventario = pd.read_csv(URL_MERCHANDISING)
-            df_inventario.columns = df_inventario.columns.str.strip()
-        except Exception:
-            df_inventario = pd.DataFrame()  # En caso de error, creamos un dataframe vacío de seguridad
-        
+
         if not df_pedidos.empty:
             df_pedidos['Fila_Sheets'] = df_pedidos.index + 2
             busqueda_ped = st.text_input("🔍 Buscar por Socio o Producto...").strip().lower()
             
-            filtro_estado = st.radio("Filtrar por estado de entrega:", ["Todos", "Pendientes", "STOCK"], horizontal=True)
+            # Filtro optimizado: "Entregados" en lugar de "STOCK" para evitar confusiones
+            filtro_estado = st.radio("Filtrar por estado de entrega:", ["Todos", "Pendientes", "Entregados"], horizontal=True)
             df_filtrado_ped = df_pedidos.copy()
-            
+
             if busqueda_ped:
                 df_filtrado_ped = df_filtrado_ped[
                     df_filtrado_ped['Socio'].astype(str).str.lower().str.contains(busqueda_ped) |
                     df_filtrado_ped['Producto'].astype(str).str.lower().str.contains(busqueda_ped)
                 ]
-            
+
             if "Pendientes" in filtro_estado:
-                df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Reservado|Pendiente", case=False)]
-            elif "STOCK" in filtro_estado:
+                df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Reservado | Pendiente", case=False)]
+            elif "Entregados" in filtro_estado:
                 df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Entregado", case=False)]
-            
+
             st.write("---")
-            
+
             for index, row in df_filtrado_ped.iterrows():
                 num_fila_pedido = int(row['Fila_Sheets'])
                 id_ped_actual = row.get('Id_Pedido', index)
-                nombre_producto = str(row.get('Producto', '')).strip()
-                talla_pedido = str(row.get('Talla', '')).strip()
-                
-                # --- LÓGICA PARA BUSCAR EL STOCK REAL (SUMATORIA TOTAL) ---
-                stock_actual_item = 0
-                if not df_inventario.empty and 'Producto' in df_inventario.columns and 'Stock' in df_inventario.columns:
-                    if 'Talla' in df_inventario.columns:
-                        match_stock = df_inventario[
-                            (df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()) &
-                            (df_inventario['Talla'].astype(str).str.lower().str.strip() == talla_pedido.lower())
-                        ]
-                    else:
-                        match_stock = df_inventario[df_inventario['Producto'].str.lower().str.strip() == nombre_producto.lower()]
-                    
-                    if not match_stock.empty:
-                        # Suma todas las unidades que coincidan para dar el valor real de stock
-                        stock_actual_item = int(pd.to_numeric(match_stock['Stock'], errors='coerce').sum())
-                
+                nombre_producto = str(row.get('Producto', "")).strip()
+                talla_pedido = str(row.get('Talla', "")).strip()
+
                 with st.container():
-                    # SOLUCIÓN AL ERROR: Le pasamos los tamaños definidos a las columnas [2.5, 1.5]
+                    # Definimos un espacio estructurado para la información del pedido
                     col_info, col_accion = st.columns([2.5, 1.5])
+                    
                     with col_info:
                         st.markdown(f"🆔 **Pedido ID:** {id_ped_actual} — 👤 **{row.get('Socio', 'N/A')}**")
-                        st.write(f"👕 **Producto:** {nombre_producto} | 📦 **Cantidad Pedida:** {row.get('Cantidad', 1)} ud. | 📐 **Talla:** {talla_pedido}")
-                        
-                        # Muestra el stock total sumado de la hoja de inventario
-                        st.caption(f"📊 **Unidades en Almacén (Inventario General):** {stock_actual_item} ud.")
+                        st.write(f"👕 **Producto:** {nombre_producto} | 📏 **Talla:** {talla_pedido} | 🔢 **Cantidad:** {row.get('Cantidad', 1)} ud.")
                         
                         estado_real = str(row.get('Estado_Entrega', 'Reservado / Pendiente')).strip()
                         if "Entregado" in estado_real:
-                            st.success("🟢 Estado: Stock")
+                            st.success("🟢 Estado: Entregado")
                         else:
-                            st.warning("🟡 Estado: Pendiente")
-                            
+                            st.warning("🟡 Estado: Pendiente de Entrega")
+
                     with col_accion:
-                        roles_directiva = ["Presidente", "Vicepresidente", "Tesorero", "Secretario", "Administrador"]
-                        if rol_actual in roles_directiva:
+                        # Control de accesos integrado para la directiva
+                        if rol_actual in ROLES_AUTORIZADOS:
                             col_b1, col_b2 = st.columns(2)
+                            
                             with col_b1:
                                 if st.button("📝 EDITAR", key=f"btn_editar_ped_{index}"):
                                     pedido_diccionario = row.to_dict()
@@ -1134,47 +1166,58 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                                     st.session_state.edit_pedido_data = pedido_diccionario
                                     st.session_state.current_menu = "MERCH_EDITAR_PEDIDO"
                                     st.rerun()
+                                    
                             with col_b2:
-                                if st.button("❌ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
+                                if st.button("🗑️ ELIMINAR", key=f"btn_eliminar_ped_{index}"):
                                     st.session_state.pedido_a_confirmar = index
                                     st.rerun()
-                                    
+
+                # Bloque interactivo de confirmación de seguridad para eliminación del pedido
                 if st.session_state.get("pedido_a_confirmar") == index:
                     st.write("")
-                    st.error(f"¿Borrar pedido **{id_ped_actual}**?")
+                    st.error(f"⚠️ ¿Seguro que deseas borrar el pedido **{id_ped_actual}**?")
                     col_c1, col_c2 = st.columns(2)
+                    
                     with col_c1:
-                        if st.button("⚠️ Sí", key=f"btn_si_conf_{index}"):
+                        if st.button("✔️ Sí, eliminar", key=f"btn_si_conf_{index}"):
                             payload_del = {
                                 "accion": "eliminar_pedido_merch",
                                 "num_fila": num_fila_pedido
                             }
-                            with st.spinner("Borrando del Sheets..."):
+                            with st.spinner("Borrando registro en Google Sheets..."):
                                 try:
-                                    respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload_del), headers={"Content-Type": "application/json"})
+                                    respuesta = requests.post(
+                                        URL_PROCESADOR_GOOGLE, 
+                                        data=json.dumps(payload_del),
+                                        headers={"Content-Type": "application/json"}
+                                    )
                                     if "OK" in respuesta.text or "éxito" in respuesta.text:
-                                        st.success("Pedido eliminado.")
+                                        st.success("✨ Pedido eliminado correctamente.")
                                         st.session_state.pedido_a_confirmar = None
                                         time.sleep(1.0)
                                         st.rerun()
                                     else:
-                                        st.error(f"Error: {respuesta.text}")
+                                        st.error(f"❌ Error del servidor: {respuesta.text}")
                                 except Exception as err:
-                                    st.error(f"Error de red: {err}")
-                        with col_c2:
-                            if st.button("❌ NO", key=f"btn_no_conf_{index}"):
-                                st.session_state.pedido_a_confirmar = None
-                                st.rerun()
-            st.write("---")
+                                    st.error(f"💥 Error de red: {err}")
+                                    
+                    with col_c2:
+                        if st.button("❌ No, cancelar", key=f"btn_no_conf_{index}"):
+                            st.session_state.pedido_a_confirmar = None
+                            st.rerun()
+                st.write("---")
         else:
-            st.info("No hay pedidos registrados en el sistema todavía.")
+            st.info("No hay pedidos ni reservas registrados en el sistema todavía.")
+            
     except Exception as e:
         st.error(f"Error al leer la pestaña Pedidos: {e}")
-        
+
+    # Botón de navegación para regresar a la pantalla de Merchandising principal
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos"):
         st.session_state.pedido_a_confirmar = None
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # === 5.5 SUBPANTALLA: MODIFICAR / EDITAR PEDIDO ===
 elif st.session_state.current_menu == "MERCH_EDITAR_PEDIDO":
