@@ -1364,15 +1364,23 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
                     pagado = row.get('Importe_Pagado', 0)
                     pendiente = row.get('Importe_Pendiente', 0)
                     
-                    # Convertimos de forma segura a números para evitar que salgan a 0 por strings vacíos
-                    pagado_num = float(pagado) if pd.notna(pagado) and str(pagado).strip() != "" else 0.0
-                    pendiente_num = float(pendiente) if pd.notna(pendiente) and str(pendiente).strip() != "" else 0.0
+                    # CORRECCIÓN DE SEGURIDAD: Convertimos de forma robusta los valores a números flotantes limpios
+                    try:
+                        pagado_num = float(str(pagado).replace(',', '.')) if pd.notna(pagado) and str(pagado).strip() != "" else 0.0
+                    except ValueError:
+                        pagado_num = 0.0
+                        
+                    try:
+                        pendiente_num = float(str(pendiente).replace(',', '.')) if pd.notna(pendiente) and str(pendiente).strip() != "" else 0.0
+                    except ValueError:
+                        pendiente_num = 0.0
                     
                     col_p1, col_p2 = st.columns(2)
                     with col_p1:
                         st.markdown(f"💰 **Entregado a cuenta:** {pagado_num}€")
                     with col_p2:
-                        if pendiente_num > 0:
+                        # Evaluamos con una tolerancia flotante para evitar fallos de precisión decimal
+                        if pendiente_num > 0.01:
                             st.markdown(f"🔴 **Pendiente de pago:** {pendiente_num}€")
                         else:
                             st.markdown("🟢 **Estado:** Totalmente Pagado")
