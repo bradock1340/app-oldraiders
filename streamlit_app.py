@@ -945,7 +945,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
                     "accion": "crear_producto_merch",
                     "Id_Producto": id_prod,
                     "Producto": nombre_prod,
-                    "Precio": float(precio_prod), # <-- Envía el precio a Google Sheets
+                    "Precio": precio_prod, # <-- Envía el precio a Google Sheets
                     "Proveedor": proveedor,
                     "Tel_Proveedor": tel_proveedor,
                     "Descripcion": descripcion
