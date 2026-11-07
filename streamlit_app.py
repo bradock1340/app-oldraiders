@@ -1235,31 +1235,12 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         df_stock.columns = df_stock.columns.str.strip()
         df_disponibles = df_stock[df_stock['Stock_Fisico'] > 0] if not df_stock.empty else pd.DataFrame()
         
-        # 2. Cargamos el catálogo para saber el precio base de cada diseño de forma automática
+        # 2. Cargamos el catálogo de diseños oficiales para cruzar los precios base
         df_catalogo = pd.read_csv(URL_MERCHANDISING)
         df_catalogo.columns = df_catalogo.columns.str.strip()
         
-        # 3. LÓGICA DEL DESPLEGABLE DE SOCIOS INTELIGENTE
-        URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
-        lista_socios = ["-- Selecciona un Socio --", "Otros"]
-        try:
-            df_usuarios = pd.read_csv(URL_USUARIOS)
-            df_usuarios.columns = df_usuarios.columns.str.strip()
-            # Usamos la columna 'Alias' o 'Nombre' de tu base de datos de usuarios
-            col_nombre_socio = 'Alias' if 'Alias' in df_usuarios.columns else ('Nombre' if 'Nombre' in df_usuarios.columns else '')
-            if col_nombre_socio and not df_usuarios.empty:
-                lista_socios += sorted(df_usuarios[col_nombre_socio].dropna().astype(str).unique().tolist())
-        except Exception:
-            pass # Si falla el lector por cualquier motivo, se mantendrán las opciones base seguro
-            
-        socio_seleccionado = st.selectbox("👤 Asignar Operación al Socio:", lista_socios)
-        
-        # Si elige "Otros", abrimos una caja de texto para escribir el nombre a mano de forma opcional
-        if socio_seleccionado == "Otros":
-            socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona:").strip()
-        else:
-            socio_final = socio_seleccionado if socio_seleccionado != "-- Selecciona un Socio --" else ""
-            
+        # Entrada directa por teclado tal y como has solicitado
+        socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona:").strip()
         st.write("---")
         
         if df_disponibles.empty:
@@ -1276,21 +1257,22 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 fila_stock_real = df_disponibles.iloc[idx_seleccionado]
                 nombre_articulo = fila_stock_real['Producto']
                 
-                # --- BUSQUEDA AUTOMÁTICA DEL PRECIO EN EL CATÁLOGO ---
+                # --- BÚSQUEDA ROBUSTA DEL PRECIO BASE EN EL CATÁLOGO MAESTRO ---
                 precio_unitario = 0.0
                 if not df_catalogo.empty and 'Producto' in df_catalogo.columns and 'Precio' in df_catalogo.columns:
                     match_cat = df_catalogo[df_catalogo['Producto'].astype(str).str.lower() == str(nombre_articulo).lower()]
                     if not match_cat.empty:
+                        # Extraemos el valor limpio de la primera coincidencia encontrada
                         precio_unitario = float(match_cat.iloc[0]['Precio'])
                 
                 max_permitido = int(fila_stock_real['Stock_Fisico'])
                 cantidad_vender = st.number_input("Cantidad a entregar:", min_value=1, max_value=max_permitido, value=1, step=1)
                 
-                # --- CALCULO AUTOMÁTICO INTELIGENTE MULTIPLICADO POR LAS UNIDADES ---
+                # --- CÁLCULO AUTOMÁTICO DE IMPORTE MULTIPLICADO POR CANTIDAD ---
                 importe_calculado = precio_unitario * cantidad_vender
                 st.info(f"💰 Precio unitario catálogo: {precio_unitario}€ | **Importe Total Calculado: {importe_calculado}€**")
                 
-                # Dejamos que puedan ajustar el precio definitivo cobrado por si se hace alguna rebaja manual
+                # Caja de confirmación del cobro definitivo (ya viene con el total calculado puesto)
                 precio_cobrado_final = st.number_input("Importe definitivo cobrado (€):", min_value=0.0, value=float(importe_calculado), step=0.5)
                 
                 if st.button("🎯 VALIDAR Y ENTREGAR PRODUCTO"):
@@ -1318,13 +1300,14 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                                     st.error(f"Fallo del procesador: {respuesta.text}")
                             except Exception as err: st.error(f"Error de red: {err}")
                     else:
-                        st.warning("Por favor, selecciona un socio válido o introduce su nombre en 'Otros'.")
+                        st.warning("Por favor, introduce el nombre o alias de la persona para poder registrar la operación.")
                         
     except Exception as e: st.error(f"Error al procesar módulo de ventas: {e}")
     
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_vta"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 # ==============================================================================
 # 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS
 # ==============================================================================
