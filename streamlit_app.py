@@ -1133,7 +1133,8 @@ elif st.session_state.current_menu == "MERCH_STOCK":
                             st.metric(label="Disponible", value=f"{unidades} ud.")
                             elif unidades > 0: 
                                 st.metric(label="⚠️ Stock Mínimo", value=f"{unidades} ud.")
-                            else: st.metric(label="❌ AGOTADO", value="0 ud.")
+                            else: 
+                                st.metric(label="❌ AGOTADO", value="0 ud.")
                                 st.write("---")
         else:
             st.info("El almacén central está vacío. Cuando el proveedor te entregue las órdenes y las marques como 'Recibido', verás el stock reflejado aquí.")
