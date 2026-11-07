@@ -1240,7 +1240,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         df_catalogo.columns = df_catalogo.columns.str.strip()
         
         # 3. LÓGICA DEL DESPLEGABLE DINÁMICO CON TU HOJA DE USUARIOS REAL
-        URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+        URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
         lista_socios = ["-- Selecciona un Socio --", "Otros"]
         
         try:
