@@ -863,11 +863,13 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
             for index, row in df_filtrado_merch.iterrows():
                 num_fila_producto = int(index) + 2
                 with st.container():
-                    col_info, col_accion_edit, col_accion_elim = st.columns([3, 0.8, 0.8]) if rol_actual in ROLES_AUTORIZADOS else st.columns([4, 0.1, 0.1])
+                    col_info, col_accion_edit, col_accion_elim = st.columns() if rol_actual in ROLES_AUTORIZADOS else st.columns()
                     
                     with col_info:
-                        st.markdown(f"**[{row['Id_Producto']}] {row['Producto']}**")
-                        st.caption(f"🏭 Proveedor: {row['Proveedor']} ({row['Tel_Proveedor']})")
+                        # Añadimos el precio oficial al título de la tarjeta
+                        precio_oficial = f" — 💰 {row['Precio']}€" if 'Precio' in row.index and pd.notna(row['Precio']) else ""
+                        st.markdown(f"### **[{row['Id_Producto']}] {row['Producto']}{precio_oficial}**")
+                        st.caption(f"🏭 Proveedor: {row.get('Proveedor', 'N/A')} ({row.get('Tel_Proveedor', 'N/A')})")
                         if pd.notna(row['Descripcion']) and str(row['Descripcion']).strip() != "":
                             st.info(f"📝 *{row['Descripcion']}*")
                             
@@ -909,6 +911,7 @@ elif st.session_state.current_menu == "MERCH_CONSULTAR":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_consultar"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # ==============================================================================
 # 5.2 SUBPANTALLA: DISEÑAR / REGISTRAR NUEVO PRODUCTO EN CATÁLOGO
