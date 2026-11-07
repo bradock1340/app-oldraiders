@@ -1239,26 +1239,32 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         df_catalogo = pd.read_csv(URL_MERCHANDISING)
         df_catalogo.columns = df_catalogo.columns.str.strip()
         
-        # 3. LÓGICA DEL DESPLEGABLE DE SOCIOS (Extracción limpia de tu URL original)
-        URL_USUARIOS = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+        # 3. LÓGICA DEL DESPLEGABLE HÍBRIDO (Usuarios reales + Opción Otros)
+        URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
         lista_socios = ["-- Selecciona un Socio --"]
         
         try:
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
             
-            # Buscamos la columna Alias en tu pestaña de Usuarios
             if 'Alias' in df_usuarios.columns:
                 alias_limpios = df_usuarios['Alias'].dropna().astype(str).str.strip()
-                # Quitamos posibles celdas vacías o duplicados del encabezado
                 alias_validos = [x for x in alias_limpios if x != "" and x.lower() != "alias"]
                 lista_socios += sorted(alias_validos)
         except Exception as e_usuarios:
             st.error(f"Error al conectar con la lista de usuarios: {e_usuarios}")
             
+        # Añadimos manualmente la opción "Otros" al final de la lista de socios reales
+        lista_socios.append("Otros")
+            
         socio_select = st.selectbox("👤 Selecciona el Socio Destinatario:", lista_socios)
-        socio_final = socio_select if socio_select != "-- Selecciona un Socio --" else ""
         
+        # Si el usuario elige "Otros", abrimos dinámicamente la caja de texto manual
+        if socio_select == "Otros":
+            socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona (No Socio):").strip()
+        else:
+            socio_final = socio_select if socio_select != "-- Selecciona un Socio --" else ""
+            
         st.write("---")
         
         if df_disponibles.empty:
@@ -1290,13 +1296,13 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 
                 st.info(f"💰 Precio catálogo unitario: {precio_unitario}€ | **Total Operación: {importe_total_fijo}€**")
                 
-                # Campo de importe total bloqueado e inmodificable
+                # Campo de importe total bloqueado
                 st.number_input("Importe total de la venta (€):", value=float(importe_total_fijo), disabled=True)
                 
                 # Único campo editable: Dinero entregado a cuenta
                 importe_pagado_cuenta = st.number_input("Cantidad entregada / pagada A CUENTA (€):", min_value=0.0, max_value=float(importe_total_fijo), value=float(importe_total_fijo), step=0.5)
                 
-                # El balance pendiente se calcula de forma estrictamente matemática
+                # Balance pendiente estrictamente matemático
                 importe_pendiente = importe_total_fijo - importe_pagado_cuenta
                 
                 if importe_pendiente > 0.01:
@@ -1329,14 +1335,13 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                                 else: st.error(f"Error: {respuesta.text}")
                             except Exception as err: st.error(f"Error de red: {err}")
                     else:
-                        st.warning("Por favor, selecciona un socio de la lista para poder registrar la venta.")
+                        st.warning("Por favor, selecciona un socio de la lista o escribe su nombre en 'Otros'.")
                         
     except Exception as e: st.error(f"Error en módulo ventas: {e}")
     
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_vta"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
-
 
 
 # ==============================================================================
