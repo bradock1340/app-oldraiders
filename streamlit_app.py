@@ -969,9 +969,33 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
         st.write("Registra un nuevo diseño base en el catálogo maestro del club con su precio oficial.")
         st.write("---")
         
-        id_prod = st.text_input("ID Producto (Ej: CHAL01, CAM01)")
+        # --- LÓGICA DE AUTO-INCREMENTO DEL ID ---
+        id_sugerido = "PROD-1" # ID por defecto si el catálogo está vacío
+        try:
+            df_merch = pd.read_csv(URL_MERCHANDISING)
+            df_merch.columns = df_merch.columns.str.strip()
+            
+            if not df_merch.empty and 'Id_Producto' in df_merch.columns:
+                # Buscamos todos los números dentro de los IDs existentes (ej: extrae el 3 de "PROD-3")
+                numeros_id = []
+                for x in df_merch['Id_Producto'].dropna().astype(str):
+                    partes = x.split('-')
+                    if len(partes) > 1 and partes[1].isdigit():
+                        numeros_id.append(int(partes[1]))
+                    elif x.isdigit():
+                        numeros_id.append(int(x))
+                
+                # Si encontramos números secuenciales, calculamos el siguiente
+                if numeros_id:
+                    siguiente_numero = max(numeros_id) + 1
+                    id_sugerido = f"PROD-{siguiente_numero}"
+        except Exception:
+            pass # Si falla la lectura por cualquier motivo, se mantiene el "PROD-1" seguro
+            
+        # Mostramos el ID calculado automáticamente, pero permitimos editarlo si fuera necesario
+        id_prod = st.text_input("ID Producto (Calculado automáticamente):", value=id_sugerido)
         nombre_prod = st.text_input("Nombre del Artículo base")
-        precio_prod = st.number_input("Precio Oficial de Venta (€):", min_value=0.0, value=15.0, step=0.5) # <-- Captura el precio
+        precio_prod = st.number_input("Precio Oficial de Venta (€):", min_value=0.0, value=15.0, step=0.5)
         proveedor = st.text_input("Nombre de la Fábrica / Proveedor")
         tel_proveedor = st.text_input("Teléfono del Proveedor")
         descripcion = st.text_area("Descripción del diseño o materiales")
@@ -982,7 +1006,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
                     "accion": "crear_producto_merch",
                     "Id_Producto": id_prod,
                     "Producto": nombre_prod,
-                    "Precio": precio_prod, # <-- Envía el precio a Google Sheets
+                    "Precio": precio_prod,
                     "Proveedor": proveedor,
                     "Tel_Proveedor": tel_proveedor,
                     "Descripcion": descripcion
@@ -991,7 +1015,7 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
                     try:
                         respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                         if "OK" in respuesta.text or "MERCH" in respuesta.text:
-                            st.success(f"¡Producto '{nombre_prod}' registrado con éxito!")
+                            st.success(f"¡Producto '{nombre_prod}' registrado con el código {id_prod}!")
                             time.sleep(1.5)
                             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                             st.rerun()
@@ -1002,7 +1026,6 @@ elif st.session_state.current_menu == "MERCH_NUEVO_PRODUCTO":
         if st.button("⬅️ CANCELAR Y VOLVER", key="btn_volver_nuevo_prod"):
             st.session_state.current_menu = "PANTALLA_MERCHANDISING"
             st.rerun()
-
 
 # ==============================================================================
 # 5.3 SUBPANTALLA: NUEVO PEDIDO A PROVEEDOR (SOLICITUD A FÁBRICA)
