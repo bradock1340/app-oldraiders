@@ -1226,21 +1226,36 @@ elif st.session_state.current_menu == "MERCH_STOCK":
 # ==============================================================================
 elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
     st.title("🛒 ENTREGAR / VENDER ARTÍCULO A SOCIO")
-    st.write("Descuenta unidades del almacén real y genera un comprobante a nombre del socio.")
+    st.write("Descuenta unidades del almacén real y genera un comprobante con control de pagos a cuenta.")
     st.write("---")
     
     try:
-        # 1. Cargamos el Stock Real disponible en almacén
         df_stock = pd.read_csv(URL_STOCK)
         df_stock.columns = df_stock.columns.str.strip()
         df_disponibles = df_stock[df_stock['Stock_Fisico'] > 0] if not df_stock.empty else pd.DataFrame()
         
-        # 2. Cargamos el catálogo de diseños oficiales para cruzar los precios base
         df_catalogo = pd.read_csv(URL_MERCHANDISING)
         df_catalogo.columns = df_catalogo.columns.str.strip()
         
-        # Entrada directa por teclado tal y como has solicitado
-        socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona:").strip()
+        # --- DESPLEGABLE DE SOCIOS DINÁMICO DESDE HOJA USUARIOS + OPCIÓN OTROS ---
+        URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
+        lista_socios = ["-- Selecciona un Socio --", "Otros"]
+        try:
+            df_usuarios = pd.read_csv(URL_USUARIOS)
+            df_usuarios.columns = df_usuarios.columns.str.strip()
+            col_nombre = 'Alias' if 'Alias' in df_usuarios.columns else ('Nombre' if 'Nombre' in df_usuarios.columns else '')
+            if col_nombre and not df_usuarios.empty:
+                lista_socios += sorted(df_usuarios[col_nombre].dropna().astype(str).unique().tolist())
+        except Exception:
+            pass
+            
+        socio_select = st.selectbox("👤 Selecciona el Socio Destinatario:", lista_socios)
+        
+        if socio_select == "Otros":
+            socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona:").strip()
+        else:
+            socio_final = socio_select if socio_select != "-- Selecciona un Socio --" else ""
+            
         st.write("---")
         
         if df_disponibles.empty:
@@ -1257,23 +1272,29 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 fila_stock_real = df_disponibles.iloc[idx_seleccionado]
                 nombre_articulo = fila_stock_real['Producto']
                 
-                # --- BÚSQUEDA ROBUSTA DEL PRECIO BASE EN EL CATÁLOGO MAESTRO ---
+                # Búsqueda de precio unitario
                 precio_unitario = 0.0
                 if not df_catalogo.empty and 'Producto' in df_catalogo.columns and 'Precio' in df_catalogo.columns:
                     match_cat = df_catalogo[df_catalogo['Producto'].astype(str).str.lower() == str(nombre_articulo).lower()]
                     if not match_cat.empty:
-                        # Extraemos el valor limpio de la primera coincidencia encontrada
                         precio_unitario = float(match_cat.iloc[0]['Precio'])
                 
                 max_permitido = int(fila_stock_real['Stock_Fisico'])
                 cantidad_vender = st.number_input("Cantidad a entregar:", min_value=1, max_value=max_permitido, value=1, step=1)
                 
-                # --- CÁLCULO AUTOMÁTICO DE IMPORTE MULTIPLICADO POR CANTIDAD ---
+                # Cálculos automáticos de importes
                 importe_calculado = precio_unitario * cantidad_vender
-                st.info(f"💰 Precio unitario catálogo: {precio_unitario}€ | **Importe Total Calculado: {importe_calculado}€**")
+                st.info(f"💰 Precio catálogo unitario: {precio_unitario}€ | **Total Operación: {importe_calculado}€**")
                 
-                # Caja de confirmación del cobro definitivo (ya viene con el total calculado puesto)
-                precio_cobrado_final = st.number_input("Importe definitivo cobrado (€):", min_value=0.0, value=float(importe_calculado), step=0.5)
+                # Gestión de pagos a cuenta y deuda pendiente
+                importe_total_final = st.number_input("Importe total definitivo de la venta (€):", min_value=0.0, value=float(importe_calculado), step=0.5)
+                importe_pagado_cuenta = st.number_input("Cantidad entregada / pagada A CUENTA (€):", min_value=0.0, max_value=float(importe_total_final), value=float(importe_total_final), step=0.5)
+                
+                importe_pendiente = importe_total_final - importe_pagado_cuenta
+                if importe_pendiente > 0:
+                    st.warning(f"⚠️ Quedará una deuda pendiente de: **{importe_pendiente}€**")
+                else:
+                    st.success("✨ Operación totalmente abonada.")
                 
                 if st.button("🎯 VALIDAR Y ENTREGAR PRODUCTO"):
                     if socio_final != "":
@@ -1286,23 +1307,23 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                             "Producto": nombre_articulo,
                             "Talla": fila_stock_real['Talla'],
                             "Cantidad": int(cantidad_vender),
-                            "Importe_Pagado": float(precio_cobrado_final)
+                            "Importe_Pagado": float(importe_pagado_cuenta),
+                            "Importe_Pendiente": float(importe_pendiente)
                         }
-                        with st.spinner("Procesando despacho y descontando stock..."):
+                        with st.spinner("Registrando venta y actualizando contabilidad..."):
                             try:
                                 respuesta = requests.post(URL_PROCESADOR_GOOGLE, data=json.dumps(payload), headers={"Content-Type": "application/json"})
                                 if "OK" in respuesta.text or "venta" in respuesta.text.lower():
-                                    st.success(f"¡Venta registrada con éxito a {socio_final}! Importe: {precio_cobrado_final}€.")
+                                    st.success(f"¡Operación registrada con éxito a {socio_final}!")
                                     time.sleep(1.5)
                                     st.session_state.current_menu = "PANTALLA_MERCHANDISING"
                                     st.rerun()
-                                else:
-                                    st.error(f"Fallo del procesador: {respuesta.text}")
+                                else: st.error(f"Error: {respuesta.text}")
                             except Exception as err: st.error(f"Error de red: {err}")
                     else:
-                        st.warning("Por favor, introduce el nombre o alias de la persona para poder registrar la operación.")
+                        st.warning("Por favor, introduce o selecciona un socio para el registro.")
                         
-    except Exception as e: st.error(f"Error al procesar módulo de ventas: {e}")
+    except Exception as e: st.error(f"Error en módulo ventas: {e}")
     
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_vta"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
@@ -1313,7 +1334,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
 # ==============================================================================
 elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
     st.title("📜 HISTORIAL DE RETIROS Y COMPRAS DE SOCIOS")
-    st.write("Auditoría de quién se ha llevado cada artículo de merchandising del Club.")
+    st.write("Auditoría completa de entregas de material y control de deudas pendientes.")
     st.write("---")
     
     try:
@@ -1329,12 +1350,30 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
             for index, row in df_ventas.iterrows():
                 with st.container():
                     st.markdown(f"👤 **Socio:** {row['Socio']} | 📅 Fecha: {row.get('Fecha','N/A')}")
-                    st.write(f"🛍️ **Se llevó:** {row['Producto']} (Talla: {row['Talla']}) — 🔢 Cantidad: {row['Cantidad']} ud.")
-                    st.caption(f"💰 Importe de Operación: {row.get('Importe_Pagado', 0)}€ | Transacción: `{row.get('Id_Venta', index)}`")
+                    st.write(f"🛍️ **Artículo:** {row['Producto']} (Talla: {row['Talla']}) — 🔢 Cantidad: {row['Cantidad']} ud.")
+                    
+                    # Recuperación e impresión segura de importes pagados y pendientes
+                    pagado = row.get('Importe_Pagado', 0)
+                    pendiente = row.get('Importe_Pendiente', 0)
+                    
+                    # Convertimos de forma segura a números para evitar que salgan a 0 por strings vacíos
+                    pagado_num = float(pagado) if pd.notna(pagado) and str(pagado).strip() != "" else 0.0
+                    pendiente_num = float(pendiente) if pd.notna(pendiente) and str(pendiente).strip() != "" else 0.0
+                    
+                    col_p1, col_p2 = st.columns(2)
+                    with col_p1:
+                        st.markdown(f"💰 **Entregado a cuenta:** {pagado_num}€")
+                    with col_p2:
+                        if pendiente_num > 0:
+                            st.markdown(f"🔴 **Pendiente de pago:** {pendiente_num}€")
+                        else:
+                            st.markdown("🟢 **Estado:** Totalmente Pagado")
+                            
+                    st.caption(f"🆔 Transacción: `{row.get('Id_Venta', index)}`")
                 st.write("---")
         else:
             st.info("No hay registros de ventas ni entregas a socios todavía en el sistema.")
-    except Exception as e: st.error(f"Error al leer hoja Ventas_Socios: {e}")
+    except Exception as e: st.error(f"Error al leer historial de ventas: {e}")
     
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_hist_socios"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
