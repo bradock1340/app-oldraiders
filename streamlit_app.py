@@ -1129,8 +1129,10 @@ elif st.session_state.current_menu == "MERCH_STOCK":
                         st.markdown(f"📏 **Talla:** `{row.get('Talla', 'Única')}` | Código Ref: `{row.get('Id_Producto', 'N/A')}`")
                     with col_unidades:
                         unidades = int(row.get('Stock_Fisico', 0))
-                        if unidades > 5: st.metric(label="Disponible", value=f"{unidades} ud.")
-                            elif unidades > 0: st.metric(label="⚠️ Stock Mínimo", value=f"{unidades} ud.")
+                        if unidades > 5:
+                            st.metric(label="Disponible", value=f"{unidades} ud.")
+                            elif unidades > 0: 
+                                st.metric(label="⚠️ Stock Mínimo", value=f"{unidades} ud.")
                             else: st.metric(label="❌ AGOTADO", value="0 ud.")
                                 st.write("---")
         else:
