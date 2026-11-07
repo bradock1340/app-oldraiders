@@ -1096,10 +1096,14 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
             filtro_estado = st.radio("Filtrar órdenes logísticas:", ["Todos", "Pendientes", "Recibidos (En Almacén)"], horizontal=True)
             df_filtrado_ped = df_pedidos.copy()
             
-            if "Pendientes" in filtro_estado:
-                df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Pendiente", case=False)]
-            elif "Recibidos" in filtro_estado:
-                df_filtrado_ped = df_filtrado_ped[df_filtrado_ped['Estado_Entrega'].astype(str).str.contains("Recibido", case=False)]
+            # Determinamos cuál es el nombre real de la columna de estado en tu Sheets
+            col_estado = 'Estado_Entrega' if 'Estado_Entrega' in df_pedidos.columns else (df_pedidos.columns[-1] if len(df_pedidos.columns) > 0 else '')
+            
+            if col_estado in df_filtrado_ped.columns:
+                if "Pendientes" in filtro_estado:
+                    df_filtrado_ped = df_filtrado_ped[df_filtrado_ped[col_estado].astype(str).str.contains("Pendiente", case=False, na=False)]
+                elif "Recibidos" in filtro_estado:
+                    df_filtrado_ped = df_filtrado_ped[df_filtrado_ped[col_estado].astype(str).str.contains("Recibido", case=False, na=False)]
                 
             st.write("---")
             for index, row in df_filtrado_ped.iterrows():
@@ -1108,9 +1112,11 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                     col_info, col_accion = st.columns([3, 1])
                     with col_info:
                         st.markdown(f"🆔 **Orden ID:** {row.get('Id_Pedido', index)} — 📅 Fecha: {row.get('Fecha', 'N/A')}")
-                        st.write(f"🏭 **Lote:** {row['Producto']} | 📏 Talla: `{row['Talla']}` | 🔢 Cantidad: {row['Cantidad']} ud.")
+                        st.write(f"🏭 **Lote:** {row.get('Producto', 'N/A')} | 📏 Talla: `{row.get('Talla', 'Única')}` | 🔢 Cantidad: {row.get('Cantidad', 0)} ud.")
                         
-                        if "Recibido" in str(row['Estado_Entrega']):
+                        # Lectura e indicación segura del estado logístico
+                        estado_actual = str(row.get(col_estado, 'Pendiente')).strip()
+                        if "Recibido" in estado_actual:
                             st.success("🟢 Estado: Recibido en Almacén")
                         else:
                             st.warning("🟡 Estado: En Fabricación / Pendiente de Llegar")
@@ -1120,12 +1126,15 @@ elif st.session_state.current_menu == "MERCH_PEDIDOS":
                             if st.button("✏️ CAMBIAR ESTADO", key=f"btn_edit_ped_{index}"):
                                 st.session_state.edit_pedido_data = row.to_dict()
                                 st.session_state.edit_pedido_data['Fila_Sheets'] = num_fila_pedido
+                                # Nos aseguramos de pasarle el estado con la clave estandarizada para la siguiente pantalla
+                                st.session_state.edit_pedido_data['Estado_Entrega'] = estado_actual
                                 st.session_state.current_menu = "MERCH_EDITAR_PEDIDO"
                                 st.rerun()
                 st.write("---")
         else:
             st.info("No hay registros de pedidos enviados a proveedores todavía.")
-    except Exception as e: st.error(f"Error al leer pedidos a proveedor: {e}")
+    except Exception as e: 
+        st.error(f"Error al leer pedidos a proveedor: {e}")
     
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pedidos"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
