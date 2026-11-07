@@ -1230,29 +1230,37 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
     st.write("---")
     
     try:
+        # 1. Cargamos el Stock Real disponible en almacén
         df_stock = pd.read_csv(URL_STOCK)
         df_stock.columns = df_stock.columns.str.strip()
         df_disponibles = df_stock[df_stock['Stock_Fisico'] > 0] if not df_stock.empty else pd.DataFrame()
         
+        # 2. Cargamos el catálogo de diseños oficiales para cruzar los precios base
         df_catalogo = pd.read_csv(URL_MERCHANDISING)
         df_catalogo.columns = df_catalogo.columns.str.strip()
         
-        # --- DESPLEGABLE DE SOCIOS DINÁMICO DESDE HOJA USUARIOS + OPCIÓN OTROS ---
+        # 3. LÓGICA DEL DESPLEGABLE DINÁMICO CON TU HOJA DE USUARIOS REAL
         URL_USUARIOS = f"https://google.com{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Usuarios"
         lista_socios = ["-- Selecciona un Socio --", "Otros"]
+        
         try:
             df_usuarios = pd.read_csv(URL_USUARIOS)
             df_usuarios.columns = df_usuarios.columns.str.strip()
-            col_nombre = 'Alias' if 'Alias' in df_usuarios.columns else ('Nombre' if 'Nombre' in df_usuarios.columns else '')
-            if col_nombre and not df_usuarios.empty:
-                lista_socios += sorted(df_usuarios[col_nombre].dropna().astype(str).unique().tolist())
-        except Exception:
-            pass
+            
+            # Forzamos la lectura de tu columna 'Alias' exacta según tu captura de pantalla
+            if 'Alias' in df_usuarios.columns:
+                alias_limpios = df_usuarios['Alias'].dropna().astype(str).str.strip()
+                # Filtramos para quitar posibles filas vacías o encabezados repetidos
+                alias_validos = [x for x in alias_limpios if x != "" and x.lower() != "alias"]
+                lista_socios += sorted(alias_validos)
+        except Exception as e_usuarios:
+            st.error(f"Aviso técnico al cargar usuarios: {e_usuarios}")
             
         socio_select = st.selectbox("👤 Selecciona el Socio Destinatario:", lista_socios)
         
+        # Si elige "Otros", abrimos una caja de texto para escribir el nombre a mano
         if socio_select == "Otros":
-            socio_final = st.text_input("✍️ Escribe el nombre / alias de la persona:").strip()
+            socio_final = st.text_input("✍ *Escribe el nombre / alias de la persona:*").strip()
         else:
             socio_final = socio_select if socio_select != "-- Selecciona un Socio --" else ""
             
@@ -1272,7 +1280,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 fila_stock_real = df_disponibles.iloc[idx_seleccionado]
                 nombre_articulo = fila_stock_real['Producto']
                 
-                # Búsqueda de precio unitario
+                # Búsqueda del precio unitario en el catálogo maestro
                 precio_unitario = 0.0
                 if not df_catalogo.empty and 'Producto' in df_catalogo.columns and 'Precio' in df_catalogo.columns:
                     match_cat = df_catalogo[df_catalogo['Producto'].astype(str).str.lower() == str(nombre_articulo).lower()]
@@ -1282,11 +1290,11 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 max_permitido = int(fila_stock_real['Stock_Fisico'])
                 cantidad_vender = st.number_input("Cantidad a entregar:", min_value=1, max_value=max_permitido, value=1, step=1)
                 
-                # Cálculos automáticos de importes
+                # Cálculos automáticos de importes de venta
                 importe_calculado = precio_unitario * cantidad_vender
                 st.info(f"💰 Precio catálogo unitario: {precio_unitario}€ | **Total Operación: {importe_calculado}€**")
                 
-                # Gestión de pagos a cuenta y deuda pendiente
+                # Gestión de cobros, entregas a cuenta y balance pendiente
                 importe_total_final = st.number_input("Importe total definitivo de la venta (€):", min_value=0.0, value=float(importe_calculado), step=0.5)
                 importe_pagado_cuenta = st.number_input("Cantidad entregada / pagada A CUENTA (€):", min_value=0.0, max_value=float(importe_total_final), value=float(importe_total_final), step=0.5)
                 
@@ -1321,7 +1329,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                                 else: st.error(f"Error: {respuesta.text}")
                             except Exception as err: st.error(f"Error de red: {err}")
                     else:
-                        st.warning("Por favor, introduce o selecciona un socio para el registro.")
+                        st.warning("Por favor, selecciona un socio válido o introduce su nombre en 'Otros'.")
                         
     except Exception as e: st.error(f"Error en módulo ventas: {e}")
     
