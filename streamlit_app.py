@@ -1344,7 +1344,6 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
 
-
 # ==============================================================================
 # 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS
 # ==============================================================================
@@ -1368,11 +1367,9 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
                     st.markdown(f"👤 **Socio:** {row['Socio']} | 📅 Fecha: {row.get('Fecha','N/A')}")
                     st.write(f"🛍️ **Artículo:** {row['Producto']} (Talla: {row['Talla']}) — 🔢 Cantidad: {row['Cantidad']} ud.")
                     
-                    # Recuperación e impresión segura de importes pagados y pendientes
                     pagado = row.get('Importe_Pagado', 0)
                     pendiente = row.get('Importe_Pendiente', 0)
                     
-                    # CORRECCIÓN DE SEGURIDAD: Convertimos de forma robusta los valores a números flotantes limpios
                     try:
                         pagado_num = float(str(pagado).replace(',', '.')) if pd.notna(pagado) and str(pagado).strip() != "" else 0.0
                     except ValueError:
@@ -1387,7 +1384,6 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
                     with col_p1:
                         st.markdown(f"💰 **Entregado a cuenta:** {pagado_num}€")
                     with col_p2:
-                        # Evaluamos con una tolerancia flotante para evitar fallos de precisión decimal
                         if pendiente_num > 0.01:
                             st.markdown(f"🔴 **Pendiente de pago:** {pendiente_num}€")
                         else:
@@ -1402,8 +1398,9 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_hist_socios"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 # ==============================================================================
-# 5.8 SUBPANTALLA: VER DEUDAS Y SALDAR CUENTAS PENDIENTES
+# 5.9 SUBPANTALLA: VER DEUDAS Y SALDAR CUENTAS PENDIENTES (CORREGIDA)
 # ==============================================================================
 elif st.session_state.current_menu == "MERCH_VER_PENDIENTES":
     st.title("💰 CONTROL DE DEUDAS Y PAGOS PENDIENTES")
@@ -1415,9 +1412,11 @@ elif st.session_state.current_menu == "MERCH_VER_PENDIENTES":
         df_ventas = pd.read_csv(URL_VENTAS_SOCIOS)
         df_ventas.columns = df_ventas.columns.str.strip()
 
-        # 2. Filtramos estrictamente las que tienen un saldo pendiente mayor a cero
-        if 'Importe_Pendiente' in df_ventas.columns and not df_ventas.empty:
-            df_deudores = df_ventas[df_ventas['Importe_Pendiente'] > 0.01]
+        # 2. Convertimos a numérico de forma segura para filtrar deudas reales
+        if not df_ventas.empty and 'Importe_Pendiente' in df_ventas.columns:
+            df_ventas['Importe_Pendiente_Num'] = df_ventas['Importe_Pendiente'].astype(str).str.replace(',', '.').replace('nan', '0')
+            df_ventas['Importe_Pendiente_Num'] = pd.to_numeric(df_ventas['Importe_Pendiente_Num'], errors='coerce').fillna(0.0)
+            df_deudores = df_ventas[df_ventas['Importe_Pendiente_Num'] > 0.01]
         else:
             df_deudores = pd.DataFrame()
 
@@ -1426,49 +1425,52 @@ elif st.session_state.current_menu == "MERCH_VER_PENDIENTES":
         else:
             st.warning(f"⚠️ Se han encontrado {len(df_deudores)} operaciones con saldo pendiente.")
             
-            # Creamos una lista limpia para el desplegable de deudas
+            # Formateamos las opciones del desplegable sin emojis conflictivos para evitar fallos de lectura
             opciones_deudas = ["-- Selecciona una deuda para saldar --"]
             for idx, r in df_deudores.iterrows():
-                opciones_deudas.append(f"🆔 {r['Id_Venta']} | 👤 {r['Socio']} | 📦 {r['Producto']} | 🔴 Debe: {r['Importe_Pendiente']:.2f}€")
+                opciones_deudas.append(f"{r['Id_Venta']} | Socio: {r['Socio']} | Debe: {r['Importe_Pendiente_Num']:.2f}€")
 
             deuda_seleccionada = st.selectbox("Selecciona la operación a regularizar:", opciones_deudas)
 
             if deuda_seleccionada != "-- Selecciona una deuda para saldar --":
-                # Extraemos limpiamente el ID de la venta
-                id_venta_sel = deuda_seleccionada.split("|")[0].replace("🆔", "").strip()
+                # Buscamos la fila aislando limpiamente el ID de la venta mediante split
+                id_venta_sel = deuda_seleccionada.split("|")[0].strip()
                 fila_deuda = df_deudores[df_deudores['Id_Venta'].astype(str).str.strip() == id_venta_sel].iloc[0]
 
-                # Mostramos los datos actuales fijados de la deuda
+                # Convertimos importes originales para operar matemáticamente con seguridad
+                pagado_original = float(str(fila_deuda['Importe_Pagado']).replace(',', '.')) if pd.notna(fila_deuda['Importe_Pagado']) else 0.0
+                pendiente_original = float(fila_deuda['Importe_Pendiente_Num'])
+
+                # Mostramos los datos fijados de la transacción en la interfaz
                 st.info(f"📋 **Detalles del registro:**\n\n"
                         f"* **Socio:** {fila_deuda['Socio']}\n"
                         f"* **Artículo:** {fila_deuda['Producto']} (Talla {fila_deuda['Talla']}) x {fila_deuda['Cantidad']} u.\n"
-                        f"* **Pagado originalmente:** {fila_deuda['Importe_Pagado']:.2f}€")
+                        f"* **Pagado originalmente:** {pagado_original:.2f}€")
 
-                st.error(f"💵 **Cantidad pendiente actual:** {fila_deuda['Importe_Pendiente']:.2f}€")
+                st.error(f"💵 **Cantidad pendiente actual:** {pendiente_original:.2f}€")
 
-                # Input para introducir cuánto va a pagar ahora (por defecto todo el total restante)
+                # Único campo editable: El dinero entregado ahora
                 monto_a_pagar = st.number_input(
                     "Cantidad que entrega el socio en este momento (€):",
                     min_value=0.0,
-                    max_value=float(fila_deuda['Importe_Pendiente']),
-                    value=float(fila_deuda['Importe_Pendiente']),
+                    max_value=pendiente_original,
+                    value=pendiente_original,
                     step=0.5
                 )
 
-                nuevo_pendiente = float(fila_deuda['Importe_Pendiente']) - monto_a_pagar
-                nuevo_total_pagado = float(fila_deuda['Importe_Pagado']) + monto_a_pagar
+                nuevo_pendiente = pendiente_original - monto_a_pagar
+                nuevo_total_pagado = pagado_original + monto_a_pagar
 
                 if nuevo_pendiente > 0.01:
                     st.warning(f"🔸 Tras este pago, todavía quedará un remanente de **{nuevo_pendiente:.2f}€**")
                 else:
                     st.success("🎉 ¡Excelente! La cuenta quedará completamente saldada (0.00€ pendientes).")
 
-                # Botón de validación final
+                # Botón de validación final hacia Google Apps Script
                 if st.button("🤝 CONFIRMAR PAGO Y ACTUALIZAR CUENTA"):
                     payload = {
                         "accion": "saldar_deuda_venta",
                         "Id_Venta": id_venta_sel,
-                        "Monto_Pagado_Ahora": float(monto_a_pagar),
                         "Nuevo_Importe_Pagado": float(nuevo_total_pagado),
                         "Nuevo_Importe_Pendiente": float(nuevo_pendiente)
                     }
@@ -1480,7 +1482,7 @@ elif st.session_state.current_menu == "MERCH_VER_PENDIENTES":
                                 data=json.dumps(payload), 
                                 headers={"Content-Type": "application/json"}
                             )
-                            if "OK" in respuesta.text or "actualizado" in respuesta.text.lower():
+                            if "OK" in respuesta.text:
                                 st.success(f"¡Pago registrado correctamente! La cuenta de {fila_deuda['Socio']} ha sido actualizada.")
                                 time.sleep(1.5)
                                 st.session_state.current_menu = "PANTALLA_MERCHANDISING"
@@ -1496,6 +1498,7 @@ elif st.session_state.current_menu == "MERCH_VER_PENDIENTES":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pend"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
