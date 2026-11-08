@@ -1402,6 +1402,100 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_hist_socios"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+# ==============================================================================
+# 5.8 SUBPANTALLA: VER DEUDAS Y SALDAR CUENTAS PENDIENTES
+# ==============================================================================
+elif st.session_state.current_menu == "MERCH_VER_PENDIENTES":
+    st.title("💰 CONTROL DE DEUDAS Y PAGOS PENDIENTES")
+    st.write("Visualiza las ventas con saldos pendientes y regístralas como totalmente pagadas.")
+    st.write("---")
+
+    try:
+        # 1. Cargamos el histórico usando tu variable exacta
+        df_ventas = pd.read_csv(URL_VENTAS_SOCIOS)
+        df_ventas.columns = df_ventas.columns.str.strip()
+
+        # 2. Filtramos estrictamente las que tienen un saldo pendiente mayor a cero
+        if 'Importe_Pendiente' in df_ventas.columns and not df_ventas.empty:
+            df_deudores = df_ventas[df_ventas['Importe_Pendiente'] > 0.01]
+        else:
+            df_deudores = pd.DataFrame()
+
+        if df_deudores.empty:
+            st.success("✨ ¡Perfecto! No hay ninguna deuda ni pago pendiente en el sistema.")
+        else:
+            st.warning(f"⚠️ Se han encontrado {len(df_deudores)} operaciones con saldo pendiente.")
+            
+            # Creamos una lista limpia para el desplegable de deudas
+            opciones_deudas = ["-- Selecciona una deuda para saldar --"]
+            for idx, r in df_deudores.iterrows():
+                opciones_deudas.append(f"🆔 {r['Id_Venta']} | 👤 {r['Socio']} | 📦 {r['Producto']} | 🔴 Debe: {r['Importe_Pendiente']:.2f}€")
+
+            deuda_seleccionada = st.selectbox("Selecciona la operación a regularizar:", opciones_deudas)
+
+            if deuda_seleccionada != "-- Selecciona una deuda para saldar --":
+                # Extraemos limpiamente el ID de la venta
+                id_venta_sel = deuda_seleccionada.split("|")[0].replace("🆔", "").strip()
+                fila_deuda = df_deudores[df_deudores['Id_Venta'].astype(str).str.strip() == id_venta_sel].iloc[0]
+
+                # Mostramos los datos actuales fijados de la deuda
+                st.info(f"📋 **Detalles del registro:**\n\n"
+                        f"* **Socio:** {fila_deuda['Socio']}\n"
+                        f"* **Artículo:** {fila_deuda['Producto']} (Talla {fila_deuda['Talla']}) x {fila_deuda['Cantidad']} u.\n"
+                        f"* **Pagado originalmente:** {fila_deuda['Importe_Pagado']:.2f}€")
+
+                st.error(f"💵 **Cantidad pendiente actual:** {fila_deuda['Importe_Pendiente']:.2f}€")
+
+                # Input para introducir cuánto va a pagar ahora (por defecto todo el total restante)
+                monto_a_pagar = st.number_input(
+                    "Cantidad que entrega el socio en este momento (€):",
+                    min_value=0.0,
+                    max_value=float(fila_deuda['Importe_Pendiente']),
+                    value=float(fila_deuda['Importe_Pendiente']),
+                    step=0.5
+                )
+
+                nuevo_pendiente = float(fila_deuda['Importe_Pendiente']) - monto_a_pagar
+                nuevo_total_pagado = float(fila_deuda['Importe_Pagado']) + monto_a_pagar
+
+                if nuevo_pendiente > 0.01:
+                    st.warning(f"🔸 Tras este pago, todavía quedará un remanente de **{nuevo_pendiente:.2f}€**")
+                else:
+                    st.success("🎉 ¡Excelente! La cuenta quedará completamente saldada (0.00€ pendientes).")
+
+                # Botón de validación final
+                if st.button("🤝 CONFIRMAR PAGO Y ACTUALIZAR CUENTA"):
+                    payload = {
+                        "accion": "saldar_deuda_venta",
+                        "Id_Venta": id_venta_sel,
+                        "Monto_Pagado_Ahora": float(monto_a_pagar),
+                        "Nuevo_Importe_Pagado": float(nuevo_total_pagado),
+                        "Nuevo_Importe_Pendiente": float(nuevo_pendiente)
+                    }
+
+                    with st.spinner("Actualizando libro de deudas en Google Sheets..."):
+                        try:
+                            respuesta = requests.post(
+                                URL_PROCESADOR_GOOGLE, 
+                                data=json.dumps(payload), 
+                                headers={"Content-Type": "application/json"}
+                            )
+                            if "OK" in respuesta.text or "actualizado" in respuesta.text.lower():
+                                st.success(f"¡Pago registrado correctamente! La cuenta de {fila_deuda['Socio']} ha sido actualizada.")
+                                time.sleep(1.5)
+                                st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+                                st.rerun()
+                            else:
+                                st.error(f"Error devuelto por el servidor: {respuesta.text}")
+                        except Exception as err:
+                            st.error(f"Error de conexión en red: {err}")
+
+    except Exception as e:
+        st.error(f"Error en el módulo de gestión de deudas: {e}")
+
+    if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_pend"):
+        st.session_state.current_menu = "PANTALLA_MERCHANDISING"
+        st.rerun()
 
 # Marcadores de posición para el resto de pantallas (Normativa, Historia, etc.)
 
