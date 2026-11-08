@@ -1305,8 +1305,9 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
                 # Balance pendiente estrictamente matemático
                 importe_pendiente = importe_total_fijo - importe_pagado_cuenta
                 
+                # CAMBIO: Usamos st.error para resaltar en rojo si queda saldo pendiente
                 if importe_pendiente > 0.01:
-                    st.warning(f"⚠️ Quedará una deuda pendiente de: **{importe_pendiente:.2f}€**")
+                    st.error(f"🔴 PENDIENTE DE PAGO: Quedará una deuda de **{importe_pendiente:.2f}€**")
                 else:
                     st.success("✨ Operación totalmente abonada.")
                 
