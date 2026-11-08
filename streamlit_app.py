@@ -1345,7 +1345,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         st.rerun()
 
 # ==============================================================================
-# 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS (CON FUNCIÓN DE SALDO DIRECTO)
+# 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS (CON FILTROS Y SALDO DIRECTO)
 # ==============================================================================
 elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
     st.title("📜 HISTORIAL DE RETIROS Y COMPRAS DE SOCIOS")
@@ -1357,44 +1357,78 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
         df_ventas.columns = df_ventas.columns.str.strip()
         
         if not df_ventas.empty:
+            # 1. Filtro por texto (Nombre del Socio)
             buscar_socio = st.text_input("🔍 Filtrar por Nombre del Socio...").strip().lower()
             if buscar_socio:
                 df_ventas = df_ventas[df_ventas['Socio'].astype(str).str.lower().str.contains(buscar_socio)]
+            
+            # --- NUEVA BOTONERA DE FILTROS DE ESTADO ---
+            st.write("**Filtrar por estado del pago:**")
+            
+            # Inicializamos el estado del filtro si no existe
+            if "filtro_estado_merch" not in st.session_state:
+                st.session_state.filtro_estado_merch = "Todos"
                 
+            col_f1, col_f2, col_f3 = st.columns(3)
+            with col_f1:
+                if st.button("📋 Ver Todos", use_container_width=True, type="primary" if st.session_state.filtro_estado_merch == "Todos" else "secondary"):
+                    st.session_state.filtro_estado_merch = "Todos"
+                    st.rerun()
+            with col_f2:
+                if st.button("🔴 Solo Pendientes", use_container_width=True, type="primary" if st.session_state.filtro_estado_merch == "Pendientes" else "secondary"):
+                    st.session_state.filtro_estado_merch = "Pendientes"
+                    st.rerun()
+            with col_f3:
+                if st.button("🟢 Solo Pagados", use_container_width=True, type="primary" if st.session_state.filtro_estado_merch == "Pagados" else "secondary"):
+                    st.session_state.filtro_estado_merch = "Pagados"
+                    st.rerun()
+            # ------------------------------------------
+            
             st.write("---")
+            
+            # Contador de registros renderizados para mostrar aviso si el filtro vacía la lista
+            registros_mostrados = 0
+            
             for index, row in df_ventas.iterrows():
+                pagado = row.get('Importe_Pagado', 0)
+                pendiente = row.get('Importe_Pendiente', 0)
+                
+                try:
+                    pagado_num = float(str(pagado).replace(',', '.')) if pd.notna(pagado) and str(pagado).strip() != "" else 0.0
+                except ValueError:
+                    pagado_num = 0.0
+                    
+                try:
+                    pendiente_num = float(str(pendiente).replace(',', '.')) if pd.notna(pendiente) and str(pendiente).strip() != "" else 0.0
+                except ValueError:
+                    pendiente_num = 0.0
+                
+                # Aplicamos la lógica de la botonera de filtros
+                es_pendiente = pendiente_num > 0.01
+                if st.session_state.filtro_estado_merch == "Pendientes" and not es_pendiente:
+                    continue
+                if st.session_state.filtro_estado_merch == "Pagados" and es_pendiente:
+                    continue
+                
+                registros_mostrados += 1
+                
                 with st.container():
                     id_venta = str(row.get('Id_Venta', index)).strip()
                     st.markdown(f"👤 **Socio:** {row['Socio']} | 📅 Fecha: {row.get('Fecha','N/A')}")
                     st.write(f"🛍️ **Artículo:** {row['Producto']} (Talla: {row['Talla']}) — 🔢 Cantidad: {row['Cantidad']} ud.")
                     
-                    pagado = row.get('Importe_Pagado', 0)
-                    pendiente = row.get('Importe_Pendiente', 0)
-                    
-                    try:
-                        pagado_num = float(str(pagado).replace(',', '.')) if pd.notna(pagado) and str(pagado).strip() != "" else 0.0
-                    except ValueError:
-                        pagado_num = 0.0
-                        
-                    try:
-                        pendiente_num = float(str(pendiente).replace(',', '.')) if pd.notna(pendiente) and str(pendiente).strip() != "" else 0.0
-                    except ValueError:
-                        pendiente_num = 0.0
-                    
                     col_p1, col_p2 = st.columns(2)
                     with col_p1:
                         st.markdown(f"💰 **Entregado a cuenta:** {pagado_num:.2f}€")
                     with col_p2:
-                        if pendiente_num > 0.01:
+                        if es_pendiente:
                             st.markdown(f"🔴 **Pendiente de pago:** {pendiente_num:.2f}€")
                         else:
                             st.markdown("🟢 **Estado:** Totalmente Pagado")
                             
                     st.caption(f"🆔 Transacción: `{id_venta}`")
                     
-                    # SI TIENE DEUDA, MOSTRAMOS LA FUNCIÓN PARA SALDARLA AQUÍ MISMO
-                    if pendiente_num > 0.01:
-                        # Creamos un expansor discreto para introducir el pago
+                    if es_pendiente:
                         with st.expander("💳 Cobrar / Saldar esta deuda"):
                             monto_a_pagar = st.number_input(
                                 f"Cantidad entregada (€):",
@@ -1432,6 +1466,9 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
                                         st.error(f"Error de red: {err}")
                                         
                 st.write("---")
+            
+            if registros_mostrados == 0:
+                st.info(f"No hay registros que coincidan con el filtro: '{st.session_state.filtro_estado_merch}'")
         else:
             st.info("No hay registros de ventas ni entregas a socios todavía en el sistema.")
     except Exception as e: st.error(f"Error al leer historial de ventas: {e}")
