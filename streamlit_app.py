@@ -1345,7 +1345,7 @@ elif st.session_state.current_menu == "MERCH_NUEVA_VENTA":
         st.rerun()
 
 # ==============================================================================
-# 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS
+# 5.8 SUBPANTALLA: HISTORIAL DE COMPRAS DE SOCIOS (CON FUNCIÓN DE SALDO DIRECTO)
 # ==============================================================================
 elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
     st.title("📜 HISTORIAL DE RETIROS Y COMPRAS DE SOCIOS")
@@ -1364,6 +1364,7 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
             st.write("---")
             for index, row in df_ventas.iterrows():
                 with st.container():
+                    id_venta = str(row.get('Id_Venta', index)).strip()
                     st.markdown(f"👤 **Socio:** {row['Socio']} | 📅 Fecha: {row.get('Fecha','N/A')}")
                     st.write(f"🛍️ **Artículo:** {row['Producto']} (Talla: {row['Talla']}) — 🔢 Cantidad: {row['Cantidad']} ud.")
                     
@@ -1382,14 +1383,54 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
                     
                     col_p1, col_p2 = st.columns(2)
                     with col_p1:
-                        st.markdown(f"💰 **Entregado a cuenta:** {pagado_num}€")
+                        st.markdown(f"💰 **Entregado a cuenta:** {pagado_num:.2f}€")
                     with col_p2:
                         if pendiente_num > 0.01:
-                            st.markdown(f"🔴 **Pendiente de pago:** {pendiente_num}€")
+                            st.markdown(f"🔴 **Pendiente de pago:** {pendiente_num:.2f}€")
                         else:
                             st.markdown("🟢 **Estado:** Totalmente Pagado")
                             
-                    st.caption(f"🆔 Transacción: `{row.get('Id_Venta', index)}`")
+                    st.caption(f"🆔 Transacción: `{id_venta}`")
+                    
+                    # SI TIENE DEUDA, MOSTRAMOS LA FUNCIÓN PARA SALDARLA AQUÍ MISMO
+                    if pendiente_num > 0.01:
+                        # Creamos un expansor discreto para introducir el pago
+                        with st.expander("💳 Cobrar / Saldar esta deuda"):
+                            monto_a_pagar = st.number_input(
+                                f"Cantidad entregada (€):",
+                                min_value=0.0,
+                                max_value=pendiente_num,
+                                value=pendiente_num,
+                                step=0.5,
+                                key=f"input_{id_venta}_{index}"
+                            )
+                            
+                            nuevo_pendiente = pendiente_num - monto_a_pagar
+                            nuevo_total_pagado = pagado_num + monto_a_pagar
+                            
+                            if st.button("🤝 CONFIRMAR PAGO", key=f"btn_{id_venta}_{index}", use_container_width=True):
+                                payload = {
+                                    "accion": "saldar_deuda_venta",
+                                    "Id_Venta": id_venta,
+                                    "Nuevo_Importe_Pagado": float(nuevo_total_pagado),
+                                    "Nuevo_Importe_Pendiente": float(nuevo_pendiente)
+                                }
+                                with st.spinner("Actualizando en Google Sheets..."):
+                                    try:
+                                        respuesta = requests.post(
+                                            URL_PROCESADOR_GOOGLE, 
+                                            data=json.dumps(payload), 
+                                            headers={"Content-Type": "application/json"}
+                                        )
+                                        if "OK" in respuesta.text:
+                                            st.success("¡Cuenta actualizada con éxito!")
+                                            time.sleep(1.0)
+                                            st.rerun()
+                                        else:
+                                            st.error(f"Error del servidor: {respuesta.text}")
+                                    except Exception as err:
+                                        st.error(f"Error de red: {err}")
+                                        
                 st.write("---")
         else:
             st.info("No hay registros de ventas ni entregas a socios todavía en el sistema.")
@@ -1398,6 +1439,7 @@ elif st.session_state.current_menu == "MERCH_HISTORIAL_SOCIOS":
     if st.button("⬅️ VOLVER AL MENÚ", key="btn_volver_hist_socios"):
         st.session_state.current_menu = "PANTALLA_MERCHANDISING"
         st.rerun()
+
 
 # ==============================================================================
 # 5.9 SUBPANTALLA: VER DEUDAS Y SALDAR CUENTAS PENDIENTES (CORREGIDA)
